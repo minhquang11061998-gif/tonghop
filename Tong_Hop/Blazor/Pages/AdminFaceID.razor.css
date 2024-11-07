@@ -1,0 +1,32 @@
+﻿/* Hiệu ứng 3D cho bảng */
+.table-3d {
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2), 0 6px 20px rgba(0, 0, 0, 0.19);
+    border-radius: 15px;
+    overflow: hidden;
+    /*background: linear-gradient(145deg, #ffffff, #e6e6e6);*/ /* Hiệu ứng màu nền nhẹ */
+}
+
+/* Hiệu ứng 3D khi di chuột qua từng hàng */
+.row-3d {
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+    .row-3d:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15), 0 4px 10px rgba(0, 0, 0, 0.1);
+    }
+
+/* Cài đặt bóng cho nút */
+.btn-success, .btn-danger {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+    .btn-success:hover {
+        background-color: #218838;
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+    }
+
+    .btn-danger:hover {
+        background-color: #c82333;
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+    }
