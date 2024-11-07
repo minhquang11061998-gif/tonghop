@@ -1,0 +1,139 @@
+﻿@using DataBase.DTOs
+@inherits LayoutComponentBase
+@inject IJSRuntime jsRuntime
+@inject HttpClient httpclient
+@inject NavigationManager navigate
+
+<main>
+    <div class="fixed-top">
+        <!-- Navbar trên cùng -->
+        <nav class="navbar navbar-expand-lg navbar-light bg-light shadow-sm py-2" style="height:60px">
+            <div class="container d-flex justify-content-between align-items-center">
+                <!-- Logo & Tên hệ thống -->
+                <a class="navbar-brand d-flex align-items-center" href="/">
+                    <img src="img/Rectangle89.png" style="height:45px;" alt="Logo" class="me-2" />
+                    <span class="fw-semibold text-primary" style="font-size: 1.25rem;">Quản lý hệ thống</span>
+                </a>
+                <div class="d-flex align-items-center">
+                    <i class="bi bi-person-circle fs-5 text-primary me-2"></i>
+                    @if (tokenResponse != null)
+                    {
+                        <span class="fw-semibold text-secondary me-2">@ShortenContent(userName, 15)</span>
+                        <NavLink href="#" @onclick="HandleLogout" class="btn btn-outline-primary btn-sm">Đăng xuất</NavLink>
+                    }
+                </div>
+            </div>
+        </nav>
+
+        <!-- Sidebar ngang với màu sắc nhẹ nhàng -->
+        <nav class="navbar navbar-expand-sm navbar-light  shadow-sm" style="background-color:#00A6AD;height:40px">
+            <div class="container">
+                <div class="collapse navbar-collapse">
+                    <ul class="navbar-nav mx-auto">
+                        <li class="nav-item">
+                            <NavLink class="nav-link text-white " href="/" aria-hidden="true">
+                                <i class="bi bi-house-door fs-6 me-1"></i>Trang chủ
+                            </NavLink>
+                        </li>
+                        <li class="nav-item">
+                            <NavLink class="nav-link text-white " href="face-registration" aria-hidden="true">
+                                <i class="bi bi-emoji-smile fs-6 me-1"></i>Quản lý faceID
+                            </NavLink>
+                        </li>
+                        <li class="nav-item">
+                            <NavLink class="nav-link text-white " href="quanlystudent" aria-hidden="true">
+                                <i class="bi bi-mortarboard fs-6 me-1"></i>Quản lý học sinh
+                            </NavLink>
+                        </li>
+                        <li class="nav-item">
+                            <NavLink class="nav-link text-white " href="manage-test" aria-hidden="true">
+                                <i class="bi bi-book fs-6 me-1"></i>Quản lý đề thi
+                            </NavLink>
+                        </li>
+                        <li class="nav-item">
+                            <NavLink class="nav-link text-white " href="exam-room" aria-hidden="true">
+                                <i class="bi bi-stopwatch fs-6 me-1"></i>Quản lý ca thi
+                            </NavLink>
+                        </li>
+                        <li class="nav-item">
+                            <NavLink class="nav-link text-white " href="exam-room" aria-hidden="true">
+                                <i class="bi bi-bar-chart-line fs-6 me-1"></i>Điểm
+                            </NavLink>
+                        </li>
+                        <li class="nav-item">
+                            <NavLink class="nav-link text-white " href="exam-result" aria-hidden="true">
+                                <i class="bi bi-layout-text-window-reverse fs-6 me-1"></i>Quản lý phúc khảo
+                            </NavLink>
+                        </li>
+                        <li class="nav-item">
+                            <NavLink class="nav-link text-white " href="teacher-system" aria-hidden="true">
+                                <i class="bi bi-info-square fs-6 me-1"></i>Thông tin liên hệ
+                            </NavLink>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+
+    </div>
+
+    <!-- Nội dung chính -->
+    <div style="margin-top:99px" class="body-container">
+        <div class="bg-white">
+            @Body
+        </div>
+    </div>
+    <footer class="bg-light text-secondary py-3 mt-4 fixed-bottom">
+        <div class="container d-flex justify-content-between align-items-center">
+            <span>&copy; 2024 Hệ thống quản lý. Tất cả các quyền được bảo lưu.</span>
+            <div class="d-flex">
+                <a href="https://example.com" class="text-secondary me-3" target="_blank" aria-label="Link đến trang chủ">
+                    <i class="bi bi-globe"></i> Trang chủ
+                </a>
+                <a href="mailto:support@example.com" class="text-secondary" aria-label="Email hỗ trợ">
+                    <i class="bi bi-envelope"></i> Hỗ trợ
+                </a>
+            </div>
+        </div>
+    </footer>
+</main>
+@code {
+    private TokenResponse tokenResponse;
+    private string userName;
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var token = await jsRuntime.InvokeAsync<string>("localStorage.getItem", "YourSuperSecretKeyHere");
+
+            if (!string.IsNullOrEmpty(token))
+            {
+                tokenResponse = new TokenResponse { Token = token };
+                var handler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
+                var jsonToken = handler.ReadToken(token) as System.IdentityModel.Tokens.Jwt.JwtSecurityToken;
+                userName = jsonToken?.Claims.FirstOrDefault(c => c.Type == "nameab")?.Value;
+                StateHasChanged();
+            }
+        }
+    }
+    private async Task HandleLogout()
+    {
+        var response = await httpclient.PostAsync("api/User/logout", null);
+
+        if (response.IsSuccessStatusCode)
+        {
+            await jsRuntime.InvokeVoidAsync("localStorage.removeItem", "YourSuperSecretKeyHere");
+            tokenResponse = null;
+            userName = null;
+            navigate.NavigateTo("/");
+        }
+    }
+    private string ShortenContent(string content, int maxLength)
+    {
+        if (string.IsNullOrEmpty(content))
+        {
+            return content;
+        }
+        return content.Length > maxLength ? content.Substring(0, maxLength) + "..." : content;
+    }
+}

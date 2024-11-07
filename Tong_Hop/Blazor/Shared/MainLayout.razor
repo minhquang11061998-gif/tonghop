@@ -1,5 +1,6 @@
 ﻿@inherits LayoutComponentBase
 @using System.Text.Json
+@using DataBase.DTOs
 @using Database.DTOs
 @using global::Data.DTOs
 @inject IJSRuntime jsRuntime
@@ -231,7 +232,7 @@
     private int unreadCount = 0;
     private bool isLoginFormVisible = false;
     private bool isLoading = false;
-    private LoginModel loginModel = new LoginModel();
+    private LoginModelDTO loginModel = new LoginModelDTO();
     private string errorMessage;
     private string userName;
     private TokenResponse tokenResponse;
@@ -353,7 +354,7 @@
                 else if (role == "Teacher")
                 {
                     userName = jsonToken?.Claims.FirstOrDefault(c => c.Type == "nameab")?.Value;
-                    navigate.NavigateTo("/teacherindex");
+                    navigate.NavigateTo("/teacherIndext");
                 }
                 StateHasChanged();
             }
@@ -404,7 +405,6 @@
             HideLoginForm();
             StateHasChanged();
             navigate.NavigateTo("/");
-            await jsRuntime.InvokeVoidAsync("alert", $"tên là :{userName}");
         }
         else
         {
