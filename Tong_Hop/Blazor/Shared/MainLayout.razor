@@ -237,61 +237,12 @@
     private TokenResponse tokenResponse;
     private void ShowLoginForm() => isLoginFormVisible = true;
     private void HideLoginForm() => isLoginFormVisible = false;
-    private bool notificationsLoaded = false; 
+    private bool notificationsLoaded = false;
     private bool showNotifications = false;
 
     protected override async Task OnInitializedAsync()
     {
-        try
-        {
-            // Kiểm tra token để xác định trạng thái đăng nhập
-            var token = await jsRuntime.InvokeAsync<string>("localStorage.getItem", "YourSuperSecretKeyHere");
-
-            if (!string.IsNullOrEmpty(token))
-            {
-                Console.WriteLine("Token found, user is logged in.");
-                tokenResponse = new TokenResponse { Token = token };
-                var handler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
-                var jsonToken = handler.ReadToken(token) as System.IdentityModel.Tokens.Jwt.JwtSecurityToken;
-
-                // Xác nhận vai trò của người dùng từ token
-                var role = jsonToken?.Claims.FirstOrDefault(temp => temp.Type == "Id")?.Value;
-                Console.WriteLine($"User role: {role}");
-
-                if (role == "Student")
-                {
-                    userName = jsonToken?.Claims.FirstOrDefault(c => c.Type == "nameab")?.Value;
-                    var studentIdClaim = jsonToken?.Claims.FirstOrDefault(c => c.Type == "Idstudent")?.Value;
-
-                    if (!string.IsNullOrEmpty(studentIdClaim) && Guid.TryParse(studentIdClaim, out Guid studentIdGuid))
-                    {
-                        // Gọi API với studentId dưới dạng Guid
-                        Console.WriteLine($"Loading student notifications for studentId: {studentIdGuid}");
-                        await LoadStudentNotifications(studentIdGuid); // Tải thông báo cho học sinh với type = 1
-                    }
-                    else
-                    {
-                        Console.WriteLine("StudentId is missing or invalid in the token, loading public notifications.");
-                        await LoadPublicNotifications(); // Tải thông báo chung nếu không tìm thấy studentId hợp lệ
-                    }
-                }
-                else
-                {
-                    Console.WriteLine("User role is not Student, loading public notifications.");
-                    await LoadPublicNotifications(); // Tải thông báo chung nếu vai trò không phải là Student
-                }
-            }
-            else
-            {
-                Console.WriteLine("No token found, loading public notifications.");
-                await LoadPublicNotifications(); // Tải thông báo chung nếu không có token
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"An error occurred in OnInitializedAsync: {ex.Message}");
-            await LoadPublicNotifications(); // Tải thông báo chung trong trường hợp lỗi
-        }
+        LoadPublicNotifications();
     }
 
     private async Task LoadPublicNotifications()
@@ -316,7 +267,7 @@
         {
             Console.WriteLine($"Exception while loading public notifications: {ex.Message}");
         }
-    }   
+    }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -347,6 +298,18 @@
                 if (role == "Student")
                 {
                     userName = jsonToken?.Claims.FirstOrDefault(c => c.Type == "nameab")?.Value;
+                    var studentIdClaim = jsonToken?.Claims.FirstOrDefault(c => c.Type == "Idstudent")?.Value;
+                    if (!string.IsNullOrEmpty(studentIdClaim) && Guid.TryParse(studentIdClaim, out Guid studentIdGuid))
+                    {
+                        // Gọi API với studentId dưới dạng Guid
+                        Console.WriteLine($"Loading student notifications for studentId: {studentIdGuid}");
+                        await LoadStudentNotifications(studentIdGuid); // Tải thông báo cho học sinh với type = 1
+                    }
+                    else
+                    {
+                        Console.WriteLine("StudentId is missing or invalid in the token, loading public notifications.");
+                        await LoadPublicNotifications(); // Tải thông báo chung nếu không tìm thấy studentId hợp lệ
+                    }
                     navigate.NavigateTo("/");
 
                 }
@@ -387,7 +350,7 @@
     private void ToggleNotificationList()
     {
         showNotifications = !showNotifications;
-        StateHasChanged(); 
+        StateHasChanged();
     }
 
     private async Task HandleLogin()
@@ -410,7 +373,7 @@
         {
             errorMessage = "Tên đăng nhập hoặc mật khẩu không chính xác.";
             isLoading = false;
-            loginModel.Username=string.Empty;
+            loginModel.Username = string.Empty;
             loginModel.Password = string.Empty;
             StateHasChanged();
         }
@@ -448,7 +411,7 @@
 }
 
 <script>
-    function error(){
+    function error() {
         document.getElementById("erro").window.alert("mật khẩu sai")
     }
 </script>
