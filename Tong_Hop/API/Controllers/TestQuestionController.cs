@@ -242,7 +242,7 @@ namespace API.Controllers
         {
             var allTestCodes = await _db.TestCodes
                 .Include(tc => tc.Tests)
-                .Where(tc => tc.Tests.Id == testId)
+                .Where(tc => tc.TestId == testId)
                 .ToListAsync();
 
             if (allTestCodes == null || allTestCodes.Count == 0)
