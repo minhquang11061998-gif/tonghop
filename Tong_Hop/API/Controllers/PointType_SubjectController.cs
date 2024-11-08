@@ -59,22 +59,22 @@ namespace API.Controllers
             return Ok(PTS);
         }
 
-        [HttpPost("create-pointtype_subject")]
-        public async Task<IActionResult> Create_PointType_Subject(PointType_SubjectDTO dto)
-        {
-            var data = new PointType_Subject
-            {
-                Id = Guid.NewGuid(),
-                SubjectId = dto.SubjectId,
-                PointTypeId = dto.PointTypeId,
-                Quantity = dto.Quantity,
-            };
+        //[HttpPost("create-pointtype_subject")]
+        //public async Task<IActionResult> Create_PointType_Subject(PointType_SubjectDTO dto)
+        //{
+        //    var data = new PointType_Subject
+        //    {
+        //        Id = Guid.NewGuid(),
+        //        SubjectId = dto.SubjectId,
+        //        PointTypeId = dto.PointTypeId,
+        //        Quantity = dto.Quantity,
+        //    };
 
-            await _db.PointType_Subjects.AddAsync(data);
-            await _db.SaveChangesAsync();
+        //    await _db.PointType_Subjects.AddAsync(data);
+        //    await _db.SaveChangesAsync();
 
-            return Ok(dto);
-        }
+        //    return Ok(dto);
+        //}
 
         [HttpPut("update-pointtype_subject")]
         public async Task<IActionResult> Update_PointType_Subejct(PointType_SubjectDTO dto)
