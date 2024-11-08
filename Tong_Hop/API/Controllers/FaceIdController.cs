@@ -1,13 +1,18 @@
 ﻿using DataBase.Data;
+using DataBase.DTOs;
+using DataBase.Models;
 using Emgu.CV;
 using Emgu.CV.Face;
+using Emgu.CV.Ocl;
 using Emgu.CV.Structure;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Drawing;
 using System.IdentityModel.Tokens.Jwt;
 using System.Text;
+using System.Xml;
 using System.Xml.Linq;
 
 namespace API.Controllers
@@ -188,7 +193,7 @@ namespace API.Controllers
                         ValidateAudience = false
                     },
                     out SecurityToken validatedToken);
-                var student = claimsPrincipal.Claims.First(claim => claim.Type == "Idstudent").Value;
+                var student = claimsPrincipal.Claims.First(claim => claim.Type == "Idstudents").Value;
                 foreach (var face in faces)
                 {
                     var grayFace = frame.Convert<Gray, byte>().GetSubRect(face).Resize(200, 200, Emgu.CV.CvEnum.Inter.Cubic);
@@ -196,13 +201,11 @@ namespace API.Controllers
 
                     // Kiểm tra khuôn mặt với dữ liệu đã lưu
                     var result = CheckFaceAgainstStoredData(faceFeatures);
-
                     if (result != null && student == result.Value.UserId)
                     {
-
                         // Gọi hàm reset camera
                         return Ok(new { Message = "Face matched.", UserId = result.Value.UserId });
-
+                        
                     }
                 }
 
@@ -343,14 +346,10 @@ namespace API.Controllers
 
             return Unauthorized("Face not recognized.");
         }
-        public class Login_Exam_DTO
-        {
-            public int codelogin { get; set; }
-
-        }
+        
 
         [HttpPost("Login-exam")]
-        public IActionResult GetLogin(Login_Exam_DTO login)
+        public  IActionResult GetLogin(Login_Exam_DTO login)
         {
             // Lấy token từ tiêu đề Authorization
             var token = HttpContext.Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
@@ -373,15 +372,43 @@ namespace API.Controllers
                     out SecurityToken validatedToken);
 
                 // Lấy IdStudent từ claim trong token
-                var studentIdFromToken = claimsPrincipal.Claims.First(claim => claim.Type == "Idstudent").Value;
+                var studentIdFromToken = claimsPrincipal.Claims.First(claim => claim.Type == "Idstudents").Value;
 
                 // Kiểm tra mã code và IdStudent từ cơ sở dữ liệu
                 var code = _db.Tests.FirstOrDefault(x => x.Code == login.codelogin);
                 var student = _db.Students.FirstOrDefault(x => x.Id.ToString() == studentIdFromToken);
-
+               
                 if (code != null && student != null)
                 {
-                    return Ok("thành công ");
+                    var examRoomTestCodeId = (from exam in _db.Exam_Room_TestCodes
+                                              join test in _db.Tests
+                                              on exam.TestId equals test.Id
+                                              where test.Code == login.codelogin
+                                              select exam.Id).FirstOrDefault();
+                    if (examRoomTestCodeId != Guid.Empty)
+                    {
+
+                        var newExamRoomStudent = new Exam_Room_Student_DTO
+                        {
+                            Id = Guid.NewGuid(),
+                            ChenkTime = DateTime.Now,
+                            Status = 1,
+                            ExamRoomTestCodeId = examRoomTestCodeId,
+                            StudentId = Guid.Parse(studentIdFromToken)
+                        };
+                        var examRoomStudentEntity = new Exam_Room_Student 
+                        {
+                            Id = newExamRoomStudent.Id,
+                            ChenkTime = newExamRoomStudent.ChenkTime,
+                            Status = newExamRoomStudent.Status,
+                            ExamRoomTestCodeId = newExamRoomStudent.ExamRoomTestCodeId,
+                            StudentId = newExamRoomStudent.StudentId
+                        };
+
+                       _db.Exam_Room_Students.Add(examRoomStudentEntity);
+                       _db.SaveChanges();
+                        return Ok("thành công ");
+                    }   
                 }
             }
             catch (Exception)
@@ -391,6 +418,7 @@ namespace API.Controllers
 
             return Unauthorized("Code hoặc ID sai");
         }
+        
     }
 }
 
