@@ -1,7 +1,9 @@
-﻿@* @using DataBase.DTOs
+﻿@page "/teacherindex"
+@using DataBase.DTOs
 @using Database.DTOs
-@layout AdminLayout
-@page "/adminIndex"
+@using global::Data.DTOs
+@* @using global::Data.Models *@
+@layout Teacherlayout
 @inject IHttpClientFactory clientFactory;
 @inject HttpClient client
 @inject IJSRuntime jsRuntime
@@ -19,8 +21,9 @@
         <canvas id="teachersPieChart"></canvas>
     </div>
 </div>
+
 @code {
-    private List<GradeDTO> gradeData = new List<GradeDTO>();
+    private List<ChartDTO> ChartData = new List<ChartDTO>();
     private bool isDataLoaded = false;
 
     protected override async Task OnInitializedAsync()
@@ -28,8 +31,8 @@
         try
         {
             var httpClinet = clientFactory.CreateClient("DefaultClient");
-            var url = "https://localhost:7046/api/Grade/get-grade-data";
-            gradeData = await httpClinet.GetFromJsonAsync<List<GradeDTO>>(url);
+            var url = "https://localhost:7046/api/TeacherIndex/get-bieudo-data";
+            ChartData = await httpClinet.GetFromJsonAsync<List<ChartDTO>>(url);
             isDataLoaded = true; // Đánh dấu dữ liệu đã được tải
         }
         catch (Exception ex)
@@ -40,6 +43,7 @@
 
     }
 
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
@@ -47,14 +51,14 @@
             try
             {
                 var httpClient = clientFactory.CreateClient("DefaultClient");
-                var url = "https://localhost:7046/api/Grade/get-grade-data";
-                gradeData = await httpClient.GetFromJsonAsync<List<GradeDTO>>(url);
-                if (gradeData != null && gradeData.Any())
+                var url = "https://localhost:7046/api/TeacherIndex/get-bieudo-data";
+                ChartData = await httpClient.GetFromJsonAsync<List<ChartDTO>>(url);
+                if (ChartData != null && ChartData.Any())
                 {
                     var gradeNames = new[] { 6, 7, 8, 9 };
-                    var studentCounts = gradeNames.Select(name => gradeData.FirstOrDefault(d => d.Name == name)?.TotalStudents ?? 0).ToArray();
-                    var classCounts = gradeNames.Select(name => gradeData.FirstOrDefault(d => d.Name == name)?.TotalClasses ?? 0).ToArray();
-                    var teacherCounts = gradeNames.Select(name => gradeData.FirstOrDefault(d => d.Name == name)?.TotalTeachers ?? 0).ToArray();
+                    var studentCounts = gradeNames.Select(name => ChartData.FirstOrDefault(d => d.GradeName == name)?.TotalStudents ?? 0).ToArray();
+                    var classCounts = gradeNames.Select(name => ChartData.FirstOrDefault(d => d.GradeName == name)?.TotalClasses ?? 0).ToArray();
+                    var teacherCounts = gradeNames.Select(name => ChartData.FirstOrDefault(d => d.GradeName == name)?.TotalTeachers ?? 0).ToArray();
 
                     // Vẽ biểu đồ sau khi dữ liệu đã tải xong
                     if (studentCounts.Any(c => c > 0))
@@ -86,9 +90,9 @@
         <div class="chart-group">
             <div class="chart-group-title">Biển đồ 1: Thống kê số lượng học sinh theo khối</div>
             <ul>
-                @foreach (var grade in gradeData.OrderBy(g => g.Name))
+                @foreach (var grade in ChartData.OrderBy(g => g.GradeName))
                 {
-                    <li>Khối @grade.Name: @grade.TotalStudents học sinh</li>
+                    <li>Khối @grade.GradeName: @grade.TotalStudents học sinh</li>
                 }
             </ul>
         </div>
@@ -96,9 +100,9 @@
         <div class="chart-group">
             <div class="chart-group-title">Biển đồ 2: Thống kê số lượng lớp theo khối</div>
             <ul>
-                @foreach (var grade in gradeData.OrderBy(g => g.Name))
+                @foreach (var grade in ChartData.OrderBy(g => g.GradeName))
                 {
-                    <li>Khối @grade.Name: @grade.TotalClasses lớp</li>
+                    <li>Khối @grade.GradeName: @grade.TotalClasses lớp</li>
                 }
             </ul>
         </div>
@@ -106,9 +110,9 @@
         <div class="chart-group">
             <div class="chart-group-title">Biển đồ 3: Thống kê số lượng giáo viên theo khối</div>
             <ul>
-                @foreach (var grade in gradeData.OrderBy(g => g.Name))
+                @foreach (var grade in ChartData.OrderBy(g => g.GradeName))
                 {
-                    <li>Khối @grade.Name: @grade.TotalTeachers giáo viên</li>
+                    <li>Khối @grade.GradeName: @grade.TotalTeachers giáo viên</li>
                 }
             </ul>
         </div>
@@ -121,7 +125,7 @@
             @if (notifications != null && notifications.Count > 0)
             {
                 @foreach (var notification in notifications.Take(4)) @* <!-- Giới hạn hiển thị 4 thông báo --> *@
-                @* {
+                {
                     <div class="card notification-card mb-2">
                         <div class="card-body">
                             <h6 class="card-title">
@@ -137,7 +141,7 @@
                     </div>
                 }
 
-
+               
             }
             else
             {
@@ -204,6 +208,42 @@
         </div>
     </div>
 </div>
+
+<style>
+    .modal-header {
+        background-color: #007bff;
+        color: white;
+        border-bottom: 1px solid #e5e5e5;
+    }
+
+    .modal-title {
+        font-weight: bold;
+        font-size: 1.25rem;
+    }
+
+    .modal-footer {
+        background-color: #f1f1f1;
+        border-top: 1px solid #e5e5e5;
+    }
+
+    .btn-close {
+        background-color: transparent;
+        border: none;
+        font-size: 1.25rem;
+    }
+
+    .form-label {
+        font-weight: bold;
+    }
+
+    .list-group-item {
+        font-size: 0.9rem;
+        padding: 5px 10px;
+    }
+</style>
+
+
+<!-- Modal chọn lớp -->
 @if (isClassSelectionModalVisible)
 {
     <div class="modal fade show" tabindex="-1" style="display:block;">
@@ -391,4 +431,177 @@
         isClassSelectionModalVisible = false;
     }
 }
- *@ 
+
+<style>
+    .chart-container {
+        display: flex;
+        justify-content: space-around; /* Chia đều không gian giữa các biểu đồ */
+        gap: 10px; /* Khoảng cách giữa các biểu đồ */
+        padding: 15px;
+    }
+
+    .chart-wrapper {
+        width: 300px; /* Điều chỉnh kích thước khung biểu đồ */
+        height: 300px;
+        padding: 10px;
+        border: 1px solid #ddd; /* Đường viền mỏng xung quanh biểu đồ */
+        border-radius: 15px; /* Tăng độ bo tròn */
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1); /* Đổ bóng mờ lớn hơn */
+        background-color: #f9f9f9; /* Màu nền */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+        .chart-wrapper h3 {
+            text-align: center;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+    .chart-details {
+        padding: 20px;
+        background-color: #f9f9f9;
+        margin: 20px 0;
+    }
+
+        .chart-details h3 {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            color: #333;
+            font-weight: bold;
+        }
+
+    .chart-group {
+        margin-bottom: 20px; /* Khoảng cách giữa các biểu đồ */
+    }
+
+    .chart-group-title {
+        font-weight: bold;
+        margin-bottom: 8px; /* Tạo khoảng cách giữa tiêu đề và các khối */
+        white-space: nowrap; /* Không cho tiêu đề xuống dòng */
+    }
+
+    .chart-group ul {
+        display: flex;
+        flex-wrap: wrap; /* Cho phép các khối xuống dòng nếu tràn màn hình */
+        gap: 10px; /* Khoảng cách giữa các khối */
+        margin: 0;
+        padding: 0;
+        list-style-type: none; /* Bỏ dấu đầu dòng */
+    }
+
+    .chart-group li {
+        padding: 8px 12px;
+        color: #333;
+        text-align: center;
+        min-width: 80px; /* Đảm bảo kích thước nhỏ nhất cho mỗi khối */
+        flex: 1; /* Chia đều các khối theo hàng */
+    }
+
+
+    .notification-title {
+        text-decoration: none;
+        color: #007bff;
+        font-weight: bold;
+        transition: color 0.3s;
+        flex: 1 1 45%; /* Cho phép phần này chiếm 45% chiều rộng của container */
+    }
+
+        .notification-title:hover {
+            color: #0056b3;
+        }
+
+    .notification-card {
+        transition: box-shadow 0.3s ease;
+        border: none;
+        background-color: #fff;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+
+        .notification-card:hover {
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+        }
+
+    .modal-header, .modal-footer {
+        background-color: #f8f9fa;
+        border: none;
+    }
+
+    button.btn-close {
+        font-size: 1.2rem;
+    }
+
+    textarea.form-control, input.form-control {
+        border-radius: 5px;
+        box-shadow: none;
+    }
+
+    h2.text-center {
+        font-weight: bold;
+        font-size: 1.75rem;
+        color: #333;
+        margin-bottom: 30px;
+    }
+
+    .table-fixed {
+        max-height: 250px;
+        overflow-y: auto;
+    }
+
+        .table-fixed thead {
+            background-color: #007bff;
+            color: white;
+        }
+
+</style>
+
+<style>
+    .notification-list-container {
+        max-height: 250px; /* Chiều cao cố định để giới hạn số thông báo hiển thị */
+        overflow-y: auto; /* Kích hoạt thanh cuộn dọc khi nội dung vượt quá chiều cao */
+        padding: 10px; /* Khoảng cách nhỏ cho phần thông báo */
+        border: 1px solid #ddd; /* Đường viền để tách biệt phần thông báo */
+        background-color: #f9f9f9; /* Màu nền cho dễ đọc */
+    }
+
+    .notification-title {
+        text-decoration: none; /* Bỏ gạch chân mặc định */
+        color: #007bff; /* Màu mặc định của liên kết */
+        font-weight: normal;
+        cursor: pointer;
+    }
+
+        .notification-title:hover {
+            color: #004080; /* Màu khi hover đậm hơn */
+            font-weight: bold; /* Tăng độ đậm khi hover */
+        }
+
+
+    .notification-card {
+        transition: box-shadow 0.2s ease;
+        font-size: 0.9rem;
+    }
+
+        .notification-card:hover {
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+    .card-body {
+        padding: 10px; /* Giảm padding của card */
+    }
+
+    .mb-2 {
+        margin-bottom: 0.5rem !important; /* Giảm khoảng cách giữa các card */
+    }
+
+    h2.text-center {
+        margin-bottom: 15px; /* Giảm khoảng cách giữa tiêu đề và danh sách */
+        font-weight: bold;
+        font-size: 1.5rem; /* Giảm kích thước tiêu đề */
+    }
+
+    .shadow-sm {
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.15);
+    }
+</style>

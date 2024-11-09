@@ -367,7 +367,7 @@ namespace API.Controllers
             public string TestCode { get; set; }
         }
         [HttpPost("login")]
-        public IActionResult Login([FromBody] LoginModelDTO model)
+        public IActionResult Login([FromBody] LoginModel model)
         {
             var data = _db.Users.FirstOrDefault(temp => temp.UserName == model.Username);
             var student = _db.Roles.FirstOrDefault(temp => temp.Id == data.RoleId);
@@ -387,7 +387,7 @@ namespace API.Controllers
                         {
                          new Claim("nameab",data.FullName.ToString()),
                          new Claim("Id",student.Name.ToString()),
-                          new Claim("Idstudents",studentId.Id.ToString()),
+                         new Claim("Idstudent",studentId.Id.ToString()),
                          new Claim("email",data.Email.ToString()),
                          new Claim("numberPhone",data.PhoneNumber.ToString()),
                          new Claim("CodeStudent", studentId.Code.ToString()),
