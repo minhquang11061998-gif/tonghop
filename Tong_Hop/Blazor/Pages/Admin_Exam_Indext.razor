@@ -1,0 +1,208 @@
+﻿@page "/exam-room"
+@using System.Text.Json
+@using DataBase.DTOs
+@using global::Data.DTOs
+@using System.Net.Http.Json
+@layout AdminLayout
+@inject HttpClient client
+@inject IHttpClientFactory clientFactory
+@inject IJSRuntime Jsruntime
+@inject NavigationManager navigate
+
+<div>
+    <div class="row">
+        <div class=" border d-flex">
+            <div class="col-2">
+                <div class="border shadow-sm" style="background-color:cornflowerblue">
+                    <h5 class="text-white d-flex justify-content-center align-items-center">Thư mục</h5>
+                </div>
+                <div class="border min-vh-100" style="height: 80vh; overflow-y: auto;">
+                    @foreach (var item in testList)
+                    {
+                        <div>
+                            <span class="target" value="@item.Id" type="button" @onclick="() => ToggleTest(item.Id)">
+                                <i class="bi bi-folder-fill text-warning p-1"></i> @item.Name
+                            </span>
+                            @if (selectedTestId == item.Id)
+                            {
+                                <div class="mt-2">
+                                    <label for="easyCount">Số câu dễ:</label>
+                                    <input type="number" id="easyCount" @bind="easyCount" min="0" class="form-control mb-2" />
+
+                                    <label for="mediumCount">Số câu trung bình:</label>
+                                    <input type="number" id="mediumCount" @bind="mediumCount" min="0" class="form-control mb-2" />
+
+                                    <label for="hardCount">Số câu khó:</label>
+                                    <input type="number" id="hardCount" @bind="hardCount" min="0" class="form-control mb-2" />
+
+                                    <label for="veryHardCount">Số câu nâng cao:</label>
+                                    <input type="number" id="veryHardCount" @bind="veryHardCount" min="0" class="form-control mb-2" />
+
+                                    <button class="btn btn-primary mt-2" @onclick="() => onlick(item.Id)"> Tạo ca thi</button>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+            <div class="col-10">
+                <div class="border shadow-sm d-flex justify-content-between" style="background-color:cornflowerblue">
+                    <div class="p-1">
+                        <h5 class="text-white" style="font-size:15px">Cấu trúc bài thi</h5>
+                    </div>
+                </div>
+                <div class="border min-vh-50 p-2">
+                    <div class="exam-container" style="height: 80vh; overflow-y: auto;">
+                        @if (detailDTOs != null && detailDTOs.Count > 0)
+                        {
+                            @foreach (var item in detailDTOs)
+                            {
+                                <h2 class="title">SỞ GD & ĐT THANH HÓA</h2>
+                                <h3 class="school-name">TRƯỜNG THPT NGUYỄN TRÃI</h3>
+                                <h4 class="year">NĂM HỌC 2017 - 2018</h4>
+
+                                <h4 class="subject">MÔN: @item.NameSubject</h4>
+                                <h5 class="time">Thời gian làm bài: @item.time phút</h5>
+                                <h6 class="code">Mã đề thi: @item.CodeTescode</h6>
+
+                                <div class="student-info">
+                                    <span>Họ, tên sinh viên: ............................................</span><br />
+                                    <span>Số báo danh: .................................................</span>
+                                </div>
+                                <div class="content">
+                                    @foreach (var question in item.NameQuestion)
+                                    {
+                                        <h5>Câu @(item.NameQuestion.IndexOf(question) + 1): @question.QuestionName</h5>
+                                        <ol type="A" class="d-flex justify-content-md-evenly p-2">
+                                            @if (question.Type == 1 || question.Type == 2)
+                                            {
+                                                foreach (var answer in question.Answers)
+                                                {
+                                                    <li>@answer.Answer</li>
+                                                }
+                                            }
+                                            else if (question.Type == 3)
+                                            {
+                                                <li>Đúng</li>
+                                                <li>Sai</li>
+                                            }
+                                            else if (question.Type == 4)
+                                            {
+                                                @foreach (var answer in question.Answers)
+                                                {
+                                                    <p><strong>Đáp án:</strong> @answer.Answer</p>
+                                                }
+                                            }
+                                        </ol>
+                                    }
+
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <p>Không có dữ liệu để hiển thị.</p>
+                        }
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+@code {
+    // Các biến và danh sách cần thiết
+    private List<DetailDTO> detailDTOs = new List<DetailDTO>();
+    private List<TestQuestion_TestQuestionAnswersDTO> selectedQuestions = new List<TestQuestion_TestQuestionAnswersDTO>();
+    private List<TestDTO> testList = new List<TestDTO>();
+    private Guid? selectedTestId = null;
+    private bool isLoading = false;
+    private int easyCount;
+    private int mediumCount;
+    private int hardCount;
+    private int veryHardCount;
+
+    // Phương thức xử lý sự kiện nhấn nút "Tạo ca thi"
+    private async Task onlick(Guid id)
+    {
+        isLoading = true; // Bắt đầu tải
+        try
+        {
+            // Gửi yêu cầu tạo câu hỏi ngẫu nhiên
+           
+            var response = await client.PostAsJsonAsync($"https://localhost:7046/api/TestQuestion/randomize-questions-for-test-codes?testId={id}&easyCount={easyCount}&mediumCount={mediumCount}&hardCount={hardCount}&veryHardCount={veryHardCount}", selectedQuestions);
+
+            if (response.IsSuccessStatusCode)
+            {
+                await ShowSuccessMessage("Thêm dữ liệu thành công!");
+
+                // Tải lại chi tiết bài thi sau khi thêm thành công
+                await LoadDetailTest(id);
+
+            }
+            else
+            {
+                await ShowErrorMessage($"Có lỗi xảy ra. Mã lỗi: {response.StatusCode}");
+            }
+        }
+        catch (Exception ex)
+        {
+            await ShowErrorMessage($"Có lỗi xảy ra: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false; // Kết thúc tải
+        }
+    }
+
+    // Các phương thức khác vẫn giữ nguyên như bạn đã viết
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadTestList();
+    }
+
+    private async Task LoadTestList()
+    {
+        var client = clientFactory.CreateClient("Get");
+        var url = "https://localhost:7046/api/Test/get-all-test";
+        testList = await client.GetFromJsonAsync<List<TestDTO>>(url);
+    }
+
+    private async Task LoadDetailTest(Guid id)
+    {
+        var client = clientFactory.CreateClient("Get");
+        var url = $"https://localhost:7046/api/TestQuestion/Get-testcodes-by-testid?testId={id}";
+        detailDTOs = await client.GetFromJsonAsync<List<DetailDTO>>(url);
+    }
+
+    private void ToggleTest(Guid id)
+    {
+        selectedTestId = selectedTestId == id ? null : id;
+    }
+
+
+
+    private async Task ShowSuccessMessage(string message)
+    {
+        await Jsruntime.InvokeVoidAsync("Swal.fire", new
+        {
+            title = "Thành công!",
+            text = message,
+            icon = "success",
+            confirmButtonText = "OK"
+        });
+    }
+
+    private async Task ShowErrorMessage(string message)
+    {
+        await Jsruntime.InvokeVoidAsync("Swal.fire", new
+        {
+            title = "Thất bại!",
+            text = message,
+            icon = "error",
+            confirmButtonText = "OK"
+        });
+    }
+}
+

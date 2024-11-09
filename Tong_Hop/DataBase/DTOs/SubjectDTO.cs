@@ -10,12 +10,12 @@ namespace DataBase.DTOs
     public class SubjectDTO
     {
         public Guid Id { get; set; }
-        public string Name { get; set; }
-        public string Code { get; set; }
+        public string? Name { get; set; }
+        public string? Code { get; set; }
         public DateTime CreationTime { get; set; }
         public int Status { get; set; }
-        public List<Guid> GradeIds { get; set; }
-        public List<PointTypeDto> PointTypeIds { get; set; } // Thêm danh sách PointTypeId
+        public List<Guid>? GradeIds { get; set; }
+        public List<PointTypeDto>? PointTypeIds { get; set; } // Thêm danh sách PointTypeId
         public Guid TeacherId { get; set; }
 
     }
