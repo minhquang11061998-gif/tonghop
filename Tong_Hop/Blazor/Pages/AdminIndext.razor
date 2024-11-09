@@ -1,7 +1,7 @@
 ﻿@using DataBase.DTOs
 @using Database.DTOs
 @layout AdminLayout
-@page "/teacherIndext"
+@page "/adminIndex"
 @inject IHttpClientFactory clientFactory;
 @inject HttpClient client
 @inject IJSRuntime jsRuntime
@@ -28,7 +28,7 @@
         try
         {
             var httpClinet = clientFactory.CreateClient("DefaultClient");
-            var url = "https://localhost:7039/api/Grade/get-grade-data";
+            var url = "https://localhost:7046/api/Grade/get-grade-data";
             gradeData = await httpClinet.GetFromJsonAsync<List<GradeDTO>>(url);
             isDataLoaded = true; // Đánh dấu dữ liệu đã được tải
         }
@@ -47,7 +47,7 @@
             try
             {
                 var httpClient = clientFactory.CreateClient("DefaultClient");
-                var url = "https://localhost:7039/api/Grade/get-grade-data";
+                var url = "https://localhost:7046/api/Grade/get-grade-data";
                 gradeData = await httpClient.GetFromJsonAsync<List<GradeDTO>>(url);
                 if (gradeData != null && gradeData.Any())
                 {
@@ -262,7 +262,7 @@
     private async Task LoadNotifications()
     {
         var httpClient = clientFactory.CreateClient("Get");
-        var url = "https://localhost:7039/api/Notification/get-all-notification";
+        var url = "https://localhost:7046/api/Notification/get-all-notification";
         notifications = await httpClient.GetFromJsonAsync<List<NotificationDTO>>(url);
     }
     private void HandleNotificationTypeChange(Microsoft.AspNetCore.Components.ChangeEventArgs e)
@@ -332,7 +332,7 @@
 
         // Gửi thông báo qua API
         var httpClient = clientFactory.CreateClient();
-        var url = $"https://localhost:7039/api/Notification/create-notification";
+        var url = $"https://localhost:7046/api/Notification/create-notification";
         var response = await httpClient.PostAsJsonAsync(url, notificationDTO);
 
         if (response.IsSuccessStatusCode)

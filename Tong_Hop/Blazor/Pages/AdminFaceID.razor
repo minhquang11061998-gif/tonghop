@@ -14,6 +14,7 @@
                         <th scope="col" class="text-center">STT</th>
                         <th scope="col">Họ và Tên</th>
                         <th scope="col">Email</th>
+                        <th scope="col">Trạng thái</th>
                         <th scope="col" class="text-center">Thao tác</th>
                     </tr>
                 </thead>
@@ -24,6 +25,7 @@
                             <td class="text-center">@(studentDTOs.IndexOf(item) + 1)</td>
                             <td>@item.Name</td>
                             <td>@item.Email</td>
+                            <td>@(item.IsRegistered ? "Đã đăng ký" : "Chưa đăng ký")</td>
                             <td class="text-center">
                                 <button class="btn btn-sm btn-success rounded-pill me-2 px-3" @onclick="() => RegisterFaceAsync(item.Id.ToString())">
                                     Đăng ký
@@ -52,11 +54,6 @@
     protected override async Task OnInitializedAsync()
     {
         studentDTOs = await Http.GetFromJsonAsync<List<StudentDTO>>("https://localhost:7046/api/Student/get-all-student2");
-        foreach (var student in studentDTOs)
-        {
-            var response = await Http.GetAsync($"https://localhost:7046/api/FaceId/check-face-registered?userId={student.Id}");
-            student.IsRegistered = response.IsSuccessStatusCode;
-        }
     }
     private async Task delete(string id)
     {

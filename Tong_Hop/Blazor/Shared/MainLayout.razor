@@ -354,7 +354,7 @@
                 else if (role == "Teacher")
                 {
                     userName = jsonToken?.Claims.FirstOrDefault(c => c.Type == "nameab")?.Value;
-                    navigate.NavigateTo("/teacherIndext");
+                    navigate.NavigateTo("/adminIndex");
                 }
                 StateHasChanged();
             }
