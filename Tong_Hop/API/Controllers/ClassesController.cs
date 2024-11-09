@@ -70,6 +70,7 @@ namespace API.Controllers
                     Status = x.Status,
                     TeacherId = x.TeacherId,
                     GradeId = x.GradeId,
+                    
 
                 }).ToList();
 
@@ -164,6 +165,99 @@ namespace API.Controllers
             }
 
             return BadRequest("Khong co lop nay");
+        }
+        [HttpPut("update-class-and-testcodes")]
+        public async Task<IActionResult> UpdateClassAndTestCodes(ClassesDTO classDTO)
+        {
+            try
+            {
+                // Kiểm tra nếu ClassCode có tồn tại
+                if (string.IsNullOrEmpty(classDTO.Code))
+                {
+                    return BadRequest("ClassCode không được để trống.");
+                }
+
+                // Lấy lớp học dựa trên ClassCode
+                var classEntity = _db.Classes.FirstOrDefault(c => c.Code == classDTO.Code);
+
+                if (classEntity == null)
+                {
+                    return NotFound("Không tìm thấy lớp học.");
+                }
+
+                // Lấy thông tin Subject_Grade dựa trên GradeId của lớp và SubjectId từ DTO
+                var subjectGrade = _db.Subject_Grades
+                    .FirstOrDefault(sg => sg.GradeId == classEntity.GradeId && sg.SubjectId == classDTO.SubjectId);
+
+                if (subjectGrade == null)
+                {
+                    return NotFound("Không tìm thấy Subject_Grade phù hợp với lớp học và môn học.");
+                }
+
+                // Cập nhật số lượng MaxStudent mới cho lớp
+                classEntity.Name = classDTO.Name;
+                classEntity.Status = classDTO.Status;
+                classEntity.TeacherId = classDTO.TeacherId;
+                classEntity.GradeId = classDTO.GradeId;
+                classEntity.MaxStudent = classDTO.MaxStudent;
+                _db.Classes.Update(classEntity);
+
+                // Lấy bài kiểm tra liên quan
+                var testEntity = _db.Tests.FirstOrDefault(t => t.SubjectId == classDTO.SubjectId);
+
+                if (testEntity == null)
+                {
+                    return NotFound("Không tìm thấy bài kiểm tra cho lớp học và môn học.");
+                }
+
+                // Cập nhật MaxStudent trong bài kiểm tra
+                testEntity.MaxStudent = classDTO.MaxStudent;
+                _db.Tests.Update(testEntity);
+
+                // Lấy tất cả TestCode của bài kiểm tra
+                var ListTestCodes = _db.TestCodes.Where(tc => tc.TestId == testEntity.Id).ToList();
+
+                // Nếu số lượng hiện tại ít hơn MaxStudent, thêm mới TestCode
+                if (ListTestCodes.Count < classDTO.MaxStudent)
+                {
+                    int missingTestCodes = classDTO.MaxStudent - ListTestCodes.Count;
+
+                    for (int i = 0; i < missingTestCodes; i++)
+                    {
+                        var newTestCode = new TestCodes
+                        {
+                            Id = Guid.NewGuid(),
+                            Code = RamdomCode_TestCode(8), // Tạo mã ngẫu nhiên
+                            Status = 1,
+                            TestId = testEntity.Id,
+                        };
+
+                        await _db.TestCodes.AddAsync(newTestCode);
+                    }
+                }
+                // Nếu số lượng hiện tại nhiều hơn MaxStudent, xóa bớt TestCode
+                else if (ListTestCodes.Count > classDTO.MaxStudent)
+                {
+                    int excessTestCodes = ListTestCodes.Count - classDTO.MaxStudent;
+
+                    var testCodesToRemove = ListTestCodes.TakeLast(excessTestCodes).ToList();
+                    _db.TestCodes.RemoveRange(testCodesToRemove);
+                }
+
+                // Lưu các thay đổi
+                await _db.SaveChangesAsync();
+
+                return Ok("Cập nhật lớp học và số lượng mã bài kiểm tra thành công.");
+            }
+            catch (Exception ex)
+            {
+                if (ex.InnerException != null)
+                {
+                    return BadRequest($"Lỗi khi cập nhật: {ex.InnerException.Message}");
+                }
+
+                return BadRequest($"Lỗi khi cập nhật: {ex.Message}");
+            }
         }
 
 

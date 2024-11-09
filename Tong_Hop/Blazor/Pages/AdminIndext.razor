@@ -1,4 +1,4 @@
-﻿@* @using DataBase.DTOs
+﻿@using DataBase.DTOs
 @using Database.DTOs
 @layout AdminLayout
 @page "/adminIndex"
@@ -121,7 +121,7 @@
             @if (notifications != null && notifications.Count > 0)
             {
                 @foreach (var notification in notifications.Take(4)) @* <!-- Giới hạn hiển thị 4 thông báo --> *@
-                @* {
+                {
                     <div class="card notification-card mb-2">
                         <div class="card-body">
                             <h6 class="card-title">
@@ -391,4 +391,4 @@
         isClassSelectionModalVisible = false;
     }
 }
- *@ 
+ 
