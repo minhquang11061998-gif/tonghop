@@ -8,13 +8,13 @@ namespace API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class TeacherIndexController : ControllerBase
+    public class AdminIndexController : ControllerBase
     {
         private readonly AppDbContext _db;
 
-        public TeacherIndexController(AppDbContext db)
+        public AdminIndexController(AppDbContext db)
         {
-                _db = db;
+            _db = db;
         }
 
         [HttpGet("get-bieudo-data")]

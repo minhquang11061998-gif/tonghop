@@ -38,7 +38,7 @@
                 <div class="mt-4 d-flex justify-content-between align-items-center">
                     <!-- Nút Cập nhật mở modal để cập nhật thông báo -->
                     <button class="btn btn-custom-update me-2" @onclick="ToggleEdit"><i class="bi bi-pencil"></i> Cập nhật</button>
-
+                    <button class="btn btn-custom-back me-2" @onclick="Back"><i class="bi bi-arrow-counterclockwise"></i> Quay lại</button>
                     <!-- Nút Xóa thông báo -->
                     <button class="btn btn-custom-delete" @onclick="() => DeleteNotification(notification.Id)"><i class="bi bi-trash"></i> Xóa</button>
                 </div>
@@ -171,7 +171,7 @@
 
     public void Back()
     {
-        nav.NavigateTo("/teacherindex");
+        nav.NavigateTo("/adminIndex");
     }
 }
 
@@ -272,4 +272,25 @@
         margin-right: 0.5rem;
     }
 
+    /* Phong cách nút quay lại */
+    .btn-custom-back {
+        background-color: #f39c12; /* Màu vàng */
+        color: white;
+        font-weight: 600;
+        border-radius: 30px;
+        padding: 10px 20px;
+        border: none;
+        transition: background-color 0.3s ease;
+        margin-right: auto; /* Căn trái */
+    }
+
+        .btn-custom-back:hover {
+            background-color: #e67e22; /* Màu vàng đậm khi hover */
+        }
+
+    /* Căn chỉnh các nút theo thứ tự */
+    .d-flex.justify-content-between {
+        display: flex;
+        justify-content: flex-start; /* Căn nút về phía bên trái */
+    }
 </style>

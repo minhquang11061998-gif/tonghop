@@ -20,7 +20,7 @@
     </div>
 </div>
 @code {
-    private List<GradeDTO> gradeData = new List<GradeDTO>();
+    private List<ChartDTO> chartData = new List<ChartDTO>();
     private bool isDataLoaded = false;
 
     protected override async Task OnInitializedAsync()
@@ -28,8 +28,8 @@
         try
         {
             var httpClinet = clientFactory.CreateClient("DefaultClient");
-            var url = "https://localhost:7046/api/Grade/get-grade-data";
-            gradeData = await httpClinet.GetFromJsonAsync<List<GradeDTO>>(url);
+            var url = "https://localhost:7046/api/AdminIndex/get-bieudo-data";
+            chartData = await httpClinet.GetFromJsonAsync<List<ChartDTO>>(url);
             isDataLoaded = true; // Đánh dấu dữ liệu đã được tải
         }
         catch (Exception ex)
@@ -47,14 +47,14 @@
             try
             {
                 var httpClient = clientFactory.CreateClient("DefaultClient");
-                var url = "https://localhost:7046/api/Grade/get-grade-data";
-                gradeData = await httpClient.GetFromJsonAsync<List<GradeDTO>>(url);
-                if (gradeData != null && gradeData.Any())
+                var url = "https://localhost:7046/api/AdminIndex/get-bieudo-data";
+                chartData = await httpClient.GetFromJsonAsync<List<ChartDTO>>(url);
+                if (chartData != null && chartData.Any())
                 {
                     var gradeNames = new[] { 6, 7, 8, 9 };
-                    var studentCounts = gradeNames.Select(name => gradeData.FirstOrDefault(d => d.Name == name)?.TotalStudents ?? 0).ToArray();
-                    var classCounts = gradeNames.Select(name => gradeData.FirstOrDefault(d => d.Name == name)?.TotalClasses ?? 0).ToArray();
-                    var teacherCounts = gradeNames.Select(name => gradeData.FirstOrDefault(d => d.Name == name)?.TotalTeachers ?? 0).ToArray();
+                    var studentCounts = gradeNames.Select(name => chartData.FirstOrDefault(d => d.GradeName == name)?.TotalStudents ?? 0).ToArray();
+                    var classCounts = gradeNames.Select(name => chartData.FirstOrDefault(d => d.GradeName == name)?.TotalClasses ?? 0).ToArray();
+                    var teacherCounts = gradeNames.Select(name => chartData.FirstOrDefault(d => d.GradeName == name)?.TotalTeachers ?? 0).ToArray();
 
                     // Vẽ biểu đồ sau khi dữ liệu đã tải xong
                     if (studentCounts.Any(c => c > 0))
@@ -86,9 +86,9 @@
         <div class="chart-group">
             <div class="chart-group-title">Biển đồ 1: Thống kê số lượng học sinh theo khối</div>
             <ul>
-                @foreach (var grade in gradeData.OrderBy(g => g.Name))
+                @foreach (var grade in chartData.OrderBy(g => g.GradeName))
                 {
-                    <li>Khối @grade.Name: @grade.TotalStudents học sinh</li>
+                    <li>Khối @grade.GradeName: @grade.TotalStudents học sinh</li>
                 }
             </ul>
         </div>
@@ -96,9 +96,9 @@
         <div class="chart-group">
             <div class="chart-group-title">Biển đồ 2: Thống kê số lượng lớp theo khối</div>
             <ul>
-                @foreach (var grade in gradeData.OrderBy(g => g.Name))
+                @foreach (var grade in chartData.OrderBy(g => g.GradeName))
                 {
-                    <li>Khối @grade.Name: @grade.TotalClasses lớp</li>
+                    <li>Khối @grade.GradeName: @grade.TotalClasses lớp</li>
                 }
             </ul>
         </div>
@@ -106,9 +106,9 @@
         <div class="chart-group">
             <div class="chart-group-title">Biển đồ 3: Thống kê số lượng giáo viên theo khối</div>
             <ul>
-                @foreach (var grade in gradeData.OrderBy(g => g.Name))
+                @foreach (var grade in chartData.OrderBy(g => g.GradeName))
                 {
-                    <li>Khối @grade.Name: @grade.TotalTeachers giáo viên</li>
+                    <li>Khối @grade.GradeName: @grade.TotalTeachers giáo viên</li>
                 }
             </ul>
         </div>
