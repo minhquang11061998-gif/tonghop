@@ -1,4 +1,5 @@
-﻿using DataBase.Data;
+﻿using Data.DTOs;
+using DataBase.Data;
 using DataBase.DTOs;
 using DataBase.Models;
 using Microsoft.AspNetCore.Http;
@@ -17,6 +18,56 @@ namespace API.Controllers
         public TestQuestionController(AppDbContext db)
         {
             _db = db;
+        }
+        [HttpGet("get-question-details/{id}")]
+        public async Task<List<listdetailquestion>> GetQuestionDetails(Guid id)
+        {
+            var questionDetails = await _db.TestQuestions
+                .Where(q => q.TestId == id)
+                .Select(q => new listdetailquestion
+                {
+                    Id = q.Id,
+                    Questionname = q.QuestionName,
+                    RightAnswer = q.RightAnswer,
+                    Type = q.Type,
+                    answer = q.TestQuestionAnswer.Select(a => new AnswerDTO
+                    {
+                        Answer = a.Answer,
+                    }).ToList()
+                }).ToListAsync();
+
+            return questionDetails;
+        }
+        [HttpGet("Get-testcodes-by-testid")]
+        public async Task<ActionResult<List<DetailDTO>>> GetTestCodesByTestId(Guid testId)
+        {
+            var testcodes = await _db.TestCodes
+                .Where(tc => tc.TestId == testId) // Lọc theo TestId
+                .Select(tc => new DetailDTO
+                {
+                    IdTestcode = tc.Id,
+                    CodeTescode = tc.Code,
+                    time = tc.Tests.Minute, // Thời gian bài kiểm tra
+                    NameSubject = tc.Tests.Subject.Name, // Tên môn học
+                    NameQuestion = _db.TestCode_TestQuestion
+                        .Where(tcq => tcq.TestCodeId == tc.Id) // Lấy danh sách câu hỏi liên quan
+                        .Select(tcq => new TestQuestionDTO
+                        {
+                            Id = tcq.TestQuestion.Id,
+                            QuestionName = tcq.TestQuestion.QuestionName, // Nội dung câu hỏi
+                            /*code = tc.test.Code*/ // Mã TestCode
+                            Level = tcq.TestQuestion.Level, // Mức độ câu hỏi
+                            Type = tcq.TestQuestion.Type, // Loại câu hỏi
+                            Answers = tcq.TestQuestion.TestQuestionAnswer // Truy cập trực tiếp từ quan hệ
+                                .Select(a => new AnswerDTO
+                                {
+                                    Id = a.Id,
+                                    Answer = a.Answer // Nội dung câu trả lời
+                                }).ToList()
+                        }).ToList()
+                }).ToListAsync();
+
+            return testcodes;
         }
 
         [HttpGet("get-all-testquestion")]
@@ -589,6 +640,18 @@ namespace API.Controllers
             }
 
             return Ok("Nhập câu hỏi thành công từ file Excel.");
+        }
+        [HttpDelete("Delete_TestQuestion")]
+        public async Task<ActionResult> Delete_question(Guid Id)
+        {
+            var delete = _db.TestQuestions.FirstOrDefault(temp => temp.Id == Id);
+            if (delete != null)
+            {
+                _db.TestQuestions.Remove(delete);
+                await _db.SaveChangesAsync();
+                return Ok("Xóa thành công");
+            }
+            return BadRequest("Xóa thất bại");
         }
     }
 }

@@ -367,7 +367,7 @@ namespace API.Controllers
             public string TestCode { get; set; }
         }
         [HttpPost("login")]
-        public IActionResult Login([FromBody] LoginModel model)
+        public IActionResult Login([FromBody] LoginModelDTO model)
         {
             var data = _db.Users.FirstOrDefault(temp => temp.UserName == model.Username);
             var student = _db.Roles.FirstOrDefault(temp => temp.Id == data.RoleId);
