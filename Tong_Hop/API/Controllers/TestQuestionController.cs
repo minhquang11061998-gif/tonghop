@@ -292,14 +292,15 @@ namespace API.Controllers
         public async Task<IActionResult> RandomizeQuestionsForTestCodes(Guid testId, int easyCount, int mediumCount, int hardCount, int veryHardCount)
         {
             var allTestCodes = await _db.TestCodes
-                .Include(tc => tc.Tests)
-                .Where(tc => tc.TestId == testId)
-                .ToListAsync();
+        .Include(tc => tc.Tests)
+        .Where(tc => tc.TestId == testId)
+        .ToListAsync();
 
             if (allTestCodes == null || allTestCodes.Count == 0)
             {
                 return NotFound("Không tìm thấy mã kiểm tra liên quan đến bài thi.");
             }
+
             var questions = await _db.TestQuestions.Where(x => x.TestId == testId).ToListAsync();
             var easyQuestions = questions.Where(x => x.Level == 1).ToList();
             var mediumQuestions = questions.Where(x => x.Level == 2).ToList();
@@ -312,13 +313,12 @@ namespace API.Controllers
                 return BadRequest("Không đủ số câu hỏi cho một hoặc nhiều mức độ.");
             }
 
-            Random random = new Random();
+            Random random = new Random(); // Để đảm bảo tính ngẫu nhiên
 
             var selectedEasyQuestions = easyQuestions.OrderBy(_ => random.Next()).Take(easyCount).ToList();
             var selectedMediumQuestions = mediumQuestions.OrderBy(_ => random.Next()).Take(mediumCount).ToList();
             var selectedHardQuestions = hardQuestions.OrderBy(_ => random.Next()).Take(hardCount).ToList();
             var selectedVeryHardQuestions = veryHardQuestions.OrderBy(_ => random.Next()).Take(veryHardCount).ToList();
-
 
             var allSelectedQuestions = selectedEasyQuestions
                 .Concat(selectedMediumQuestions)
@@ -328,7 +328,12 @@ namespace API.Controllers
 
             foreach (var testCode in allTestCodes)
             {
-                foreach (var question in allSelectedQuestions)
+                Random testCodeRandom = new Random(); // Tạo random riêng cho mỗi testCode
+
+                // Random hóa câu hỏi cho từng TestCode
+                var shuffledQuestions = allSelectedQuestions.OrderBy(_ => testCodeRandom.Next()).ToList();
+
+                foreach (var question in shuffledQuestions)
                 {
                     var testCodeQuestion = new TestCode_TestQuestion
                     {
