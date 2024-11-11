@@ -12,10 +12,10 @@ namespace Database.DTOs
         public Guid Id { get; set; }
 
         [StringLength(256, ErrorMessage = "Title không quá 256 ký tự ")]
-        public string Title { get; set; }
+        public string? Title { get; set; }
 
         [MaxLength]
-        public string Content { get; set; }
+        public string? Content { get; set; }
         public DateTime CreationTime { get; set; }
         public int Status { get; set; }
         public int type { get; set; }
@@ -23,13 +23,6 @@ namespace Database.DTOs
         // Danh sách tên các lớp liên quan (chỉ để hiển thị)
         public List<string> ClassNames { get; set; } = new List<string>();
     }
-    public class LoginModel
-    {
-        public string? Username { get; set; }
-        public string? Password { get; set; }
-    }
-    public class TokenResponse
-    {
-        public string? Token { get; set; }
-    }
+    
+    
 }

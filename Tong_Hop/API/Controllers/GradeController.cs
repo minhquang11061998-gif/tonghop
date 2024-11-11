@@ -1,4 +1,5 @@
-﻿using DataBase.Data;
+﻿
+using DataBase.Data;
 using DataBase.DTOs;
 using DataBase.Models;
 using Microsoft.AspNetCore.Http;
@@ -17,24 +18,22 @@ namespace API.Controllers
             _db = db;
         }
 
-        [HttpGet("get-all-grade")]
+        [HttpGet("get-grade")]
         public async Task<ActionResult<List<GradeDTO>>> GetAll()
         {
             try
             {
-                var data = await _db.Grades.ToArrayAsync();
+                var data = await _db.Grades.ToListAsync();
 
                 if (data == null)
                 {
-                    return BadRequest("Danh sach trong");
+                    return BadRequest("Danh sach null");
                 }
-
                 var gradto = data.Select(x => new GradeDTO
                 {
                     Id = x.Id,
                     Name = x.Name,
                     Status = x.Status,
-
                 }).ToList();
 
                 return Ok(gradto);
@@ -54,7 +53,7 @@ namespace API.Controllers
 
                 if (data == null)
                 {
-                    return BadRequest("Khong co Id nay");
+                    return BadRequest("KO co Id nay");
                 }
 
                 var gardto = new GradeDTO
@@ -83,7 +82,7 @@ namespace API.Controllers
                     Name = gradedto.Name,
                     Status = gradedto.Status,
                 };
-
+                
                 await _db.Grades.AddAsync(data);
                 await _db.SaveChangesAsync();
 
@@ -110,7 +109,7 @@ namespace API.Controllers
                 return Ok("Update thanh cong");
             };
 
-            return BadRequest("Khong co Id nay");
+            return BadRequest("Ko co Id nay");
         }
 
         [HttpDelete("delete-grade")]
@@ -127,23 +126,6 @@ namespace API.Controllers
             }
 
             return BadRequest("Loi");
-        }
-
-        [HttpGet("get-grade-data")]
-        public async Task<List<GradeDTO>> GetGradeData()
-        {
-            var totalClass = await _db.Classes.CountAsync();
-            var totalTeachers = await _db.Teachers.CountAsync();
-            var gradeData = await _db.Grades
-                .Select(g => new GradeDTO
-                {
-                    Name = g.Name,
-                    TotalStudents = g.Class.SelectMany(c => c.Student_Classes).Count(),
-                    TotalClasses = totalClass,
-                    TotalTeachers = totalTeachers
-                }).ToListAsync();
-
-            return gradeData;
         }
     }
 }
