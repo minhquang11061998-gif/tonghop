@@ -33,7 +33,7 @@ else
                     {
                         <input type="radio"
                                name="answer_@currentQuestion.QuestionId"
-                               @onclick="(e) => SaveHistories(answer.AnswerId)"
+                               @onchange="(e) => UpdateSelectedAnswer(currentQuestion.QuestionId, answer.AnswerId)"
                                checked="@(selectedAnswerIds.ContainsKey(currentQuestion.QuestionId) && selectedAnswerIds[currentQuestion.QuestionId] == answer.AnswerId)" />
                         @answer.AnswerText
                     }
@@ -68,6 +68,7 @@ else
     [Parameter]
     public int CodeTest { get; set; }
     private HistDTO hist;
+    private Guid isdtudent;
     private bool isLoading = true;
     private string errorMessage = null;
     private int currentQuestionIndex = 0;
@@ -75,8 +76,27 @@ else
     // Lưu trữ ID của các câu trả lời đã chọn cho mỗi câu hỏi
     private Dictionary<Guid, Guid?> selectedAnswerIds = new Dictionary<Guid, Guid?>();
 
+    private async Task TokenId()
+    {
+        var token = await jsruntime.InvokeAsync<string>("localStorage.getItem", "YourSuperSecretKeyHere");
+        if (string.IsNullOrEmpty(token))
+        {
+            throw new Exception("Token không tồn tại hoặc không hợp lệ.");
+        }
+        var handler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
+        var jsonToken = handler.ReadToken(token) as System.IdentityModel.Tokens.Jwt.JwtSecurityToken;
+        var idStudentString = jsonToken?.Claims.FirstOrDefault(c => c.Type == "IdStudent")?.Value;
+        if (Guid.TryParse(idStudentString, out var parsedGuid))
+        {
+            isdtudent = parsedGuid;
+        }
+        else
+        {
+            throw new Exception("Không tìm thấy hoặc không thể chuyển đổi IdStudent thành GUID.");
+        }
+    }
 
-    private Guid? Id_dap_an_duoc_tron = null;
+    private Guid? Id_dap_an_duoc_tron;
 
     private void UpdateSelectedAnswer(Guid questionId, Guid answerId)
     {
@@ -107,50 +127,24 @@ else
             isLoading = false;
         }
     }
-    private Guid isdtudent;
 
-    private async Task SaveHistories(Guid id)
+
+    private async Task CreateHist(int codetest, Guid roomtudent, Guid IdAnswer)
     {
-        try
+        if (IdAnswer == null)
         {
-            // Lấy token từ localStorage
-            var token = await jsruntime.InvokeAsync<string>("localStorage.getItem", "YourSuperSecretKeyHere");
-            if (string.IsNullOrEmpty(token))
-            {
-                throw new Exception("Token không tồn tại hoặc không hợp lệ.");
-            }
-            var handler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
-            var jsonToken = handler.ReadToken(token) as System.IdentityModel.Tokens.Jwt.JwtSecurityToken;
-            var idStudentString = jsonToken?.Claims.FirstOrDefault(c => c.Type == "IdStudent")?.Value;
-            if (Guid.TryParse(idStudentString, out var parsedGuid))
-            {
-                isdtudent = parsedGuid;
-            }
-            else
-            {
-                throw new Exception("Không tìm thấy hoặc không thể chuyển đổi IdStudent thành GUID.");
-            }
-
-            var response = await client.PostAsync($"https://localhost:7046/api/ViewExam/create-hist?CodeTesst={CodeTest}&GuidId={isdtudent}&answerId={id}",null);
-
-            if (response.IsSuccessStatusCode)
-            {
-              await  jsruntime.InvokeVoidAsync("alert","Lưu lịch sử thành công.");
-            }
-            else
-            {
-                Console.WriteLine($"Lỗi từ server: {response.StatusCode}");
-            }
+            await jsruntime.InvokeVoidAsync("alert", "loi");
         }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Đã xảy ra lỗi: {ex.Message}");
-        }
+        var histories = await client.PostAsJsonAsync($"api/ViewExam/create-hist?CodeTesst={codetest}&GuidId={roomtudent}&answerId={IdAnswer}", examhistories);
+
     }
+
+    
     private void NextQuestion()
     {
-        if (CanGoNext)
+        if (CanGoNext && Id_dap_an_duoc_tron.HasValue)
         {
+            CreateHist(CodeTest, isdtudent, Id_dap_an_duoc_tron.Value);
             currentQuestionIndex++;
         }
     }
