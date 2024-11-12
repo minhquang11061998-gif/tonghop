@@ -101,7 +101,8 @@ namespace API.Controllers
                 TestQuestionAnswerId = answerId,
                 ExamRoomStudentId = examroomstudent.Id,
             };
-
+            _db.Exam_Room_Student_AnswerHistories.Add(hist);
+           await _db.SaveChangesAsync();
             return Ok("đã lưu");
         }
     }
