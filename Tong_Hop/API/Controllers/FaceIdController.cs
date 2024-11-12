@@ -22,9 +22,9 @@ namespace API.Controllers
     public class FaceIdController : ControllerBase
     {
         private readonly AppDbContext _db;
-        private  VideoCapture _capture;
-        private  CascadeClassifier _faceCascade;
-        private  LBPHFaceRecognizer _faceRecognizer;
+        private VideoCapture _capture;
+        private CascadeClassifier _faceCascade;
+        private LBPHFaceRecognizer _faceRecognizer;
         private static bool _isCapturing = false;
 
         public FaceIdController(AppDbContext db)
@@ -193,7 +193,7 @@ namespace API.Controllers
                         ValidateAudience = false
                     },
                     out SecurityToken validatedToken);
-                var student = claimsPrincipal.Claims.First(claim => claim.Type == "Idstudents").Value;
+                var student = claimsPrincipal.Claims.First(claim => claim.Type == "Idstudent").Value;
                 foreach (var face in faces)
                 {
                     var grayFace = frame.Convert<Gray, byte>().GetSubRect(face).Resize(200, 200, Emgu.CV.CvEnum.Inter.Cubic);
@@ -205,7 +205,7 @@ namespace API.Controllers
                     {
                         // Gọi hàm reset camera
                         return Ok(new { Message = "Face matched.", UserId = result.Value.UserId });
-                        
+
                     }
                 }
 
@@ -216,7 +216,7 @@ namespace API.Controllers
                 return StatusCode(500, $"Error: {ex.Message}");
             }
         }
-        
+
         private (string UserId, double Similarity)? CheckFaceAgainstStoredData(double[] newFaceFeatures)
         {
             string xmlFilePath = "face_features.xml";
@@ -346,10 +346,10 @@ namespace API.Controllers
 
             return Unauthorized("Face not recognized.");
         }
-        
+
 
         [HttpPost("Login-exam")]
-        public  IActionResult GetLogin(Login_Exam_DTO login)
+        public IActionResult GetLogin(Login_Exam_DTO login)
         {
             // Lấy token từ tiêu đề Authorization
             var token = HttpContext.Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
@@ -372,12 +372,12 @@ namespace API.Controllers
                     out SecurityToken validatedToken);
 
                 // Lấy IdStudent từ claim trong token
-                var studentIdFromToken = claimsPrincipal.Claims.First(claim => claim.Type == "Idstudents").Value;
+                var studentIdFromToken = claimsPrincipal.Claims.First(claim => claim.Type == "Idstudent").Value;
 
                 // Kiểm tra mã code và IdStudent từ cơ sở dữ liệu
                 var code = _db.Tests.FirstOrDefault(x => x.Code == login.codelogin);
                 var student = _db.Students.FirstOrDefault(x => x.Id.ToString() == studentIdFromToken);
-               
+
                 if (code != null && student != null)
                 {
                     var examRoomTestCodeId = (from exam in _db.Exam_Room_TestCodes
@@ -396,7 +396,7 @@ namespace API.Controllers
                             ExamRoomTestCodeId = examRoomTestCodeId,
                             StudentId = Guid.Parse(studentIdFromToken)
                         };
-                        var examRoomStudentEntity = new Exam_Room_Student 
+                        var examRoomStudentEntity = new Exam_Room_Student
                         {
                             Id = newExamRoomStudent.Id,
                             ChenkTime = newExamRoomStudent.ChenkTime,
@@ -405,10 +405,10 @@ namespace API.Controllers
                             StudentId = newExamRoomStudent.StudentId
                         };
 
-                       _db.Exam_Room_Students.Add(examRoomStudentEntity);
-                       _db.SaveChanges();
+                        _db.Exam_Room_Students.Add(examRoomStudentEntity);
+                        _db.SaveChanges();
                         return Ok("thành công ");
-                    }   
+                    }
                 }
             }
             catch (Exception)
@@ -418,7 +418,7 @@ namespace API.Controllers
 
             return Unauthorized("Code hoặc ID sai");
         }
-        
+
     }
 }
 

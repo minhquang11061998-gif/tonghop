@@ -2,6 +2,7 @@
 @using DataBase.DTOs
 @layout MainLayout
 @inject HttpClient client
+@inject IJSRuntime jsruntime
 
 <h3>ViewExam</h3>
 
@@ -32,7 +33,7 @@ else
                     {
                         <input type="radio"
                                name="answer_@currentQuestion.QuestionId"
-                               @onchange="(e) => UpdateSelectedAnswer(currentQuestion.QuestionId, answer.AnswerId)"
+                               @onclick="(e) => SaveHistories(answer.AnswerId)"
                                checked="@(selectedAnswerIds.ContainsKey(currentQuestion.QuestionId) && selectedAnswerIds[currentQuestion.QuestionId] == answer.AnswerId)" />
                         @answer.AnswerText
                     }
@@ -66,12 +67,11 @@ else
 @code {
     [Parameter]
     public int CodeTest { get; set; }
-
     private HistDTO hist;
     private bool isLoading = true;
     private string errorMessage = null;
     private int currentQuestionIndex = 0;
-
+    private Exam_Room_Histories_DTO examhistories = new Exam_Room_Histories_DTO();
     // Lưu trữ ID của các câu trả lời đã chọn cho mỗi câu hỏi
     private Dictionary<Guid, Guid?> selectedAnswerIds = new Dictionary<Guid, Guid?>();
 
@@ -107,7 +107,46 @@ else
             isLoading = false;
         }
     }
+    private Guid isdtudent;
 
+    private async Task SaveHistories(Guid id)
+    {
+        try
+        {
+            // Lấy token từ localStorage
+            var token = await jsruntime.InvokeAsync<string>("localStorage.getItem", "YourSuperSecretKeyHere");
+            if (string.IsNullOrEmpty(token))
+            {
+                throw new Exception("Token không tồn tại hoặc không hợp lệ.");
+            }
+            var handler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
+            var jsonToken = handler.ReadToken(token) as System.IdentityModel.Tokens.Jwt.JwtSecurityToken;
+            var idStudentString = jsonToken?.Claims.FirstOrDefault(c => c.Type == "IdStudent")?.Value;
+            if (Guid.TryParse(idStudentString, out var parsedGuid))
+            {
+                isdtudent = parsedGuid;
+            }
+            else
+            {
+                throw new Exception("Không tìm thấy hoặc không thể chuyển đổi IdStudent thành GUID.");
+            }
+
+            var response = await client.PostAsync($"https://localhost:7046/api/ViewExam/create-hist?CodeTesst={CodeTest}&GuidId={isdtudent}&answerId={id}",null);
+
+            if (response.IsSuccessStatusCode)
+            {
+              await  jsruntime.InvokeVoidAsync("alert","Lưu lịch sử thành công.");
+            }
+            else
+            {
+                Console.WriteLine($"Lỗi từ server: {response.StatusCode}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Đã xảy ra lỗi: {ex.Message}");
+        }
+    }
     private void NextQuestion()
     {
         if (CanGoNext)
