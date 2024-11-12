@@ -173,7 +173,8 @@
 
         if (!string.IsNullOrEmpty(code) && code.Length == 6 && await VerifyCode())
         {
-            isFaceScanComplete = true;
+            // isFaceScanComplete = true;
+            navigate.NavigateTo($"/exam/{code}");
             await jsruntime.InvokeVoidAsync("enterExamMode");
         }
         else
