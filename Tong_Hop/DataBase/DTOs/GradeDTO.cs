@@ -11,5 +11,8 @@ namespace DataBase.DTOs
         public Guid Id { get; set; }
         public int Name { get; set; }
         public int Status { get; set; }
+        public int TotalStudents { get; set; }
+        public int TotalClasses { get; set; }
+        public int TotalTeachers { get; set; }
     }
 }

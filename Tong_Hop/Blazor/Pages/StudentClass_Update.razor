@@ -1,0 +1,108 @@
+﻿@page "/update-student-class/{id:guid}"
+@using DataBase.Models
+@using Database.DTOs
+@using global::Data.DTOs
+@inject HttpClient http
+@inject NavigationManager navi
+@layout AdminLayout
+
+<h3>Chỉnh Sửa Học Sinh - Lớp Học</h3>
+
+<EditForm Model="studentClassItem" OnValidSubmit="HandleValidSubmit">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="mb-3">
+        <label for="student" class="form-label">Học sinh</label>
+        <select id="student" class="form-select" @bind="studentClassItem.StudentId" required>
+            <option value="">Chọn học sinh</option>
+            @foreach (var student in students)
+            {
+                <option value="@student.Id" selected="@((student.Id == studentClassItem.StudentId) ? "selected" : null)">
+                    @student.Code
+                </option>
+            }
+        </select>
+    </div>
+
+    <div class="mb-3">
+        <label for="class" class="form-label">Lớp học</label>
+        <select id="class" class="form-select" @bind="studentClassItem.ClassId" required>
+            <option value="">Chọn lớp học</option>
+            @foreach (var classItem in classes)
+            {
+                <option value="@classItem.Id" selected="@((classItem.Id == studentClassItem.ClassId) ? "selected" : null)">
+                    @classItem.Name
+                </option>
+            }
+        </select>
+    </div>
+
+    <div class="mb-3">
+        <label for="status" class="form-label">Trạng thái</label>
+        <InputNumber id="status" class="form-control" @bind-Value="studentClassItem.Status" required />
+    </div>
+
+    <div class="mb-3">
+        <button type="submit" class="btn btn-primary">Lưu</button>
+        <button type="button" class="btn btn-secondary" @onclick="Cancel">Quay lại</button>
+    </div>
+</EditForm>
+
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="alert alert-danger">@errorMessage</div>
+}
+
+@code {
+    [Parameter] public Guid id { get; set; }
+    private StudentClassDTO studentClassItem = new StudentClassDTO();
+    private List<Students> students = new List<Students>();
+    private List<Classes> classes = new List<Classes>();
+    private string errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadStudentClass();
+        await LoadStudentsAndClasses();
+    }
+
+    private async Task LoadStudentClass()
+    {
+        var response = await http.GetFromJsonAsync<StudentClassDTO>($"api/StudentClass/get-by-id?id={id}");
+        if (response != null)
+        {
+            studentClassItem = response;
+        }
+        else
+        {
+            errorMessage = "Không tìm thấy dữ liệu";
+        }
+    }
+
+    private async Task LoadStudentsAndClasses()
+    {
+        students = await http.GetFromJsonAsync<List<Students>>("api/Student/get-all-student2");
+        classes = await http.GetFromJsonAsync<List<Classes>>("api/Classes/get-all-class");
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        var response = await http.PutAsJsonAsync("api/StudentClass/update", studentClassItem);
+
+        if (response.IsSuccessStatusCode)
+        {
+            navi.NavigateTo("/student-classes");
+        }
+        else
+        {
+            errorMessage = await response.Content.ReadAsStringAsync();
+            Console.WriteLine($"Error updating student class: {errorMessage}");
+        }
+    }
+
+    private void Cancel()
+    {
+        navi.NavigateTo("/student-classes");
+    }
+}
