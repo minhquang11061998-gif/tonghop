@@ -101,6 +101,31 @@ namespace API.Controllers
                 TestQuestionAnswerId = answerId,
                 ExamRoomStudentId = examroomstudent.Id,
             };
+            _db.Exam_Room_Student_AnswerHistories.Add(hist);
+           await _db.SaveChangesAsync();
+
+            //var examroomstudent = await (from a in _db.Tests
+            //                             join b in _db.Exam_Room_TestCodes on a.Id equals b.TestId
+            //                             join c in _db.Exam_Room_Students on b.Id equals c.ExamRoomTestCodeId
+            //                             where a.Code == CodeTesst && c.StudentId == dto.ExamRoomStudentId
+            //                             select new
+            //                             {
+            //                                 c.Id
+            //                             }).FirstOrDefaultAsync();
+
+            //if (examroomstudent == null)
+            //{
+            //    return NotFound("Exam room student not found");
+            //}
+
+            //var hist = new Exam_Room_Student_AnswerHistory
+            //{
+            //    Id = Guid.NewGuid(),
+            //    TestQuestionAnswerId = dto.TestQuestionAnswerId,
+            //    ExamRoomStudentId = dto.ExamRoomStudentId,
+            //};
+            //_db.Exam_Room_Student_AnswerHistories.Add(hist);
+            //await _db.SaveChangesAsync();
 
             return Ok("đã lưu");
         }
