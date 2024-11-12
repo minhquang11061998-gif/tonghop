@@ -1,4 +1,5 @@
-﻿using DataBase.Data;
+﻿using Data.DTOs;
+using DataBase.Data;
 using DataBase.DTOs;
 using DataBase.Models;
 using Microsoft.AspNetCore.Http;
@@ -17,6 +18,56 @@ namespace API.Controllers
         public TestQuestionController(AppDbContext db)
         {
             _db = db;
+        }
+        [HttpGet("get-question-details/{id}")]
+        public async Task<List<listdetailquestion>> GetQuestionDetails(Guid id)
+        {
+            var questionDetails = await _db.TestQuestions
+                .Where(q => q.TestId == id)
+                .Select(q => new listdetailquestion
+                {
+                    Id = q.Id,
+                    Questionname = q.QuestionName,
+                    RightAnswer = q.RightAnswer,
+                    Type = q.Type,
+                    answer = q.TestQuestionAnswer.Select(a => new AnswerDTO
+                    {
+                        Answer = a.Answer,
+                    }).ToList()
+                }).ToListAsync();
+
+            return questionDetails;
+        }
+        [HttpGet("Get-testcodes-by-testid")]
+        public async Task<ActionResult<List<DetailDTO>>> GetTestCodesByTestId(Guid testId)
+        {
+            var testcodes = await _db.TestCodes
+                .Where(tc => tc.TestId == testId) // Lọc theo TestId
+                .Select(tc => new DetailDTO
+                {
+                    IdTestcode = tc.Id,
+                    CodeTescode = tc.Code,
+                    time = tc.Tests.Minute, // Thời gian bài kiểm tra
+                    NameSubject = tc.Tests.Subject.Name, // Tên môn học
+                    NameQuestion = _db.TestCode_TestQuestion
+                        .Where(tcq => tcq.TestCodeId == tc.Id) // Lấy danh sách câu hỏi liên quan
+                        .Select(tcq => new TestQuestionDTO
+                        {
+                            Id = tcq.TestQuestion.Id,
+                            QuestionName = tcq.TestQuestion.QuestionName, // Nội dung câu hỏi
+                            /*code = tc.test.Code*/ // Mã TestCode
+                            Level = tcq.TestQuestion.Level, // Mức độ câu hỏi
+                            Type = tcq.TestQuestion.Type, // Loại câu hỏi
+                            Answers = tcq.TestQuestion.TestQuestionAnswer // Truy cập trực tiếp từ quan hệ
+                                .Select(a => new AnswerDTO
+                                {
+                                    Id = a.Id,
+                                    Answer = a.Answer // Nội dung câu trả lời
+                                }).ToList()
+                        }).ToList()
+                }).ToListAsync();
+
+            return testcodes;
         }
 
         [HttpGet("get-all-testquestion")]
@@ -241,14 +292,15 @@ namespace API.Controllers
         public async Task<IActionResult> RandomizeQuestionsForTestCodes(Guid testId, int easyCount, int mediumCount, int hardCount, int veryHardCount)
         {
             var allTestCodes = await _db.TestCodes
-                .Include(tc => tc.Tests)
-                .Where(tc => tc.Tests.Id == testId)
-                .ToListAsync();
+        .Include(tc => tc.Tests)
+        .Where(tc => tc.TestId == testId)
+        .ToListAsync();
 
             if (allTestCodes == null || allTestCodes.Count == 0)
             {
                 return NotFound("Không tìm thấy mã kiểm tra liên quan đến bài thi.");
             }
+
             var questions = await _db.TestQuestions.Where(x => x.TestId == testId).ToListAsync();
             var easyQuestions = questions.Where(x => x.Level == 1).ToList();
             var mediumQuestions = questions.Where(x => x.Level == 2).ToList();
@@ -261,13 +313,12 @@ namespace API.Controllers
                 return BadRequest("Không đủ số câu hỏi cho một hoặc nhiều mức độ.");
             }
 
-            Random random = new Random();
+            Random random = new Random(); // Để đảm bảo tính ngẫu nhiên
 
             var selectedEasyQuestions = easyQuestions.OrderBy(_ => random.Next()).Take(easyCount).ToList();
             var selectedMediumQuestions = mediumQuestions.OrderBy(_ => random.Next()).Take(mediumCount).ToList();
             var selectedHardQuestions = hardQuestions.OrderBy(_ => random.Next()).Take(hardCount).ToList();
             var selectedVeryHardQuestions = veryHardQuestions.OrderBy(_ => random.Next()).Take(veryHardCount).ToList();
-
 
             var allSelectedQuestions = selectedEasyQuestions
                 .Concat(selectedMediumQuestions)
@@ -277,7 +328,12 @@ namespace API.Controllers
 
             foreach (var testCode in allTestCodes)
             {
-                foreach (var question in allSelectedQuestions)
+                Random testCodeRandom = new Random(); // Tạo random riêng cho mỗi testCode
+
+                // Random hóa câu hỏi cho từng TestCode
+                var shuffledQuestions = allSelectedQuestions.OrderBy(_ => testCodeRandom.Next()).ToList();
+
+                foreach (var question in shuffledQuestions)
                 {
                     var testCodeQuestion = new TestCode_TestQuestion
                     {
@@ -589,6 +645,18 @@ namespace API.Controllers
             }
 
             return Ok("Nhập câu hỏi thành công từ file Excel.");
+        }
+        [HttpDelete("Delete_TestQuestion")]
+        public async Task<ActionResult> Delete_question(Guid Id)
+        {
+            var delete = _db.TestQuestions.FirstOrDefault(temp => temp.Id == Id);
+            if (delete != null)
+            {
+                _db.TestQuestions.Remove(delete);
+                await _db.SaveChangesAsync();
+                return Ok("Xóa thành công");
+            }
+            return BadRequest("Xóa thất bại");
         }
     }
 }

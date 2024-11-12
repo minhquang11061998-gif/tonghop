@@ -9,6 +9,33 @@
 @if (!isLoginFormVisible)
 {
     <div class="row mt-5">
+        <form class="d-flex justify-content-center">
+            <div class="rounded-3 bg-light shadow-lg" style="height: auto; width: 700px; padding: 20px;">
+                <div class="d-flex justify-content-center">
+                    <img style="height: 170px;" src="img/Rectangle89.png" alt="Alternate Text" />
+                </div>
+                <div class="d-flex justify-content-center mt-3">
+                    <img id="cameraImage" src="https://localhost:7046/api/FaceId/camera-stream"
+                         alt="Alternate Text"
+                         style="width: 50%; max-height: 300px; object-fit: cover; border-radius: 10px; border-color:blue" />
+                </div>
+                <div class="d-flex justify-content-center py-3">
+                    @if (isLoading)
+                    {
+                        <p>Đang quét khuôn mặt, vui lòng đợi...</p>
+                    }
+                    else
+                    {
+                        <button class="btn btn-primary mt-3 w-50" id="submitBtn" @onclick="ScanFace" type="button" style="height: 50px;">Xác nhận khuôn mặt</button>
+                    }
+                </div>
+            </div>
+        </form>
+    </div>
+}
+@if (isLoginFormVisible && !isFaceScanComplete)
+{
+    <div class="row mt-5">
         <form class="d-flex justify-content-center" @onsubmit="HandleSubmit">
             <div class="rounded-3 bg-light shadow-lg" style="height:450px;width:700px">
                 <div class="d-flex justify-content-center">
@@ -26,33 +53,6 @@
                 <div class="d-flex justify-content-center py-3">
                     <button id="submitBtn" @onclick="HandleSubmit" class="btn btn-primary mt-3 w-25" type="button" style="height:50px" disabled="@isSubmitDisabled">Tiếp Theo</button>
                     <div id="message" class="mt-3"></div>
-                </div>
-            </div>
-        </form>
-    </div>
-}
-@if (isLoginFormVisible && !isFaceScanComplete)
-{
-    <div class="row mt-5">
-        <form class="d-flex justify-content-center">
-            <div class="rounded-3 bg-light shadow-lg" style="height: auto; width: 700px; padding: 20px;">
-                <div class="d-flex justify-content-center">
-                    <img style="height: 170px;" src="img/Rectangle89.png" alt="Alternate Text" />
-                </div>
-                <div class="d-flex justify-content-center mt-3">
-                    <img id="cameraImage" src="https://localhost:7039/api/Student_Class/camera-stream"
-                         alt="Alternate Text"
-                         style="width: 50%; max-height: 300px; object-fit: cover; border-radius: 10px; border-color:blue" />
-                </div>
-                <div class="d-flex justify-content-center py-3">
-                    @if (isLoading)
-                    {
-                        <p>Đang quét khuôn mặt, vui lòng đợi...</p>
-                    }
-                    else
-                    {
-                        <button class="btn btn-primary mt-3 w-50" id="submitBtn" @onclick="ScanFace" type="button" style="height: 50px;">Xác nhận khuôn mặt</button>
-                    }
                 </div>
             </div>
         </form>
@@ -84,7 +84,7 @@
     </div>
 }
 
-<h3>Quét Khuôn Mặt</h3>
+@* <h3>Quét Khuôn Mặt</h3>
 
 <button @onclick="ScanFace" class="btn btn-primary">Quét Khuôn Mặt</button>
 
@@ -92,7 +92,7 @@
 @if (isLoading)
 {
     <p>Đang quét khuôn mặt...</p>
-}
+} *@
 @code {
     private bool isSubmitDisabled = true;
     private bool isLoginFormVisible = false;
@@ -117,7 +117,7 @@
             }
 
             Http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-            var response = await Http.PostAsync("https://localhost:7039/api/Student_Class/check-face", null);
+            var response = await Http.PostAsync("https://localhost:7046/api/FaceId/check-face", null);
 
             if (response.IsSuccessStatusCode)
             {
@@ -132,7 +132,7 @@
                         if (message == "Face matched.")
                         {
                             await jsruntime.InvokeVoidAsync("alert", "Nhận diện thành công!");
-                            isFaceScanComplete = true;
+                            isLoginFormVisible = true;
 
 
                         }
@@ -173,7 +173,8 @@
 
         if (!string.IsNullOrEmpty(code) && code.Length == 6 && await VerifyCode())
         {
-            isLoginFormVisible = true;
+            // isFaceScanComplete = true;
+            navigate.NavigateTo($"/exam/{code}");
             await jsruntime.InvokeVoidAsync("enterExamMode");
         }
         else
@@ -189,7 +190,7 @@
         var token = await GetTokenAsync();
 
         Http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        var response = await Http.PostAsJsonAsync("https://localhost:7039/api/LoginExam/Login-exam", new { codelogin = code });
+        var response = await Http.PostAsJsonAsync("https://localhost:7046/api/FaceId/Login-exam", new { codelogin = code });
 
         return response.IsSuccessStatusCode;
     }
@@ -229,7 +230,7 @@
     function reloadCameraFeed() {
         const cameraImage = document.querySelector("#cameraImage");
         if (cameraImage) {
-            cameraImage.src = "https://localhost:7039/api/Student_Class/camera-stream?" + new Date().getTime();
+            cameraImage.src = "https://localhost:7046/api/FaceId/camera-stream?" + new Date().getTime();
         }
     }
     function getCode() {

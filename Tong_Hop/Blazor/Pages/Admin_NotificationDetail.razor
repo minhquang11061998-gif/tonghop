@@ -1,0 +1,296 @@
+﻿@page "/notification-detail/{Id:guid}"
+@using Database.DTOs
+@layout AdminLayout
+@inject HttpClient client
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JS
+@inject NavigationManager nav
+
+<div class="container mt-5">
+    @if (notification != null)
+    {
+        <div class="card shadow-sm notification-card-custom">
+            <div class="card-header">
+                <h3 class="card-title">@notification.Title</h3>
+            </div>
+            <div class="card-body">
+                <p>@notification.Content</p>
+                <small class="text-muted">Thời gian tạo: @notification.CreationTime.ToString("dd/MM/yyyy HH:mm")</small>
+
+                <!-- Hiển thị danh sách các lớp liên quan -->
+                <div class="mt-4 related-classes">
+                    <h5>Các lớp liên quan:</h5>
+                    @if (notification.ClassNames != null && notification.ClassNames.Any())
+                    {
+                        <ul class="list-group list-group-flush">
+                            @foreach (var className in notification.ClassNames)
+                            {
+                                <li class="list-group-item">@className</li>
+                            }
+                        </ul>
+                    }
+                    else
+                    {
+                        <p>Thông báo này không liên quan đến lớp nào.</p>
+                    }
+                </div>
+
+                <div class="mt-4 d-flex justify-content-between align-items-center">
+                    <!-- Nút Cập nhật mở modal để cập nhật thông báo -->
+                    <button class="btn btn-custom-update me-2" @onclick="ToggleEdit"><i class="bi bi-pencil"></i> Cập nhật</button>
+                    <button class="btn btn-custom-back me-2" @onclick="Back"><i class="bi bi-arrow-counterclockwise"></i> Quay lại</button>
+                    <!-- Nút Xóa thông báo -->
+                    <button class="btn btn-custom-delete" @onclick="() => DeleteNotification(notification.Id)"><i class="bi bi-trash"></i> Xóa</button>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+
+
+<!-- Modal form cập nhật thông báo -->
+@if (isEdit)
+{
+    <div class="modal fade show" tabindex="-1" style="display:block;">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-warning text-white">
+                    <h5 class="modal-title">Cập nhật thông báo</h5>
+                    <button type="button" class="btn-close" @onclick="ToggleEdit"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label>Tiêu đề thông báo:</label>
+                        <input type="text" class="form-control" @bind="notification.Title" />
+                    </div>
+                    <div class="mb-3">
+                        <label>Nội dung thông báo:</label>
+                        <textarea class="form-control" @bind="notification.Content"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label>Thời gian tạo:</label>
+                        <input type="datetime-local" class="form-control" @bind="notification.CreationTime" />
+                    </div>
+                    <div class="mb-3">
+                        <label>Trạng thái:</label>
+                        <input type="text" class="form-control" @bind="notification.Status" />
+                    </div>
+
+                    <!-- Hiển thị danh sách lớp liên quan nhưng không cho phép sửa -->
+                    <div class="mb-3">
+                        <label>Các lớp liên quan:</label>
+                        @if (notification.ClassNames != null && notification.ClassNames.Any())
+                        {
+                            <ul class="list-group">
+                                @foreach (var className in notification.ClassNames)
+                                {
+                                    <li class="list-group-item">@className</li>
+                                }
+                            </ul>
+                        }
+                        else
+                        {
+                            <p>Không có lớp nào liên quan.</p>
+                        }
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="ToggleEdit">Hủy</button>
+                    <button type="button" class="btn btn-primary" @onclick="UpdateNotification">Lưu</button>
+                    <button type="button" class="btn btn-primary" @onclick="Back">Quay lại</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public Guid Id { get; set; }
+
+    private NotificationDTO notification = new NotificationDTO();
+    private bool isEdit = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Gọi API để lấy chi tiết thông báo theo id
+        notification = await client.GetFromJsonAsync<NotificationDTO>($"api/Notification/detail-notification?Id={Id}");
+    }
+
+    private void ToggleEdit()
+    {
+        isEdit = !isEdit;
+    }
+
+    // Cập nhật thông báo
+    private async Task UpdateNotification()
+    {
+        if (notification == null) return; // Không làm gì nếu dữ liệu chưa có
+
+        try
+        {
+            var response = await client.PutAsJsonAsync($"api/Notification/update-notification", notification);
+            if (response.IsSuccessStatusCode)
+            {
+                isEdit = false;
+                await JS.InvokeVoidAsync("alert", "Thông báo đã được cập nhật thành công!");
+                NavigationManager.NavigateTo("/teacherindex");
+            }
+            else
+            {
+                var errorMessage = await response.Content.ReadAsStringAsync();
+                await JS.InvokeVoidAsync("alert", $"Lỗi khi cập nhật thông báo: {errorMessage}");
+            }
+        }
+        catch (Exception ex)
+        {
+            await JS.InvokeVoidAsync("alert", $"Đã xảy ra lỗi khi cập nhật thông báo: {ex.Message}");
+        }
+    }
+
+    // Xóa thông báo
+    private async Task DeleteNotification(Guid Id)
+    {
+        var confirmed = await JS.InvokeAsync<bool>("confirm", "Bạn có chắc chắn muốn xóa thông báo này?");
+        if (confirmed)
+        {
+            var response = await client.DeleteAsync($"api/Notification/delete-notification?Id={Id}");
+            if (response.IsSuccessStatusCode)
+            {
+                await JS.InvokeVoidAsync("alert", "Thông báo đã được xóa thành công!");
+                NavigationManager.NavigateTo("/teacherindex");
+            }
+            else
+            {
+                var errorMessage = await response.Content.ReadAsStringAsync();
+                await JS.InvokeVoidAsync("alert", $"Lỗi khi xóa thông báo: {errorMessage}");
+            }
+        }
+    }
+
+    public void Back()
+    {
+        nav.NavigateTo("/adminIndex");
+    }
+}
+
+<style>
+    /* Phần card */
+    .notification-card-custom {
+        border-radius: 12px;
+        border: none;
+        background-color: #ffffff;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); /* Bóng đổ tinh tế */
+        transition: transform 0.3s ease, box-shadow 0.3s ease; /* Hiệu ứng hover */
+        margin-bottom: 20px;
+        padding: 20px; /* Tăng padding để card trông thoáng hơn */
+    }
+
+        .notification-card-custom:hover {
+            transform: translateY(-5px); /* Hiệu ứng nổi lên khi hover */
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15); /* Tăng bóng đổ */
+        }
+
+    /* Phần tiêu đề */
+    .card-header {
+        background-color: transparent; /* Không màu nền */
+        padding: 20px;
+        text-align: center; /* Căn giữa tiêu đề */
+        border-bottom: none; /* Không có đường viền dưới */
+    }
+
+    .card-title {
+        font-size: 1.75rem; /* Kích thước tiêu đề lớn hơn */
+        font-weight: 600; /* Đậm hơn nhưng không quá nặng */
+        color: #2c3e50; /* Màu xanh đen tối giản */
+        margin: 0;
+        letter-spacing: 1px; /* Giãn chữ nhẹ */
+        text-transform: uppercase; /* In hoa để tạo sự nổi bật */
+    }
+
+    /* Nội dung thông báo */
+    .card-body {
+        padding: 20px 25px; /* Tăng khoảng cách padding */
+        font-size: 1rem;
+        line-height: 1.6;
+        color: #555;
+    }
+
+    /* Phong cách danh sách lớp */
+    .related-classes h5 {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #34495e; /* Màu xanh đen dịu */
+        margin-bottom: 10px;
+    }
+
+    .list-group-item {
+        background-color: transparent;
+        border: none;
+        padding: 10px 0;
+        color: #7f8c8d; /* Màu xám nhạt cho tên lớp */
+        font-size: 1rem;
+        border-bottom: 1px solid #ecf0f1; /* Đường chia nhẹ */
+    }
+
+    /* Phong cách nút bấm */
+    .btn-custom-update {
+        background-color: #3498db; /* Màu xanh nhạt */
+        color: white;
+        font-weight: 600;
+        border-radius: 30px;
+        padding: 10px 20px;
+        border: none;
+        transition: background-color 0.3s ease;
+    }
+
+        .btn-custom-update:hover {
+            background-color: #2980b9; /* Tối hơn khi hover */
+        }
+
+    .btn-custom-delete {
+        background-color: #e74c3c; /* Màu đỏ dịu */
+        color: white;
+        font-weight: 600;
+        border-radius: 30px;
+        padding: 10px 20px;
+        border: none;
+        transition: background-color 0.3s ease;
+    }
+
+        .btn-custom-delete:hover {
+            background-color: #c0392b; /* Đỏ đậm hơn khi hover */
+        }
+
+    /* Khoảng cách giữa các phần tử */
+    .mt-4 {
+        margin-top: 1.5rem;
+    }
+
+    .me-2 {
+        margin-right: 0.5rem;
+    }
+
+    /* Phong cách nút quay lại */
+    .btn-custom-back {
+        background-color: #f39c12; /* Màu vàng */
+        color: white;
+        font-weight: 600;
+        border-radius: 30px;
+        padding: 10px 20px;
+        border: none;
+        transition: background-color 0.3s ease;
+        margin-right: auto; /* Căn trái */
+    }
+
+        .btn-custom-back:hover {
+            background-color: #e67e22; /* Màu vàng đậm khi hover */
+        }
+
+    /* Căn chỉnh các nút theo thứ tự */
+    .d-flex.justify-content-between {
+        display: flex;
+        justify-content: flex-start; /* Căn nút về phía bên trái */
+    }
+</style>

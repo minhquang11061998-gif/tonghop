@@ -1,13 +1,18 @@
 ﻿using DataBase.Data;
+using DataBase.DTOs;
+using DataBase.Models;
 using Emgu.CV;
 using Emgu.CV.Face;
+using Emgu.CV.Ocl;
 using Emgu.CV.Structure;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Drawing;
 using System.IdentityModel.Tokens.Jwt;
 using System.Text;
+using System.Xml;
 using System.Xml.Linq;
 
 namespace API.Controllers
@@ -17,9 +22,9 @@ namespace API.Controllers
     public class FaceIdController : ControllerBase
     {
         private readonly AppDbContext _db;
-        private  VideoCapture _capture;
-        private  CascadeClassifier _faceCascade;
-        private  LBPHFaceRecognizer _faceRecognizer;
+        private VideoCapture _capture;
+        private CascadeClassifier _faceCascade;
+        private LBPHFaceRecognizer _faceRecognizer;
         private static bool _isCapturing = false;
 
         public FaceIdController(AppDbContext db)
@@ -196,10 +201,8 @@ namespace API.Controllers
 
                     // Kiểm tra khuôn mặt với dữ liệu đã lưu
                     var result = CheckFaceAgainstStoredData(faceFeatures);
-
                     if (result != null && student == result.Value.UserId)
                     {
-
                         // Gọi hàm reset camera
                         return Ok(new { Message = "Face matched.", UserId = result.Value.UserId });
 
@@ -213,7 +216,7 @@ namespace API.Controllers
                 return StatusCode(500, $"Error: {ex.Message}");
             }
         }
-        
+
         private (string UserId, double Similarity)? CheckFaceAgainstStoredData(double[] newFaceFeatures)
         {
             string xmlFilePath = "face_features.xml";
@@ -343,11 +346,7 @@ namespace API.Controllers
 
             return Unauthorized("Face not recognized.");
         }
-        public class Login_Exam_DTO
-        {
-            public int codelogin { get; set; }
 
-        }
 
         [HttpPost("Login-exam")]
         public IActionResult GetLogin(Login_Exam_DTO login)
@@ -381,7 +380,35 @@ namespace API.Controllers
 
                 if (code != null && student != null)
                 {
-                    return Ok("thành công ");
+                    var examRoomTestCodeId = (from exam in _db.Exam_Room_TestCodes
+                                              join test in _db.Tests
+                                              on exam.TestId equals test.Id
+                                              where test.Code == login.codelogin
+                                              select exam.Id).FirstOrDefault();
+                    if (examRoomTestCodeId != Guid.Empty)
+                    {
+
+                        var newExamRoomStudent = new Exam_Room_Student_DTO
+                        {
+                            Id = Guid.NewGuid(),
+                            ChenkTime = DateTime.Now,
+                            Status = 1,
+                            ExamRoomTestCodeId = examRoomTestCodeId,
+                            StudentId = Guid.Parse(studentIdFromToken)
+                        };
+                        var examRoomStudentEntity = new Exam_Room_Student
+                        {
+                            Id = newExamRoomStudent.Id,
+                            ChenkTime = newExamRoomStudent.ChenkTime,
+                            Status = newExamRoomStudent.Status,
+                            ExamRoomTestCodeId = newExamRoomStudent.ExamRoomTestCodeId,
+                            StudentId = newExamRoomStudent.StudentId
+                        };
+
+                        _db.Exam_Room_Students.Add(examRoomStudentEntity);
+                        _db.SaveChanges();
+                        return Ok("thành công ");
+                    }
                 }
             }
             catch (Exception)
@@ -391,6 +418,7 @@ namespace API.Controllers
 
             return Unauthorized("Code hoặc ID sai");
         }
+
     }
 }
 

@@ -1,4 +1,5 @@
-﻿using DataBase.Data;
+﻿using Data.DTOs;
+using DataBase.Data;
 using DataBase.DTOs;
 using DataBase.Models;
 using Microsoft.AspNetCore.Http;
@@ -43,7 +44,61 @@ namespace API.Controllers
 
             return Ok(testdto);
         }
+        [HttpGet("{testId}/questions")]
+        public async Task<IActionResult> GetQuestions(Guid testId, [FromQuery] int level)
+        {
+            var questions = await _db.TestQuestions
+                .Where(q => q.TestId == testId && q.Level == level)
+                .Select(q => new TestQuestion_TestQuestionAnswersDTO
+                {
 
+                    TestId = q.Id,
+                    QuestionName = q.QuestionName,
+                    Level = q.Level,
+                    CorrectAnswers = new List<string>(),
+                })
+                .ToListAsync();
+
+            if (questions == null || !questions.Any())
+            {
+                return NotFound(new { message = "Không có câu hỏi nào cho test này." });
+            }
+
+            return Ok(questions);
+        }
+        [HttpGet("get-list-test")]
+        public async Task<List<TestGridDTO>> GetListTest()
+        {
+            var query = _db.Tests
+                .Include(c => c.testQuestions)
+                .Include(c => c.testCodes)
+                .Include(t => t.Subject)
+                .Include(t => t.Subject.Subject_Grade)
+                .ThenInclude(t => t.Grade)
+                .ThenInclude(g => g.Class)
+                .Include(t => t.PointType)
+                .AsQueryable();
+
+            var testList = await query
+                .Select(t => new TestGridDTO
+                {
+                    idquestion = t.testCodes.FirstOrDefault().Id,
+                    Id = t.Id,
+                    namepoint = t.PointType.Name,
+                    nameclass = t.Subject.Subject_Grade
+                        .SelectMany(sg => sg.Grade.Class.Select(c => c.Name))
+                        .FirstOrDefault(),
+                    Name = t.Name,
+                    Code = t.Code.ToString(),
+                    SubjectName = t.Subject.Name,
+                    Status = t.Status,
+                    SubjectId = t.SubjectId,
+                    Minute = t.Minute,
+                })
+                .ToListAsync();
+
+            return testList;
+        }
         [HttpGet("get-by-id-test")]
         public async Task<ActionResult<TestDTO>> GetById(Guid id)
         {
@@ -200,6 +255,26 @@ namespace API.Controllers
                 // Bắt lỗi cụ thể và trả về phản hồi lỗi chi tiết
                 return BadRequest($"Lỗi khi tạo bài kiểm tra: {ex.Message}");
             }
+        }
+        [HttpDelete("delete-test")]
+        public async Task<IActionResult> Delete_test(Guid id)
+        {
+            var data = await _db.Tests.FirstOrDefaultAsync(x => x.Id == id);
+            var ListTestCode = _db.TestCodes.ToList().FirstOrDefault(x => x.TestId == data.Id);
+            var testquestion = _db.TestQuestions.ToList().FirstOrDefault(x => x.TestId == data.Id);
+            if (testquestion != null)
+            {
+                _db.Remove(testquestion);
+                _db.Remove(ListTestCode);
+                _db.Remove(data);
+            }
+            else if (ListTestCode != null)
+            {
+                _db.Remove(ListTestCode);
+                _db.Remove(data);
+            }
+            await _db.SaveChangesAsync();
+            return Ok("đã xóa");
         }
 
 

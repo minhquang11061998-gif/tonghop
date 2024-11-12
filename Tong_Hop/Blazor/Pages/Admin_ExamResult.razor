@@ -1,0 +1,200 @@
+﻿@page "/exam-result"
+@* @using global::Data.Model *@
+@using DataBase.DTOs
+@using global::Data.DTOs
+@using System.Net.Http.Json
+@layout AdminLayout
+@inject HttpClient client
+@inject IHttpClientFactory clientFactory
+@inject NavigationManager nav
+@inject IJSRuntime jsRuntime
+
+<div class="navbar">
+    <h2>Kết quả bài thi của học sinh</h2>
+</div>
+
+<div class="search-container">
+    <input type="text" @bind="searchKeyword" placeholder="Nhập mã hoặc tên học sinh" />
+    <button class="btn btn-primary btn-sm" @onclick="SearchStudents">Tìm kiếm</button>
+</div>
+
+@if (examResults != null && examResults.Count > 0)
+{
+    <div class="container student-management">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>STT</th>
+                                <th>Mã học sinh</th>
+                                <th>Tên học sinh</th>
+                                <th>Khối</th>
+                                <th>Lớp</th>
+                                <th>Môn</th>
+                                <th>Mã bài thi</th>
+                                <th>Phòng thi</th>
+                                <th>Điểm</th>
+                                <th>Thời gian làm bài</th>
+                                <th>Hành động</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var result in examResults)
+                            {
+                                <tr>
+                                    <td>@(examResults.IndexOf(result) + 1)</td>
+                                    <td>@result.StudentCode</td>
+                                    <td>@result.StudentName</td>
+                                    <td>@result.GradeName</td>
+                                    <td>@result.ClassName</td>
+                                    <td>@result.SubjectName</td>
+                                    <td>@result.TestCode</td>
+                                    <td>@result.RoomName</td>
+                                    <td>
+                                        @result.CorrectAnswers / @(result.CorrectAnswers + result.WrongAnswers)
+                                    </td>
+                                    <td>@result.ExamTime.ToString("MM/dd/yyyy HH:mm")</td>
+                                    <td>
+                                        <button class="btn btn-warning btn-sm" @onclick="() => OpenExamReviewModalAsync(result.StudentID,result.examRoomTestCodeId)">Chi tiết bài thi</button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+@if (showMessageBox)
+{
+    <div class="message-box-overlay">
+        <div class="message-box">
+            <div class="message-header">
+                <h2>Thông báo</h2>
+                <button class="close-btn" @onclick="CloseMessageBox">&times;</button>
+            </div>
+            <div class="message-body">
+                <p>Vui lòng nhập lại dữ liệu cần tìm.</p>
+            </div>
+            <div class="message-footer">
+                <button class="btn btn-warning btn-bold" @onclick="CloseMessageBox">Đóng</button>
+            </div>
+        </div>
+    </div>
+}
+
+@if (showExamReviewModal)
+{
+    <div class="modal-background">
+        <div class="modal-content">
+            <div class="exam-review-header">
+                <h1>Phúc Khảo Bài Thi</h1>
+                <div class="student-info">
+                    <p><strong>Tên học sinh:</strong> @studentName</p>
+                    <p><strong>Mã học sinh:</strong> @studentCode</p>
+                </div>
+            </div>
+
+            @if (examDetails == null)
+            {
+                <p class="loading">Đang tải dữ liệu...</p>
+            }
+            else
+            {
+                <table class="table table-striped">
+                    <thead class="thead-blue">
+                        <tr>
+                            <th scope="col">Câu hỏi</th>
+                            <th scope="col">Đáp án của học sinh</th>
+                            <th scope="col">Đáp án đúng</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var question in examDetails)
+                        {
+                            <tr>
+                                <td>@question.QuestionName</td>
+                                <td>
+                                    @foreach (var answer in question.Answers)
+                                    {
+                                        <p class="student-answer">@answer</p>
+                                    }
+                                </td>
+                                <td>
+                                    @foreach (var correctAnswer in question.CorrectAnswers)
+                                    {
+                                        <p class="correct-answer">@correctAnswer</p>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+
+            <button class="close-button" @onclick="CloseExamReviewModal">Đóng</button>
+        </div>
+    </div>
+
+}
+
+@code {
+    private List<StudentExamResultDTO> examResults = new List<StudentExamResultDTO>();
+    private string searchKeyword;
+    private bool showExamReviewModal = false;
+    private bool showMessageBox = false;
+    private string studentName;
+    private string studentCode;
+    private List<TestQuestion_AnswersDTO> examDetails;
+
+    private async Task SearchStudents()
+    {
+        examResults.Clear();
+        if (!string.IsNullOrEmpty(searchKeyword))
+        {
+            var response = await client.GetFromJsonAsync<List<StudentExamResultDTO>>($"https://localhost:7046/api/ExamResult/search-student-result?keyword={searchKeyword}");
+            if (response != null)
+            {
+                examResults = response;
+            }
+        }
+
+        if (examResults.Count == 0)
+        {
+            showMessageBox = true;
+        }
+    }
+
+    private async Task OpenExamReviewModalAsync(Guid studentId, Guid examRoomTestCodeId)
+    {
+        showExamReviewModal = true;
+        await LoadExamDetailsAsync(studentId, examRoomTestCodeId);
+        StateHasChanged(); // Ensure UI updates with new data
+    }
+
+    private async Task LoadExamDetailsAsync(Guid studentId, Guid examRoomTestCodeId)
+    {
+        examDetails = await client.GetFromJsonAsync<List<TestQuestion_AnswersDTO>>($"https://localhost:7046/api/ExamResult/get-student-question?studentId={studentId}&examRoomTestCodeId={examRoomTestCodeId}");
+        var studentInfo = await client.GetFromJsonAsync<StudentDTO>($"https://localhost:7046/api/Student/get-by-studentId?studentId={studentId}");
+
+        if (studentInfo != null)
+        {
+            studentName = studentInfo.Name;
+            studentCode = studentInfo.Code;
+        }
+    }
+
+    private void CloseExamReviewModal()
+    {
+        showExamReviewModal = false;
+        examDetails = null;
+    }
+
+    private void CloseMessageBox()
+    {
+        showMessageBox = false;
+    }
+}

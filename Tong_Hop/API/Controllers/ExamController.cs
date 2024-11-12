@@ -64,7 +64,6 @@ namespace API.Controllers
         {
             try
             {
-                //them exam
                 var data = new Exams
                 {
                     Id = Guid.NewGuid(),
@@ -74,7 +73,7 @@ namespace API.Controllers
                 };
 
                 await _db.Exams.AddAsync(data);
-                _db.SaveChanges();
+               await _db.SaveChangesAsync();
 
                 var ExamRoom = new Exam_Room
                 {
@@ -82,20 +81,21 @@ namespace API.Controllers
                     StartTime = dto.StartTime,
                     EndTime = dto.EndTime,
                     Status = 1,
-                    RoomId = data.Id,
+                    ExamId=data.Id,
+                    RoomId = dto.RoomId,
                     TeacherId1 = dto.TeacherId1,
                     TeacherId2 = dto.TeacherId2,
                 };
 
-                _db.Exam_Rooms.Add(ExamRoom);
-                _db.SaveChanges(true);
+               await _db.Exam_Rooms.AddAsync(ExamRoom);
+               await _db.SaveChangesAsync(true);
 
                 return Ok("Them thanh cong");
 
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                return BadRequest("Loi");
+                return BadRequest($"Lỗi: {ex.ToString()}");
             }
         }
 
