@@ -33,6 +33,7 @@ else
                     {
                         <input type="radio"
                                name="answer_@currentQuestion.QuestionId"
+                               value="@answer.AnswerId"
                                @onchange="(e) => UpdateSelectedAnswer(currentQuestion.QuestionId, answer.AnswerId)"
                                checked="@(selectedAnswerIds.ContainsKey(currentQuestion.QuestionId) && selectedAnswerIds[currentQuestion.QuestionId] == answer.AnswerId)" />
                         @answer.AnswerText
@@ -55,7 +56,7 @@ else
 
         <div>
             <button @onclick="PreviousQuestion" disabled="@(!CanGoBack)">Lùi</button>
-            <button @onclick="NextQuestion" disabled="@(!CanGoNext)">Tiến</button>
+            <button @onclick="NextQuestion" disabled="@(!Id_dap_an_duoc_tron.HasValue)">Tiến</button>
         </div>
     }
     else
@@ -68,14 +69,31 @@ else
     [Parameter]
     public int CodeTest { get; set; }
     private HistDTO hist;
-    private Guid isdtudent;
+    private string isdtudent;
     private bool isLoading = true;
     private string errorMessage = null;
     private int currentQuestionIndex = 0;
     private Exam_Room_Histories_DTO examhistories = new Exam_Room_Histories_DTO();
     // Lưu trữ ID của các câu trả lời đã chọn cho mỗi câu hỏi
     private Dictionary<Guid, Guid?> selectedAnswerIds = new Dictionary<Guid, Guid?>();
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            isLoading = true;
+            try
+            {
+                await TokenId();
 
+            }
+            finally
+            {
+                isLoading = false;
+            }
+        }
+        
+    }
+    
     private async Task TokenId()
     {
         var token = await jsruntime.InvokeAsync<string>("localStorage.getItem", "YourSuperSecretKeyHere");
@@ -85,15 +103,8 @@ else
         }
         var handler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
         var jsonToken = handler.ReadToken(token) as System.IdentityModel.Tokens.Jwt.JwtSecurityToken;
-        var idStudentString = jsonToken?.Claims.FirstOrDefault(c => c.Type == "IdStudent")?.Value;
-        if (Guid.TryParse(idStudentString, out var parsedGuid))
-        {
-            isdtudent = parsedGuid;
-        }
-        else
-        {
-            throw new Exception("Không tìm thấy hoặc không thể chuyển đổi IdStudent thành GUID.");
-        }
+        isdtudent = jsonToken?.Claims.FirstOrDefault(c => c.Type == "Idstudent")?.Value;
+       
     }
 
     private Guid? Id_dap_an_duoc_tron;
@@ -108,6 +119,7 @@ else
     protected override async Task OnInitializedAsync()
     {
         await LoadTestResultAsync();
+
     }
 
     private async Task LoadTestResultAsync()
@@ -129,33 +141,64 @@ else
     }
 
 
-    private async Task CreateHist(int codetest, Guid roomtudent, Guid IdAnswer)
+    private async Task CreateHist(int codetest, Guid idAnswer)
     {
-        if (IdAnswer == null)
+        try
         {
-            await jsruntime.InvokeVoidAsync("alert", "loi");
-        }
-        var histories = await client.PostAsJsonAsync($"api/ViewExam/create-hist?CodeTesst={codetest}&GuidId={roomtudent}&answerId={IdAnswer}", examhistories);
+            examhistories.TestQuestionAnswerId = idAnswer; // Gán giá trị ID của đáp án
+            examhistories.Id = Guid.NewGuid(); // Tạo ID duy nhất cho lịch sử
 
+            var response = await client.PostAsJsonAsync($"api/ViewExam/create-hist?CodeTesst={codetest}&GuidId={isdtudent}&answerId={idAnswer}", examhistories);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                await jsruntime.InvokeVoidAsync("alert", $"Lỗi lưu dữ liệu: {error}");
+            }
+        }
+        catch (Exception ex)
+        {
+            await jsruntime.InvokeVoidAsync("alert", $"Lỗi hệ thống: {ex.Message}");
+        }
     }
+
 
     
-    private void NextQuestion()
+    private async Task NextQuestion()
     {
-        if (CanGoNext && Id_dap_an_duoc_tron.HasValue)
+        if (CanGoNext)
         {
-            CreateHist(CodeTest, isdtudent, Id_dap_an_duoc_tron.Value);
-            currentQuestionIndex++;
+            if (Id_dap_an_duoc_tron.HasValue)
+            {
+                await CreateHist(CodeTest, Id_dap_an_duoc_tron.Value); // Lưu lịch sử câu trả lời
+                currentQuestionIndex++; // Chuyển sang câu tiếp theo
+                Id_dap_an_duoc_tron = null; // Reset đáp án đã chọn
+            }
+            else
+            {
+                await jsruntime.InvokeVoidAsync("alert", "Vui lòng chọn đáp án trước khi tiếp tục!");
+            }
         }
     }
-
     private void PreviousQuestion()
     {
         if (CanGoBack)
         {
             currentQuestionIndex--;
+
+            // Nếu câu hỏi trước đó đã được chọn đáp án, khôi phục lại giá trị
+            var questionId = hist.Questions[currentQuestionIndex].QuestionId;
+            if (selectedAnswerIds.ContainsKey(questionId))
+            {
+                Id_dap_an_duoc_tron = selectedAnswerIds[questionId];
+            }
+            else
+            {
+                Id_dap_an_duoc_tron = null;
+            }
         }
     }
+
 
 
     private bool CanGoNext => currentQuestionIndex < (hist?.Questions?.Count ?? 0) - 1;

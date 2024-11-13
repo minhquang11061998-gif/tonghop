@@ -79,12 +79,12 @@ namespace API.Controllers
         }
 
         [HttpPost("create-hist")]
-        public async Task<ActionResult> CreateHistories(int CodeTesst, Guid GuidId, Guid answerId)
+        public async Task<ActionResult> CreateHistories(int CodeTesst, string GuidId, Guid answerId)
         {
             var examroomstudent = await (from a in _db.Tests
                                          join b in _db.Exam_Room_TestCodes on a.Id equals b.TestId
                                          join c in _db.Exam_Room_Students on b.Id equals c.ExamRoomTestCodeId
-                                         where a.Code == CodeTesst && c.StudentId == GuidId
+                                         where a.Code == CodeTesst && c.StudentId == Guid.Parse(GuidId)
                                          select new
                                          {
                                              c.Id
