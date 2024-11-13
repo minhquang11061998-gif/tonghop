@@ -1,0 +1,511 @@
+﻿@page "/listGrade"
+@using DataBase.DTOs
+@using DataBase.Models
+@using global::Data.DTOs
+@using System.Net.Http.Json
+@layout AdminLayout
+@inject HttpClient client
+@inject IHttpClientFactory clientFactory
+@inject NavigationManager navigation
+@inject IJSRuntime Jsruntime
+
+
+<div>
+    <div class="row py-2">
+        <div class="border d-flex">
+            <div class="col-3 p-2">
+                <div class="border shadow-sm" style="background-color:cornflowerblue">
+                    <h5 class="p-2 text-white d-flex justify-content-center align-items-center">Quản lý khối</h5>
+                </div>
+
+                <button class="btn btn-primary" @onclick="ShowCreateGradeModal">Tạo khối mới</button>
+
+                <div class="border min-vh-100">
+                    @if (gradeDTOs != null && gradeDTOs.Any())
+                    {
+                        @foreach (var item in gradeDTOs)
+                        {
+
+                            <div>
+                                <span class="target" value="@item.Id" type="button" @onclick="()=> ToggleGrade(item.Id)">
+                                    <i class="bi bi-folder-fill text-warning p-1"></i> @item.Name
+                                </span>
+                                @if (selectedGradeId1 == item.Id)
+                                {
+                                    <ul>
+                                        @foreach (var classItem in classes.Where(c => c.GradeId == item.Id)) // Lọc các lớp theo GradeId
+                                        {
+                                            <li class="nav-link"> <i class="bi bi-folder-fill text-warning p-1"></i><span>@classItem.Name</span></li>
+
+                                        }
+                                    </ul>
+                                }
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+
+            <div class="col-9 p-2">
+                <div class="border shadow-sm d-flex justify-content-between" style="background-color:cornflowerblue">
+                    <div class="p-2">
+                        <h5 class="text-white">Thông tin chi tiết</h5>
+                    </div>
+                </div>
+
+                <div class="container grade-management">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="table-responsive">
+                                <table class="table table-striped table-hover table-bordered custom-table">
+                                    <thead class="thead-blue">
+                                        <tr>
+                                            <th>STT</th>
+                                            <th>Mã lớp</th>
+                                            <th>Tên lớp</th>
+                                            <th>Sĩ số</th>
+                                            <th>Giáo viên</th>
+                                            <th>Khối</th>
+                                            <th>Ghi chú</th>
+                                            <th>Hành động</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var classItem in classes)
+                                        {
+                                            // Kiểm tra điều kiện GradeId nếu selectedGradeId1 có giá trị
+                                            if (selectedGradeId1 == null || classItem.GradeId == selectedGradeId1)
+                                            {
+                                                var teacher = teachers.FirstOrDefault(r => r.Id == classItem.TeacherId);
+                                                var codeTeacher = teacher?.Code ?? "Không có dữ liệu";
+
+                                                var grade = grades.FirstOrDefault(r => r.Id == classItem.GradeId);
+                                                var nameGrade = grade != null ? GetGradeName(grade.Name) : "Không có dữ liệu";
+
+                                                <tr>
+                                                    <td>@(classes.IndexOf(classItem) + 1)</td>
+                                                    <td>@classItem.Code</td>
+                                                    <td>@classItem.Name</td>
+                                                    <td>@classItem.MaxStudent</td>
+                                                    <td>@codeTeacher</td>
+                                                    <td>@nameGrade</td>
+                                                    <td>@classItem.Status</td>
+                                                    <td>
+                                                        <button class="btn btn-warning" @onclick="(() => UpdateClass(classItem.Id))">Sửa</button>
+                                                        <button class="btn btn-danger" @onclick="(() => DeleteClass(classItem.Id))">Xóa</button>
+                                                        <button class="btn btn-info" @onclick="(() => ShowStudentClassDetails(classItem.Id))">Chi tiết</button>
+                                                    </td>
+                                                </tr>
+                                            }
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+                <!-- Danh sách học sinh trong lớp -->
+                @if (selectedClassId.HasValue && student_User_Classes != null && student_User_Classes.Any())
+                {
+                    <div class="border mt-3">
+                        <h5>Danh Sách Học Sinh của Lớp</h5>
+                        <table class="table">
+                            <thead class="thead-blue">
+                                <tr>
+                                    <th>STT</th>
+                                    <th>Tên học sinh</th>
+                                    <th>Ngày sinh</th>
+                                    <th>Mã học sinh</th>
+                                    <th>Ngày tham gia</th>
+                                    <th>Sĩ số</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @for (int i = 0; i < student_User_Classes.Count; i++)
+                                {
+                                    var student = student_User_Classes[i];
+
+                                    <tr>
+                                        <td>@(i + 1)</td>
+                                        <td>@student.FullName</td>
+                                        <td>@student.DateOfBirth?.ToString("dd/MM/yyyy")</td>
+                                        <td>@student.StudentCode</td>
+                                        <td>@student.JoinTime.ToString("dd/MM/yyyy")</td>
+                                        <td>@student.MaxStudent</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+
+
+
+                <!-- Modals -->
+
+                <div class="modal fade @(isCreateGradeModalVisible  ? "show" : "")" tabindex="-1" style="display:@(isCreateGradeModalVisible  ? "block" : "none")">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">@((selectedGradeId == Guid.Empty) ? "Tạo khối mới" : "Sửa thông tin khối")</h5>
+                                <button type="button" class="btn btn-secondary" @onclick="HideCreateGradeModal">Đóng</button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="mb-3">
+                                    <label for="gradeName" class="form-label">Tên khối:</label>
+                                    <input type="text" id="gradeName" class="form-control" @bind="gradeDTO.Name" placeholder="Nhập tên khối" />
+                                </div>
+                                <div class="mb-3">
+                                    <label for="status" class="form-label">Trạng thái:</label>
+                                    <select id="status" class="form-control" @bind="gradeDTO.Status">
+                                        <option value="1">Hoạt động</option>
+                                        <option value="0">Không hoạt động</option>
+                                    </select>
+                                </div>
+                                <button type="button" class="btn btn-primary" @onclick="SubmitGrade">Lưu</button>
+                                <button type="button" class="btn btn-secondary" @onclick="HideCreateGradeModal">Đóng</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<style>
+    .grade-management {
+        margin-top: 20px;
+    }
+
+    .custom-table {
+        background-color: #f8f9fa;
+        border-radius: 10px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    thead.thead-blue th {
+        background-color: #007bff;
+        color: white;
+        text-align: center;
+        font-weight: bold;
+    }
+
+    .table-hover tbody tr:hover {
+        background-color: #e2f0ff;
+    }
+
+    .table td, .table th {
+        text-align: center;
+        vertical-align: middle;
+    }
+
+    button.btn {
+        margin: 5px;
+        padding: 6px 10px;
+        font-size: 12px;
+        border-radius: 5px;
+    }
+
+    button.btn-warning {
+        background-color: #ffc107;
+        border-color: #ffc107;
+    }
+
+    button.btn-danger {
+        background-color: #dc3545;
+        border-color: #dc3545;
+    }
+
+    button.btn-primary {
+        background-color: #007bff;
+        border-color: #007bff;
+    }
+
+    button:hover {
+        opacity: 0.9;
+    }
+
+    .table {
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    }
+</style>
+
+
+
+
+@code {
+    private Guid? selectedGradeId1 = null;
+    private Guid a;
+    private void ToggleGrade(Guid gradeID)
+    {
+        if (selectedGradeId1 == gradeID)
+        {
+
+            selectedGradeId1 = null;
+        }
+        else
+        {
+
+            selectedGradeId1 = gradeID;
+        }
+    }
+
+
+
+    private bool isCreateGradeModalVisible = false;
+    private bool isShowGradeModalVisible = false;
+
+    private bool isConfirmDeleteVisible = false;
+
+
+    private List<GradeDTO> gradeDTOs = new List<GradeDTO>();
+    private GradeDTO gradeDTO = new GradeDTO();
+    private Guid selectedGradeId;
+
+    private List<StudentDTO> listStudents = new List<StudentDTO>();
+
+    private List<Classes> filteredClasses = new List<Classes>(); // Thêm biến cho danh sách lớp đã lọc
+
+
+
+    protected override async Task OnInitializedAsync()
+    {
+
+        var httpClient = clientFactory.CreateClient("student");
+        gradeDTOs = await httpClient.GetFromJsonAsync<List<GradeDTO>>("https://localhost:7046/api/Grade/get-grade");
+        StateHasChanged();
+        LoadGrades();
+        LoadClasses();
+
+        await LoadTeachersAndGrades();
+
+        // await LoadStudentClasses();
+        // await LoadStudentsAndClasses();
+    }
+
+    private void ShowGradeModal()
+    {
+        isShowGradeModalVisible = true;
+    }
+
+    private void HideCreateGradeModal()
+    {
+        isCreateGradeModalVisible = false;
+        selectedGradeId = Guid.Empty; // Reset selectedGradeId
+    }
+
+    private void ShowCreateGradeModal()
+    {
+        gradeDTO = new GradeDTO(); // Khởi tạo thông tin GradeDTO cho tạo mới
+        isCreateGradeModalVisible = true;
+        selectedGradeId = Guid.Empty; // Reset ID
+    }
+
+    private async Task ShowUpdateGrade(Guid id)
+    {
+        selectedGradeId = id;
+
+        var httpClient = clientFactory.CreateClient("student");
+        gradeDTO = await httpClient.GetFromJsonAsync<GradeDTO>($"https://localhost:7046/api/Grade/get-by-id?id={id}");
+        isCreateGradeModalVisible = true;
+    }
+
+    private async Task SubmitGrade()
+    {
+        var httpClient = clientFactory.CreateClient("student");
+        HttpResponseMessage response;
+
+        if (selectedGradeId == Guid.Empty)
+        {
+            // Tạo mới
+            response = await httpClient.PostAsJsonAsync("https://localhost:7046/api/Grade/create-grade", gradeDTO);
+        }
+        else
+        {
+            // Cập nhật
+            gradeDTO.Id = selectedGradeId;
+            response = await httpClient.PutAsJsonAsync("https://localhost:7046/api/Grade/update-grade", gradeDTO);
+        }
+
+        if (response.IsSuccessStatusCode)
+        {
+            isCreateGradeModalVisible = false;
+            await OnInitializedAsync(); // Cập nhật lại danh sách
+        }
+        else
+        {
+            // Xử lý lỗi nếu có
+            var errorMessage = await response.Content.ReadAsStringAsync();
+            Console.WriteLine($"Error: {errorMessage}");
+        }
+    }
+
+    private void ConfirmDeleteGrade(Guid id)
+    {
+        selectedGradeId = id;
+        isConfirmDeleteVisible = true;
+    }
+
+    private void HideConfirmDeleteModal()
+    {
+        isConfirmDeleteVisible = false;
+        selectedGradeId = Guid.Empty; // Reset selectedGradeId
+    }
+
+    private async Task DeleteGrade()
+    {
+        var httpClient = clientFactory.CreateClient("student");
+        var response = await httpClient.DeleteAsync($"https://localhost:7046/api/Grade/delete-grade?id={selectedGradeId}");
+
+        if (response.IsSuccessStatusCode)
+        {
+            isConfirmDeleteVisible = false;
+            await OnInitializedAsync(); // Cập nhật lại danh sách
+        }
+        else
+        {
+            // Xử lý lỗi nếu có
+            var errorMessage = await response.Content.ReadAsStringAsync();
+            Console.WriteLine($"Error: {errorMessage}");
+        }
+    }
+}
+
+
+@* Code của class *@
+@code {
+    private List<Classes> classes = new List<Classes>();
+    private List<Teachers> teachers = new List<Teachers>();
+    private List<Grades> grades = new List<Grades>();
+
+    private string GetGradeName(int gradeNumber)
+    {
+        return $"Grade {gradeNumber}";
+    }
+
+    private async Task LoadClasses()
+    {
+        classes = await client.GetFromJsonAsync<List<Classes>>("https://localhost:7046/api/Classes/get-all-class");
+    }
+
+    private async Task LoadTeachersAndGrades()
+    {
+        teachers = await client.GetFromJsonAsync<List<Teachers>>("api/Teacher/get-all-teacher");
+        grades = await client.GetFromJsonAsync<List<Grades>>("api/Grade/get-grade");
+    }
+
+    private void Create()
+    {
+        navigation.NavigateTo("/create-class");
+    }
+
+    private void UpdateClass(Guid id)
+    {
+        navigation.NavigateTo($"/update-class/{id}");
+    }
+
+    private async void DeleteClass(Guid id)
+    {
+        var response = await client.DeleteAsync($"api/Classes/delete-class/{id}");
+        if (response.IsSuccessStatusCode)
+        {
+            await LoadClasses();
+        }
+    }
+
+    private void DetailClass(Guid id)
+    {
+        navigation.NavigateTo($"/student-classes/{id}");
+    }
+
+}
+
+
+
+@* code của StudentClass *@
+@code {
+    private Guid? selectedClassId = null; // Thêm ID lớp đã chọn
+
+    private async void ShowStudentClassDetails(Guid classId)
+    {
+        selectedClassId = classId;
+        // Gọi API để lấy danh sách học sinh của lớp đã chọn
+        student_User_Classes = await client.GetFromJsonAsync<List<Student_User_ClassDTO>>($"api/StudentClass/get-classID/{classId}");
+        StateHasChanged();
+    }
+
+
+    public Guid classId { get; set; }  // Lấy ID lớp từ URL
+
+    private List<StudentClassDTO> studentClasses = new List<StudentClassDTO>();
+
+    private List<Student_User_ClassDTO> student_User_Classes = new List<Student_User_ClassDTO>();
+
+    private List<Users> users = new List<Users>();
+    private List<Students> students = new List<Students>();
+    private List<Classes> classes1 = new List<Classes>();
+    private bool showDeleteConfirmation = false; // Biến hiển thị hộp thoại xóa
+    private Guid deleteId; // Lưu trữ ID khi xác nhận xóa
+
+    private async Task LoadStudentClasses()
+    {
+        studentClasses = await client.GetFromJsonAsync<List<StudentClassDTO>>($"api/StudentClass/get-classID/{classId}");
+    }
+
+    private async Task LoadStudentsAndClasses()
+    {
+        students = await client.GetFromJsonAsync<List<Students>>("api/Student/get-all-student2");
+        classes1 = await client.GetFromJsonAsync<List<Classes>>("api/Classes/get-all-class");
+    }
+
+    private void CreateStudentClass()
+    {
+        navigation.NavigateTo("/create-student-class");
+    }
+
+    private void UpdateStudentClass(Guid id)
+    {
+        navigation.NavigateTo($"/update-student-class/{id}");
+    }
+
+    private void ConfirmDelete(Guid id)
+    {
+        deleteId = id;
+        showDeleteConfirmation = true;
+    }
+
+    private async Task ConfirmDeleteStudentClass()
+    {
+        var response = await client.DeleteAsync($"api/StudentClass/delete?id={deleteId}");
+        if (response.IsSuccessStatusCode)
+        {
+            await LoadStudentClasses();
+        }
+        showDeleteConfirmation = false;
+    }
+
+
+    private void CancelDelete()
+    {
+        showDeleteConfirmation = false;
+    }
+
+    private List<ClassesDTO> classDTOs = new List<ClassesDTO>();
+
+    private async Task LoadGrades()
+    {
+        classDTOs = await client.GetFromJsonAsync<List<ClassesDTO>>($"api/Grade/get-classid?");
+
+
+        StateHasChanged();
+    }
+
+}
+
+
