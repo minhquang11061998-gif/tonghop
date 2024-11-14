@@ -1,80 +1,147 @@
 ﻿@page "/Exam/{CodeTest:int}"
 @using DataBase.DTOs
-@layout MainLayout
 @inject HttpClient client
 @inject IJSRuntime jsruntime
+@layout LayoutNone
 
-<h3>ViewExam</h3>
 
 @if (hist == null)
 {
-    <p>Đang tải...</p>
+    <div class="text-center">
+        <p>Đang tải...</p>
+    </div>
 }
 else if (!string.IsNullOrEmpty(errorMessage))
 {
-    <p>@errorMessage</p>
+    <div class="alert alert-danger text-center">
+        <p>@errorMessage</p>
+    </div>
 }
 else
 {
-    <h4>Mã Bài Kiểm Tra: @hist.Code</h4>
-    <p>Trạng Thái: @hist.Status</p>
-
-    <h5>Câu Hỏi:</h5>
-
-    @if (hist.Questions != null && hist.Questions.Any())
-    {
-        var currentQuestion = hist.Questions[currentQuestionIndex];
-        <div>
-            <strong>@currentQuestion.QuestionName</strong>
-            @if (currentQuestion.Answers != null && currentQuestion.Answers.Any())
+    <div class="card  mb-3">
+        <div class="card-body">
+            @foreach (var item in infomationDTOs)
             {
-                <ul>
-                    @foreach (var answer in currentQuestion.Answers)
-                    {
-                        <input type="radio"
-                               name="answer_@currentQuestion.QuestionId"
-                               @onchange="(e) => UpdateSelectedAnswer(currentQuestion.QuestionId, answer.AnswerId)"
-                               checked="@(selectedAnswerIds.ContainsKey(currentQuestion.QuestionId) && selectedAnswerIds[currentQuestion.QuestionId] == answer.AnswerId)" />
-                        @answer.AnswerText
-                    }
-                    @if (selectedAnswerIds.ContainsKey(currentQuestion.QuestionId))
-                    {
-                        <p>
-                            Đáp án đã chọn cho câu hỏi @currentQuestion.QuestionId:
-                            @selectedAnswerIds[currentQuestion.QuestionId]
-                            <h1>@Id_dap_an_duoc_tron</h1>
+                <div class="row align-items-center mb-4">
+                    <div class="col-3">
+                        <img style="height: 100px; width: auto;" src="img/Rectangle89.png" alt="Alternate Text" class="img-thumbnail" />
+                    </div>
+                    <div class="col-4">
+                      
+                        <p class="mb-1">
+                            <strong>Môn Thi:</strong> @item.Namesubject
                         </p>
+                        <p class="mb-1">
+                            <strong>Mã môn:</strong> @item.codesubject
+                        </p>
+                        <p class="mb-0">
+                            <strong>Thời gian:</strong> @item.timeexam phút
+                        </p>
+                    </div>
+                    <div class="col-4">
+                      
+                        <p class="mb-1">
+                            <strong>Họ và tên:</strong> @item.namestudent
+                        </p>
+                        <p class="mb-1">
+                            <strong>Mã học sinh:</strong> @item.codestudent
+                        </p>
+                        <p class="mb-0">
+                            <strong>Email:</strong> @item.email
+                        </p>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-header">
+            <h4 class="card-title">Mã Bài Kiểm Tra: <span class="text-primary">@hist.Code</span></h4>
+            <p class="card-text">Trạng Thái: <span class="badge bg-info">@hist.Status</span></p>
+            <h5 class="card-title">Câu Hỏi</h5>
+        </div>
+        <div class="card-body">
+            @if (hist.Questions != null && hist.Questions.Any())
+            {
+                var currentQuestion = hist.Questions[currentQuestionIndex];
+                <div class="mb-4">
+                    <strong class="d-block mb-2">@currentQuestion.QuestionName</strong>
+                    @if (currentQuestion.Answers != null && currentQuestion.Answers.Any())
+                    {
+                        <ul class="list-group">
+                            @foreach (var answer in currentQuestion.Answers)
+                            {
+                                <li class="list-group-item">
+                                    <div class="form-check">
+                                        <input type="radio"
+                                               class="form-check-input"
+                                               id="answer_@answer.AnswerId"
+                                               name="answer_@currentQuestion.QuestionId"
+                                               value="@answer.AnswerId"
+                                               @onchange="(e) => UpdateSelectedAnswer(currentQuestion.QuestionId, answer.AnswerId)"
+                                               checked="@(selectedAnswerIds.ContainsKey(currentQuestion.QuestionId) && selectedAnswerIds[currentQuestion.QuestionId] == answer.AnswerId)" />
+                                        <label class="form-check-label" for="answer_@answer.AnswerId">
+                                            @answer.AnswerText
+                                        </label>
+                                    </div>
+                                </li>
+                            }
+                        </ul>
+                        @if (selectedAnswerIds.ContainsKey(currentQuestion.QuestionId))
+                        {
+                            <p class="mt-3 text-success">
+                                <strong>Đáp án đã chọn:</strong> @selectedAnswerIds[currentQuestion.QuestionId]
+                            </p>
+                        }
                     }
-                </ul>
+                    else
+                    {
+                        <p class="text-warning">Không có đáp án cho câu hỏi này.</p>
+                    }
+                </div>
+                <div class="d-flex justify-content-between">
+                    <button class="btn btn-secondary" @onclick="PreviousQuestion" disabled="@(!CanGoBack)">Lùi</button>
+                    <button class="btn btn-primary" @onclick="NextQuestion" disabled="@(!Id_dap_an_duoc_tron.HasValue)">Tiến</button>
+                </div>
             }
             else
             {
-                <p>Không có đáp án cho câu hỏi này.</p>
+                <p class="text-danger">Không có câu hỏi nào được tìm thấy.</p>
             }
         </div>
-
-        <div>
-            <button @onclick="PreviousQuestion" disabled="@(!CanGoBack)">Lùi</button>
-            <button @onclick="NextQuestion" disabled="@(!CanGoNext)">Tiến</button>
-        </div>
-    }
-    else
-    {
-        <p>Không có câu hỏi nào được tìm thấy.</p>
-    }
+    </div>
 }
 
 @code {
     [Parameter]
     public int CodeTest { get; set; }
     private HistDTO hist;
-    private Guid isdtudent;
+    private string isdtudent;
     private bool isLoading = true;
     private string errorMessage = null;
     private int currentQuestionIndex = 0;
     private Exam_Room_Histories_DTO examhistories = new Exam_Room_Histories_DTO();
+    private List<infomationDTO> infomationDTOs = new List<infomationDTO>();
     // Lưu trữ ID của các câu trả lời đã chọn cho mỗi câu hỏi
     private Dictionary<Guid, Guid?> selectedAnswerIds = new Dictionary<Guid, Guid?>();
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            isLoading = true;
+            try
+            {
+                await TokenId();
+            }
+            finally
+            {
+                isLoading = false;
+            }
+        }
+
+    }
 
     private async Task TokenId()
     {
@@ -85,15 +152,8 @@ else
         }
         var handler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
         var jsonToken = handler.ReadToken(token) as System.IdentityModel.Tokens.Jwt.JwtSecurityToken;
-        var idStudentString = jsonToken?.Claims.FirstOrDefault(c => c.Type == "IdStudent")?.Value;
-        if (Guid.TryParse(idStudentString, out var parsedGuid))
-        {
-            isdtudent = parsedGuid;
-        }
-        else
-        {
-            throw new Exception("Không tìm thấy hoặc không thể chuyển đổi IdStudent thành GUID.");
-        }
+        isdtudent = jsonToken?.Claims.FirstOrDefault(c => c.Type == "Idstudent")?.Value;
+
     }
 
     private Guid? Id_dap_an_duoc_tron;
@@ -108,14 +168,16 @@ else
     protected override async Task OnInitializedAsync()
     {
         await LoadTestResultAsync();
+       
     }
-
+   
     private async Task LoadTestResultAsync()
     {
         try
         {
             isLoading = true;
             hist = await client.GetFromJsonAsync<HistDTO>($"api/ViewExam/test-testcode-question-await?CodeTest={CodeTest}");
+            infomationDTOs = await client.GetFromJsonAsync<List<infomationDTO>>($"https://localhost:7046/api/ViewExam/information_exam?code={CodeTest}&id={isdtudent}");
         }
         catch (Exception ex)
         {
@@ -129,35 +191,60 @@ else
     }
 
 
-    private async Task CreateHist(int codetest, Guid roomtudent, Guid IdAnswer)
+    private async Task CreateHist(int codetest, Guid idAnswer)
     {
-        if (IdAnswer == null)
+        try
         {
-            await jsruntime.InvokeVoidAsync("alert", "loi");
+            examhistories.TestQuestionAnswerId = idAnswer; // Gán giá trị ID của đáp án
+            examhistories.Id = Guid.NewGuid(); // Tạo ID duy nhất cho lịch sử
+
+            var response = await client.PostAsJsonAsync($"api/ViewExam/create-hist?CodeTesst={codetest}&GuidId={isdtudent}&answerId={idAnswer}", examhistories);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                await jsruntime.InvokeVoidAsync("alert", $"Lỗi lưu dữ liệu: {error}");
+            }
         }
-        var histories = await client.PostAsJsonAsync($"api/ViewExam/create-hist?CodeTesst={codetest}&GuidId={roomtudent}&answerId={IdAnswer}", examhistories);
-
+        catch (Exception ex)
+        {
+            await jsruntime.InvokeVoidAsync("alert", $"Lỗi hệ thống: {ex.Message}");
+        }
     }
-
-    
-    private void NextQuestion()
+    private async Task NextQuestion()
     {
-        if (CanGoNext && Id_dap_an_duoc_tron.HasValue)
+        if (CanGoNext)
         {
-            CreateHist(CodeTest, isdtudent, Id_dap_an_duoc_tron.Value);
-            currentQuestionIndex++;
+            if (Id_dap_an_duoc_tron.HasValue)
+            {
+                await CreateHist(CodeTest, Id_dap_an_duoc_tron.Value); // Lưu lịch sử câu trả lời
+                currentQuestionIndex++; // Chuyển sang câu tiếp theo
+                Id_dap_an_duoc_tron = null; // Reset đáp án đã chọn
+            }
+            else
+            {
+                await jsruntime.InvokeVoidAsync("alert", "Vui lòng chọn đáp án trước khi tiếp tục!");
+            }
         }
     }
-
     private void PreviousQuestion()
     {
         if (CanGoBack)
         {
             currentQuestionIndex--;
+
+            // Nếu câu hỏi trước đó đã được chọn đáp án, khôi phục lại giá trị
+            var questionId = hist.Questions[currentQuestionIndex].QuestionId;
+            if (selectedAnswerIds.ContainsKey(questionId))
+            {
+                Id_dap_an_duoc_tron = selectedAnswerIds[questionId];
+            }
+            else
+            {
+                Id_dap_an_duoc_tron = null;
+            }
         }
     }
-
-
     private bool CanGoNext => currentQuestionIndex < (hist?.Questions?.Count ?? 0) - 1;
     private bool CanGoBack => currentQuestionIndex > 0;
 }

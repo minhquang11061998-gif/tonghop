@@ -17,7 +17,29 @@ namespace API.Controllers
         {
             _db = db;
         }
-        
+        [HttpGet("information_exam")]
+        public async Task<IActionResult> Getinfor(int code,string id)
+        {
+            var infor = (
+                 from test in _db.Tests
+                 join subject in _db.Subjects on test.SubjectId equals subject.Id
+                 join examroomtesstcode in _db.Exam_Room_TestCodes on test.Id equals examroomtesstcode.TestId
+                 join examroomstudent in _db.Exam_Room_Students on examroomtesstcode.Id equals examroomstudent.ExamRoomTestCodeId
+                 join student in _db.Students on examroomstudent.StudentId equals student.Id
+                 join user in _db.Users on student.UserId equals user.Id
+                 where test.Code == code && student.Id==Guid.Parse(id)
+                 select new infomationDTO
+                 {
+                     Namesubject = subject.Name,
+                     codesubject = subject.Code,
+                     timeexam = test.Minute ?? 0, // Xử lý nếu Minute có thể null
+                     namestudent = user.FullName,
+                     codestudent = student.Code,
+                     email = user.Email
+                 }
+             ).Distinct().ToList();
+            return Ok(infor);
+        }
         [HttpGet("test-testcode-question-await")]
         public async Task<IActionResult> Get(int CodeTest)
         {
@@ -79,12 +101,12 @@ namespace API.Controllers
         }
 
         [HttpPost("create-hist")]
-        public async Task<ActionResult> CreateHistories(int CodeTesst, Guid GuidId, Guid answerId)
+        public async Task<ActionResult> CreateHistories(int CodeTesst, string GuidId, Guid answerId)
         {
             var examroomstudent = await (from a in _db.Tests
                                          join b in _db.Exam_Room_TestCodes on a.Id equals b.TestId
                                          join c in _db.Exam_Room_Students on b.Id equals c.ExamRoomTestCodeId
-                                         where a.Code == CodeTesst && c.StudentId == GuidId
+                                         where a.Code == CodeTesst && c.StudentId == Guid.Parse(GuidId)
                                          select new
                                          {
                                              c.Id
@@ -103,30 +125,6 @@ namespace API.Controllers
             };
             _db.Exam_Room_Student_AnswerHistories.Add(hist);
            await _db.SaveChangesAsync();
-
-            //var examroomstudent = await (from a in _db.Tests
-            //                             join b in _db.Exam_Room_TestCodes on a.Id equals b.TestId
-            //                             join c in _db.Exam_Room_Students on b.Id equals c.ExamRoomTestCodeId
-            //                             where a.Code == CodeTesst && c.StudentId == dto.ExamRoomStudentId
-            //                             select new
-            //                             {
-            //                                 c.Id
-            //                             }).FirstOrDefaultAsync();
-
-            //if (examroomstudent == null)
-            //{
-            //    return NotFound("Exam room student not found");
-            //}
-
-            //var hist = new Exam_Room_Student_AnswerHistory
-            //{
-            //    Id = Guid.NewGuid(),
-            //    TestQuestionAnswerId = dto.TestQuestionAnswerId,
-            //    ExamRoomStudentId = dto.ExamRoomStudentId,
-            //};
-            //_db.Exam_Room_Student_AnswerHistories.Add(hist);
-            //await _db.SaveChangesAsync();
-
             return Ok("đã lưu");
         }
     }

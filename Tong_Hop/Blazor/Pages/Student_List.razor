@@ -1,0 +1,276 @@
+﻿@page "/quanlystudent"
+@using DataBase.DTOs
+@using Database.DTOs
+@using global::Data.DTOs
+@using System.Net.Http.Json
+@layout AdminLayout
+@inject HttpClient client
+@inject IHttpClientFactory clientFactory
+@inject NavigationManager navigation
+
+<h3 class="mb-4 text-center">Quản lý học sinh</h3> <!-- Căn giữa tiêu đề -->
+
+<button class="btn btn-primary" @onclick="CreateStudent">Tạo học sinh mới</button>
+
+<div class="container student-management">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="table-responsive">
+                <table class="table table-striped table-hover table-bordered custom-table">
+                    <thead class="thead-blue">
+                        <tr>
+                            <th scope="col">STT</th>
+                            <th scope="col">Mã HS</th>
+                            <th scope="col">Họ và tên</th>
+                            <th scope="col">Email</th>
+                            <th scope="col">Ngày sinh</th>
+                            <th scope="col">Số điện thoại</th>
+                            <th scope="col">Điểm số</th>
+                            <th scope="col">Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var n in listStudents)
+                        {
+                            <tr>
+                                <td>@(listStudents.IndexOf(n) + 1)</td>
+                                <td>@n.Code</td>
+                                <td>@n.Name</td>
+                                <td>@n.Email</td>
+                                <td>@n.DateOfBirth.ToShortDateString()</td>
+                                <td>@n.PhoneNumber</td>
+                                <td>
+                                    <button class="btn btn-outline-primary btn-sm">Xem điểm số</button>
+                                </td>
+                                <td>
+                                    <button class="btn btn-warning btn-sm" @onclick="()=>ShowUpdateStudent(n.UserId)">Sửa thông tin</button>
+                                    <button class="btn btn-primary btn-sm" @onclick="ShowCreateNoticeModal">Viết đánh giá</button>
+                                    <button class="btn btn-success btn-sm">Tổng kết học tập</button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade @(isCreateNoticeModalVisible ? "show" : "")" tabindex="-1" style="display:@(isCreateNoticeModalVisible ? "block" : "none")">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title">Sửa thông tin người dùng</h5>
+                <button type="button" class="btn-close" @onclick="HideCreateNoticeModal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="fullname" class="form-label">Họ và tên:</label>
+                    <input type="text" id="fullname" class="form-control" @bind="userDTO.FullName" placeholder="Nhập họ và tên" />
+                </div>
+                <div class="mb-3">
+                    <label for="email" class="form-label">Email:</label>
+                    <input type="email" id="email" class="form-control" @bind="userDTO.Email" placeholder="Nhập email" />
+                </div>
+
+                <div class="mb-3">
+                    <label for="phoneNumber" class="form-label">Số điện thoại:</label>
+                    <input type="tel" id="phoneNumber" class="form-control" @bind="userDTO.PhoneNumber" placeholder="Nhập số điện thoại" />
+                </div>
+
+                <div class="mb-3">
+                    <label for="userName" class="form-label">Tên đăng nhập:</label>
+                    <input type="text" id="userName" class="form-control" @bind="userDTO.UserName" placeholder="Nhập tên đăng nhập" />
+                </div>
+
+                <div class="mb-3">
+                    <label for="password" class="form-label">Mật khẩu:</label>
+                    <input type="password" id="password" class="form-control" @bind="userDTO.PasswordHash" placeholder="Nhập mật khẩu" />
+                </div>
+
+                <div class="mb-3">
+                    <label for="createTime" class="form-label">Ngày tạo:</label>
+                    <input type="datetime" id="createTime" class="form-control" @bind="userDTO.CreationTime" readonly />
+                </div>
+
+                <div class="mb-3">
+                    <label for="lockendTime" class="form-label">Ngày kết thúc:</label>
+                    <input type="datetime" id="lockendTime" class="form-control" @bind="userDTO.LockedEndTime" readonly />
+                </div>
+
+                <div class="mb-3">
+                    <label for="role" class="form-label">Vai trò:</label>
+                    <select id="role" class="form-control" @bind="userDTO.RoleId">
+                        @foreach (var role in roleDTOs)
+                        {
+                            <option value="@role.Id">@role.Name</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="form-group mb-3">
+                    <label for="avatarFile">Ảnh đại diện:</label>
+                    <InputFile id="avatarFile" class="form-control-file" OnChange="@HandleFileSelected" />
+                </div>
+
+                <button type="button" class="btn btn-primary" @onclick="Submit">Lưu</button>
+                <button type="button" class="btn btn-secondary" @onclick="HideCreateNoticeModal">Đóng</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .student-management {
+        margin-top: 20px;
+    }
+
+    /* Bo tròn và đổ bóng cho bảng */
+    .custom-table {
+        background-color: #f8f9fa;
+        border-radius: 10px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Thanh tiêu đề màu xanh dương */
+    thead.thead-blue th {
+        background-color: #007bff; /* Xanh dương */
+        color: white;
+        text-align: center;
+        font-weight: bold;
+    }
+
+    /* Hiệu ứng hover */
+    .table-hover tbody tr:hover {
+        background-color: #e2f0ff;
+    }
+
+    /* Căn giữa nội dung bảng */
+    .table td, .table th {
+        text-align: center;
+        vertical-align: middle;
+    }
+
+    /* Căn chỉnh nút bấm và thu nhỏ */
+    button.btn {
+        margin: 5px;
+        padding: 6px 10px;
+        font-size: 12px;
+        border-radius: 5px;
+    }
+
+    /* Nút với các màu tùy chỉnh */
+    button.btn-warning {
+        background-color: #ffc107;
+        border-color: #ffc107;
+    }
+
+    button.btn-primary {
+        background-color: #007bff;
+        border-color: #007bff;
+    }
+
+    button.btn-success {
+        background-color: #28a745;
+        border-color: #28a745;
+    }
+
+    /* Hiệu ứng hover cho nút bấm */
+    button:hover {
+        opacity: 0.9;
+    }
+
+    /* Thêm đổ bóng cho thanh tiêu đề và bảng */
+    .table {
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    }
+</style>
+
+@code {
+    private bool isCreateNoticeModalVisible = false;
+    private List<UserDTO>? userDTOs = new List<UserDTO>();
+    private UserDTO userDTO = new UserDTO();
+    private Guid selectedUserId;
+    private List<StudentDTO> listStudents = new List<StudentDTO>();
+    private List<RoleDTO> roleDTOs = new List<RoleDTO>();
+    private IBrowserFile avatarFile;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var httpClient = clientFactory.CreateClient("student");
+        listStudents = await httpClient.GetFromJsonAsync<List<StudentDTO>>("https://localhost:7046/api/Student/get-all-student2");
+        roleDTOs = await httpClient.GetFromJsonAsync<List<RoleDTO>>("https://localhost:7046/api/Role/get-all-role");
+        StateHasChanged();
+    }
+
+    private void HideCreateNoticeModal()
+    {
+        isCreateNoticeModalVisible = false;
+    }
+
+    private void ShowCreateNoticeModal()
+    {
+
+    }
+
+    private void CreateStudent()
+    {
+        navigation.NavigateTo("/createStudent");
+    }
+
+    private async Task HandleFileSelected(InputFileChangeEventArgs e)
+    {
+        avatarFile = e.File; // Lưu avatar file
+    }
+
+    private async Task ShowUpdateStudent(Guid Id)
+    {
+        selectedUserId = Id;
+
+        var httpClient = clientFactory.CreateClient("student");
+        userDTO = await httpClient.GetFromJsonAsync<UserDTO>($"https://localhost:7046/api/User/get-by-id-user?id={Id}");
+        isCreateNoticeModalVisible = true;
+
+    }
+
+    private async Task Submit()
+    {
+        var httpClient = clientFactory.CreateClient("student");
+
+        var content = new MultipartFormDataContent();
+
+        if (avatarFile != null)
+        {
+            // Thêm tệp ảnh vào multipart content
+            var fileContent = new StreamContent(avatarFile.OpenReadStream(1024 * 1024 * 10));
+            fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(avatarFile.ContentType);
+            content.Add(fileContent, "avatarFile", avatarFile.Name);
+        }
+
+        // Thêm các trường thông tin vào multipart content
+        content.Add(new StringContent(userDTO.FullName), "FullName");
+        content.Add(new StringContent(userDTO.Email), "Email");
+        content.Add(new StringContent(userDTO.PhoneNumber), "PhoneNumber");
+        content.Add(new StringContent(userDTO.UserName), "UserName");
+        content.Add(new StringContent(userDTO.PasswordHash), "PasswordHash");
+        content.Add(new StringContent(userDTO.RoleId.ToString()), "RoleId");
+        content.Add(new StringContent(userDTO.Id.ToString()), "Id"); // Đảm bảo gửi Id
+
+        // Gửi yêu cầu PUT
+        var response = await httpClient.PutAsync("https://localhost:7046/api/User/update-user", content);
+
+        if (response.IsSuccessStatusCode)
+        {
+            isCreateNoticeModalVisible = false;
+            await OnInitializedAsync();
+        }
+        else
+        {
+            // Xử lý lỗi nếu có
+            var errorMessage = await response.Content.ReadAsStringAsync();
+            Console.WriteLine($"Error: {errorMessage}");
+        }
+
+        StateHasChanged();
+    }
+}
