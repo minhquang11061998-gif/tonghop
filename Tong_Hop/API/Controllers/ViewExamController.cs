@@ -127,5 +127,57 @@ namespace API.Controllers
            await _db.SaveChangesAsync();
             return Ok("đã lưu");
         }
+
+        [HttpDelete("Delete_hist")]
+        public async Task<ActionResult> DeleteHist(int Cotesst, Guid IDQuestion, Guid IDStudent)
+        {
+            var answerIds = await (from a in _db.Tests
+                                   join b in _db.TestQuestions on a.Id equals b.TestId
+                                   join c in _db.TestQuestionAnswers on b.Id equals c.TestQuestionId
+                                   where a.Code == Cotesst && b.Id == IDQuestion
+                                   select c.Id).ToListAsync();
+
+            // Tìm Id của Exam_Room_Student cho sinh viên (IDStudent) cần kiểm tra
+            var examRoomStudentId = await (from ers in _db.Exam_Room_Students
+                                           join ert in _db.Exam_Room_TestCodes on ers.ExamRoomTestCodeId equals ert.Id
+                                           join t in _db.Tests on ert.TestId equals t.Id
+                                           where ers.StudentId == IDStudent && t.Code == Cotesst
+                                           select ers.Id).FirstOrDefaultAsync();
+
+            if (examRoomStudentId == Guid.Empty)
+            {
+                return NotFound("Student not found in exam room.");
+            }
+
+            // Tìm các bản ghi trong Exam_Room_Student_AnswerHistories khớp với danh sách đáp án và ExamRoomStudentId
+            var answerHistories = await _db.Exam_Room_Student_AnswerHistories
+                .Where(d => answerIds.Contains(d.TestQuestionAnswerId) && d.ExamRoomStudentId == examRoomStudentId)
+                .ToListAsync();
+
+            // Kiểm tra xem có bản ghi nào để xóa không
+            if (answerHistories.Any())
+            {
+                _db.Exam_Room_Student_AnswerHistories.RemoveRange(answerHistories);
+                await _db.SaveChangesAsync();
+                return Ok("Đã xóa đáp án cũ");
+            }
+
+            return NotFound("Không tìm thấy lịch sử câu trả lời. ");
+        }
+
+        [HttpGet("check-answer-history")]
+        public async Task<ActionResult<int>> CheckAnswerHistory(int codetest, Guid questionId, Guid studentId)
+        {
+            // Tìm số lượng đáp án đã được lưu cho câu hỏi này và sinh viên này
+            var answerHistoryCount = await (from a in _db.Tests
+                                            join b in _db.TestQuestions on a.Id equals b.TestId
+                                            join c in _db.TestQuestionAnswers on b.Id equals c.TestQuestionId
+                                            join d in _db.Exam_Room_Student_AnswerHistories on c.Id equals d.TestQuestionAnswerId
+                                            join ers in _db.Exam_Room_Students on d.ExamRoomStudentId equals ers.Id
+                                            where a.Code == codetest && b.Id == questionId && ers.StudentId == studentId
+                                            select d).CountAsync();
+
+            return Ok(answerHistoryCount);
+        }
     }
 }
