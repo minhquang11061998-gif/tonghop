@@ -92,7 +92,7 @@ else
                         @if (selectedAnswerIds.ContainsKey(currentQuestion.QuestionId))
                         {
                             <p class="mt-3 text-success">
-                                <strong>Đáp án đã chọn:</strong> @selectedAnswerIds[currentQuestion.QuestionId]
+                                <strong>Đáp án đã chọn:</strong> @selectedAnswerIds[currentQuestion.QuestionId] <span>@Id_cau_hoi_duoc_tron</span> 
                             </p>
                         }
                     }
@@ -126,6 +126,7 @@ else
     private List<infomationDTO> infomationDTOs = new List<infomationDTO>();
     // Lưu trữ ID của các câu trả lời đã chọn cho mỗi câu hỏi
     private Dictionary<Guid, Guid?> selectedAnswerIds = new Dictionary<Guid, Guid?>();
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
@@ -157,20 +158,22 @@ else
     }
 
     private Guid? Id_dap_an_duoc_tron;
+    private Guid? Id_cau_hoi_duoc_tron;
 
     private void UpdateSelectedAnswer(Guid questionId, Guid answerId)
     {
         // Cập nhật giá trị đã chọn cho câu hỏi
         selectedAnswerIds[questionId] = answerId;
         Id_dap_an_duoc_tron = answerId;
+        Id_cau_hoi_duoc_tron = questionId;
     }
 
     protected override async Task OnInitializedAsync()
     {
         await LoadTestResultAsync();
-       
+
     }
-   
+
     private async Task LoadTestResultAsync()
     {
         try
@@ -211,22 +214,73 @@ else
             await jsruntime.InvokeVoidAsync("alert", $"Lỗi hệ thống: {ex.Message}");
         }
     }
+
+    private async Task DeleteHisst( int codetest, Guid idquest)
+    {
+        var res = await client.DeleteAsync($"api/ViewExam/Delete_hist?Cotesst={codetest}&IDQuestion={idquest}&IDStudent={isdtudent}");
+
+        if (!res.IsSuccessStatusCode)
+        {
+            var error = await res.Content.ReadAsStringAsync();
+            await jsruntime.InvokeVoidAsync("alert", $"Lỗi xóa dữ liệu: {error}");
+        }
+    }
+
     private async Task NextQuestion()
     {
         if (CanGoNext)
         {
-            if (Id_dap_an_duoc_tron.HasValue)
+            if (Id_dap_an_duoc_tron == null)
             {
-                await CreateHist(CodeTest, Id_dap_an_duoc_tron.Value); // Lưu lịch sử câu trả lời
-                currentQuestionIndex++; // Chuyển sang câu tiếp theo
-                Id_dap_an_duoc_tron = null; // Reset đáp án đã chọn
+                // Nếu không chọn đáp án, chuyển sang câu tiếp theo
+                currentQuestionIndex++;
             }
             else
             {
-                await jsruntime.InvokeVoidAsync("alert", "Vui lòng chọn đáp án trước khi tiếp tục!");
+                // Kiểm tra xem câu hỏi này đã có 2 đáp án lưu chưa
+                var answerHistoryCount = await CheckAnswerHistory(CodeTest, Id_cau_hoi_duoc_tron.Value, isdtudent);
+
+                if (answerHistoryCount >= 2)
+                {
+                    // Nếu câu hỏi đã có 2 đáp án, xóa và lưu lại đáp án mới
+                    await DeleteHisst(CodeTest, Id_cau_hoi_duoc_tron.Value);
+                    await CreateHist(CodeTest, Id_dap_an_duoc_tron.Value);
+                }
+                else
+                {
+                    // Nếu chưa có 2 đáp án, chỉ cần lưu đáp án mới
+                    await CreateHist(CodeTest, Id_dap_an_duoc_tron.Value);
+                }
+
+                // Chuyển sang câu tiếp theo
+                currentQuestionIndex++;
+                Id_dap_an_duoc_tron = null; // Reset đáp án đã chọn
             }
         }
+        else
+        {
+            await jsruntime.InvokeVoidAsync("alert", "Vui lòng chọn đáp án trước khi tiếp tục!");
+        }
     }
+
+    // Hàm kiểm tra xem câu hỏi đã có bao nhiêu đáp án được lưu cho sinh viên
+    private async Task<int> CheckAnswerHistory(int codetest, Guid questionId, string studentId)
+    {
+        var response = await client.GetAsync($"api/ViewExam/check-answer-history?codetest={codetest}&questionId={questionId}&studentId={studentId}");
+
+        if (response.IsSuccessStatusCode)
+        {
+            // Sử dụng ReadFromJsonAsync để đọc dữ liệu JSON và chuyển thành kiểu int
+            var answerHistoryCount = await response.Content.ReadFromJsonAsync<int>();
+            return answerHistoryCount;
+        }
+        else
+        {
+            await jsruntime.InvokeVoidAsync("alert", "Lỗi khi kiểm tra lịch sử trả lời");
+            return 0;
+        }
+    }
+
     private void PreviousQuestion()
     {
         if (CanGoBack)
