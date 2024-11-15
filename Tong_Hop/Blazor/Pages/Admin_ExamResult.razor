@@ -155,7 +155,7 @@
         examResults.Clear();
         if (!string.IsNullOrEmpty(searchKeyword))
         {
-            var response = await client.GetFromJsonAsync<List<StudentExamResultDTO>>($"https://localhost:7046/api/ExamResult/search-student-result?keyword={searchKeyword}");
+            var response = await client.GetFromJsonAsync<List<StudentExamResultDTO>>($"https://apismartschools.azurewebsites.net/api/ExamResult/search-student-result?keyword={searchKeyword}");
             if (response != null)
             {
                 examResults = response;
@@ -177,8 +177,8 @@
 
     private async Task LoadExamDetailsAsync(Guid studentId, Guid examRoomTestCodeId)
     {
-        examDetails = await client.GetFromJsonAsync<List<TestQuestion_AnswersDTO>>($"https://localhost:7046/api/ExamResult/get-student-question?studentId={studentId}&examRoomTestCodeId={examRoomTestCodeId}");
-        var studentInfo = await client.GetFromJsonAsync<StudentDTO>($"https://localhost:7046/api/Student/get-by-studentId?studentId={studentId}");
+        examDetails = await client.GetFromJsonAsync<List<TestQuestion_AnswersDTO>>($"https://apismartschools.azurewebsites.net/api/ExamResult/get-student-question?studentId={studentId}&examRoomTestCodeId={examRoomTestCodeId}");
+        var studentInfo = await client.GetFromJsonAsync<StudentDTO>($"https://apismartschools.azurewebsites.net/api/Student/get-by-studentId?studentId={studentId}");
 
         if (studentInfo != null)
         {

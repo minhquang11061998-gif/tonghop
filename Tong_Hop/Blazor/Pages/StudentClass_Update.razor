@@ -69,7 +69,7 @@
 
     private async Task LoadStudentClass()
     {
-        var response = await http.GetFromJsonAsync<StudentClassDTO>($"api/StudentClass/get-by-id?id={id}");
+        var response = await http.GetFromJsonAsync<StudentClassDTO>($"https://apismartschools.azurewebsites.net/api/StudentClass/get-by-id?id={id}");
         if (response != null)
         {
             studentClassItem = response;
@@ -82,13 +82,13 @@
 
     private async Task LoadStudentsAndClasses()
     {
-        students = await http.GetFromJsonAsync<List<Students>>("api/Student/get-all-student2");
-        classes = await http.GetFromJsonAsync<List<Classes>>("api/Classes/get-all-class");
+        students = await http.GetFromJsonAsync<List<Students>>("https://apismartschools.azurewebsites.net/api/Student/get-all-student2");
+        classes = await http.GetFromJsonAsync<List<Classes>>("https://apismartschools.azurewebsites.net/api/Classes/get-all-class");
     }
 
     private async Task HandleValidSubmit()
     {
-        var response = await http.PutAsJsonAsync("api/StudentClass/update", studentClassItem);
+        var response = await http.PutAsJsonAsync("https://apismartschools.azurewebsites.net/api/StudentClass/update", studentClassItem);
 
         if (response.IsSuccessStatusCode)
         {

@@ -65,8 +65,8 @@
 
     private async Task LoadStudentsAndClasses()
     {
-        students = await http.GetFromJsonAsync<List<Students>>("api/Student/get-all-student2");
-        classes = await http.GetFromJsonAsync<List<Classes>>("api/Classes/get-all-class");
+        students = await http.GetFromJsonAsync<List<Students>>("https://apismartschools.azurewebsites.net/api/Student/get-all-student2");
+        classes = await http.GetFromJsonAsync<List<Classes>>("https://apismartschools.azurewebsites.net/api/Classes/get-all-class");
     }
 
     private async Task HandleValidSubmit()
@@ -75,7 +75,7 @@
         Console.WriteLine($"StudentClass Item: {JsonSerializer.Serialize(studentClassItem)}");
 
         // Thực hiện gửi yêu cầu tạo mới Student_Class
-        var response = await http.PostAsJsonAsync("api/StudentClass/create", studentClassItem);
+        var response = await http.PostAsJsonAsync("https://apismartschools.azurewebsites.net/api/StudentClass/create", studentClassItem);
 
         // Kiểm tra phản hồi từ server
         if (response.IsSuccessStatusCode)

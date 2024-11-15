@@ -37,7 +37,7 @@ namespace API.Controllers
                      codestudent = student.Code,
                      email = user.Email
                  }
-             ).Distinct().ToList();
+             ).Distinct();
             return Ok(infor);
         }
         [HttpGet("test-testcode-question-await")]

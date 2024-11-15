@@ -41,7 +41,7 @@
         </div>
         <div class="col-md-4 p-2">
             <div style="position: relative; display: inline-block; border: 1px solid #ccc; border-radius: 8px; overflow: hidden;">
-                <img id="cameraStream" src="https://localhost:7046/api/FaceId/camera-stream" alt="Camera Stream" class="img-fluid" style="max-width: 100%; height: auto;" />
+                <img id="cameraStream" src="https://apismartschools.azurewebsites.net/api/FaceId/camera-stream" alt="Camera Stream" class="img-fluid" style="max-width: 100%; height: auto;" />
                 <canvas id="faceCanvas" style="position: absolute; top: 0; left: 0; pointer-events: none; width: 100%; height: 100%;"></canvas>
             </div>
         </div>
@@ -53,11 +53,11 @@
 
     protected override async Task OnInitializedAsync()
     {
-        studentDTOs = await Http.GetFromJsonAsync<List<StudentDTO>>("https://localhost:7046/api/Student/get-all-student2");
+        studentDTOs = await Http.GetFromJsonAsync<List<StudentDTO>>("https://apismartschools.azurewebsites.net/api/Student/get-all-student2");
     }
     private async Task delete(string id)
     {
-        var resrpon = await Http.DeleteAsync($"https://localhost:7046/api/FaceId/remove-face?userId={id}");
+        var resrpon = await Http.DeleteAsync($"https://apismartschools.azurewebsites.net/api/FaceId/remove-face?userId={id}");
         if (resrpon.IsSuccessStatusCode)
         {
             await JS.InvokeVoidAsync("alert", "xóa dữ liệu thành công");
@@ -75,7 +75,7 @@
 
         try
         {
-            var response = await Http.PostAsync($"https://localhost:7046/api/FaceId/register-face?userId={userId}", null);
+            var response = await Http.PostAsync($"https://apismartschools.azurewebsites.net/api/FaceId/register-face?userId={userId}", null);
             if (response.IsSuccessStatusCode)
             {
                 navigate.NavigateTo(navigate.Uri, forceLoad: true);

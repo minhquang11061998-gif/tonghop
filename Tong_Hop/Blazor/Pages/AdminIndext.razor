@@ -28,7 +28,7 @@
         try
         {
             var httpClinet = clientFactory.CreateClient("DefaultClient");
-            var url = "https://localhost:7046/api/AdminIndex/get-bieudo-data";
+            var url = "https://apismartschools.azurewebsites.net/api/AdminIndex/get-bieudo-data";
             chartData = await httpClinet.GetFromJsonAsync<List<ChartDTO>>(url);
             isDataLoaded = true; // Đánh dấu dữ liệu đã được tải
         }
@@ -47,7 +47,7 @@
             try
             {
                 var httpClient = clientFactory.CreateClient("DefaultClient");
-                var url = "https://localhost:7046/api/AdminIndex/get-bieudo-data";
+                var url = "https://apismartschools.azurewebsites.net/api/AdminIndex/get-bieudo-data";
                 chartData = await httpClient.GetFromJsonAsync<List<ChartDTO>>(url);
                 if (chartData != null && chartData.Any())
                 {
@@ -255,14 +255,14 @@
     {
         // Giả sử bạn đã có API hoặc dịch vụ để lấy danh sách lớp từ database
         var httpClient = clientFactory.CreateClient("Get");
-        var url = "https://localhost:7046/api/Classes/get-all-class";
+        var url = "https://apismartschools.azurewebsites.net/api/Classes/get-all-class";
         classList = await httpClient.GetFromJsonAsync<List<ClassesDTO>>(url);
     }
     // Hàm tải danh sách thông báo
     private async Task LoadNotifications()
     {
         var httpClient = clientFactory.CreateClient("Get");
-        var url = "https://localhost:7046/api/Notification/get-all-notification";
+        var url = "https://apismartschools.azurewebsites.net/api/Notification/get-all-notification";
         notifications = await httpClient.GetFromJsonAsync<List<NotificationDTO>>(url);
     }
     private void HandleNotificationTypeChange(Microsoft.AspNetCore.Components.ChangeEventArgs e)
@@ -332,7 +332,7 @@
 
         // Gửi thông báo qua API
         var httpClient = clientFactory.CreateClient();
-        var url = $"https://localhost:7046/api/Notification/create-notification";
+        var url = $"https://apismartschools.azurewebsites.net/api/Notification/create-notification";
         var response = await httpClient.PostAsJsonAsync(url, notificationDTO);
 
         if (response.IsSuccessStatusCode)

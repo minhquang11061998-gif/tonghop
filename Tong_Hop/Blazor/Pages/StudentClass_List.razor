@@ -1,10 +1,10 @@
 ﻿@page "/student-classes"
+@layout AdminLayout
 @using DataBase.Models
 @using Database.DTOs
 @using global::Data.DTOs
 @inject HttpClient http
 @inject NavigationManager navigationManager
-@layout AdminLayout
 
 <h3>Danh Sách Lớp Học của Học Sinh</h3>
 <button class="btn btn-primary" @onclick="CreateStudentClass">Thêm mới</button>
@@ -82,13 +82,13 @@
 
     private async Task LoadStudentClasses()
     {
-        studentClasses = await http.GetFromJsonAsync<List<StudentClassDTO>>("api/StudentClass/get-all");
+        studentClasses = await http.GetFromJsonAsync<List<StudentClassDTO>>("https://apismartschools.azurewebsites.net/api/StudentClass/get-all");
     }
 
     private async Task LoadStudentsAndClasses()
     {
-        students = await http.GetFromJsonAsync<List<Students>>("api/Student/get-all-student2");
-        classes = await http.GetFromJsonAsync<List<Classes>>("api/Classes/get-all-class");
+        students = await http.GetFromJsonAsync<List<Students>>("https://apismartschools.azurewebsites.net/api/Student/get-all-student2");
+        classes = await http.GetFromJsonAsync<List<Classes>>("https://apismartschools.azurewebsites.net/api/Classes/get-all-class");
     }
 
     private void CreateStudentClass()
@@ -109,7 +109,7 @@
 
     private async Task ConfirmDeleteStudentClass()
     {
-        var response = await http.DeleteAsync($"api/StudentClass/delete?id={deleteId}");
+        var response = await http.DeleteAsync($"https://apismartschools.azurewebsites.net/api/StudentClass/delete?id={deleteId}");
         if (response.IsSuccessStatusCode)
         {
             await LoadStudentClasses();

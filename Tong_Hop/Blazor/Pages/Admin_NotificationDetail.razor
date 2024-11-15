@@ -115,7 +115,7 @@
     protected override async Task OnInitializedAsync()
     {
         // Gọi API để lấy chi tiết thông báo theo id
-        notification = await client.GetFromJsonAsync<NotificationDTO>($"api/Notification/detail-notification?Id={Id}");
+        notification = await client.GetFromJsonAsync<NotificationDTO>($"https://apismartschools.azurewebsites.net/api/Notification/detail-notification?Id={Id}");
     }
 
     private void ToggleEdit()
@@ -130,7 +130,7 @@
 
         try
         {
-            var response = await client.PutAsJsonAsync($"api/Notification/update-notification", notification);
+            var response = await client.PutAsJsonAsync($"https://apismartschools.azurewebsites.net/api/Notification/update-notification", notification);
             if (response.IsSuccessStatusCode)
             {
                 isEdit = false;
@@ -155,7 +155,7 @@
         var confirmed = await JS.InvokeAsync<bool>("confirm", "Bạn có chắc chắn muốn xóa thông báo này?");
         if (confirmed)
         {
-            var response = await client.DeleteAsync($"api/Notification/delete-notification?Id={Id}");
+            var response = await client.DeleteAsync($"https://apismartschools.azurewebsites.net/api/Notification/delete-notification?Id={Id}");
             if (response.IsSuccessStatusCode)
             {
                 await JS.InvokeVoidAsync("alert", "Thông báo đã được xóa thành công!");

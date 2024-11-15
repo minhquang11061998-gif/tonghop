@@ -66,13 +66,13 @@
 
 	private async Task LoadClasses()
 	{
-		classes = await http.GetFromJsonAsync<List<Classes>>("api/Classes/get-all-class");
+		classes = await http.GetFromJsonAsync<List<Classes>>("https://apismartschools.azurewebsites.net/api/Classes/get-all-class");
 	}
 
 	private async Task LoadTeachersAndGrades()
 	{
-		teachers = await http.GetFromJsonAsync<List<Teachers>>("api/Teacher/get-all-teacher");
-		grades = await http.GetFromJsonAsync<List<Grades>>("api/Grade/get-grade");
+		teachers = await http.GetFromJsonAsync<List<Teachers>>("https://apismartschools.azurewebsites.net/api/Teacher/get-all-teacher");
+		grades = await http.GetFromJsonAsync<List<Grades>>("https://apismartschools.azurewebsites.net/api/Grade/get-grade");
 	}
 	private void Create()
 	{
@@ -86,7 +86,7 @@
 
 	private async void DeleteClass(Guid id)
 	{
-		var response = await http.DeleteAsync($"api/Classes/delete-class/{id}");
+		var response = await http.DeleteAsync($"https://apismartschools.azurewebsites.net/api/Classes/delete-class/{id}");
 		if (response.IsSuccessStatusCode)
 		{
 			await LoadClasses();

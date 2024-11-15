@@ -92,13 +92,13 @@
 
     private async Task LoadTeachersAndGrades()
     {
-        teachers = await http.GetFromJsonAsync<List<Teachers>>("api/Teacher/get-all-teacher");
-        grades = await http.GetFromJsonAsync<List<GradeDTO>>("api/Grade/get-grade");
+        teachers = await http.GetFromJsonAsync<List<Teachers>>("https://apismartschools.azurewebsites.net/api/Teacher/get-all-teacher");
+        grades = await http.GetFromJsonAsync<List<GradeDTO>>("https://apismartschools.azurewebsites.net/api/Grade/get-grade");
     }
 
     private async Task LoadClassDetails()
     {
-        var response = await http.GetFromJsonAsync<ClassesDTO>($"api/Classes/gte-by-id-class?Id={Id}");
+        var response = await http.GetFromJsonAsync<ClassesDTO>($"https://apismartschools.azurewebsites.net/api/Classes/gte-by-id-class?Id={Id}");
         if (response != null)
         {
             classItem = response;
@@ -115,7 +115,7 @@
     private async Task LoadSubjects()
     {
         // Tải danh sách môn học dựa trên GradeId
-        subjects = await http.GetFromJsonAsync<List<SubjectDTO>>($"api/Subject/get-subjects-by-grade?GradeId={classItem.GradeId}");
+        subjects = await http.GetFromJsonAsync<List<SubjectDTO>>($"https://apismartschools.azurewebsites.net/api/Subject/get-subjects-by-grade?GradeId={classItem.GradeId}");
     }
 
     private async Task HandleValidSubmit()
@@ -124,7 +124,7 @@
         Console.WriteLine($"Class Item: {JsonSerializer.Serialize(classItem)}");
 
         // Thực hiện gửi yêu cầu cập nhật lớp học
-        var response = await http.PutAsJsonAsync("api/Classes/update-class-and-testcodes", classItem);
+        var response = await http.PutAsJsonAsync("https://apismartschools.azurewebsites.net/api/Classes/update-class-and-testcodes", classItem);
 
         // Kiểm tra phản hồi từ server
         if (response.IsSuccessStatusCode)

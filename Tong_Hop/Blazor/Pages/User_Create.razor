@@ -83,7 +83,7 @@
     protected override async Task OnInitializedAsync()
     {
         // Gọi API để lấy danh sách quyền
-        roles = await client.GetFromJsonAsync<List<RoleDTO>>("api/Role/get-all-role");
+        roles = await client.GetFromJsonAsync<List<RoleDTO>>("https://apismartschools.azurewebsites.net/api/Role/get-all-role");
     }
 
     private async Task HandleFileSelected(InputFileChangeEventArgs e)
@@ -113,7 +113,7 @@
         }
 
         // Gửi request đến API
-        var response = await client.PostAsync("api/User/create-user", content);
+        var response = await client.PostAsync("https://apismartschools.azurewebsites.net/api/User/create-user", content);
         if (response.IsSuccessStatusCode)
         {
             successMessage = "User added successfully!";

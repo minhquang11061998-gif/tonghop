@@ -14,7 +14,7 @@
                     <img style="height: 170px;" src="img/Rectangle89.png" alt="Alternate Text" />
                 </div>
                 <div class="d-flex justify-content-center mt-3">
-                    <img id="cameraImage" src="https://localhost:7046/api/FaceId/camera-stream"
+                    <img id="cameraImage" src="https://apismartschools.azurewebsites.net/api/FaceId/camera-stream"
                          alt="Alternate Text"
                          style="width: 50%; max-height: 300px; object-fit: cover; border-radius: 10px; border-color:blue" />
                 </div>
@@ -116,7 +116,7 @@
             }
 
             Http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-            var response = await Http.PostAsync("https://localhost:7046/api/FaceId/check-face", null);
+            var response = await Http.PostAsync("https://apismartschools.azurewebsites.net/api/FaceId/check-face", null);
 
             if (response.IsSuccessStatusCode)
             {
@@ -189,7 +189,7 @@
         var token = await GetTokenAsync();
 
         Http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        var response = await Http.PostAsJsonAsync("https://localhost:7046/api/FaceId/Login-exam", new { codelogin = code });
+        var response = await Http.PostAsJsonAsync("https://apismartschools.azurewebsites.net/api/FaceId/Login-exam", new { codelogin = code });
 
         return response.IsSuccessStatusCode;
     }
@@ -229,7 +229,7 @@
     function reloadCameraFeed() {
         const cameraImage = document.querySelector("#cameraImage");
         if (cameraImage) {
-            cameraImage.src = "https://localhost:7046/api/FaceId/camera-stream?" + new Date().getTime();
+            cameraImage.src = "https://apismartschools.azurewebsites.net/api/FaceId/camera-stream?" + new Date().getTime();
         }
     }
     function getCode() {

@@ -243,21 +243,21 @@
     private async Task detailquestion(Guid id)
     {
         var client = clientFactory.CreateClient("Get");
-        var url = $"https://localhost:7046/api/TestQuestion/get-by-id-question-answer?id={id}";
+        var url = $"https://apismartschools.azurewebsites.net/api/TestQuestion/get-by-id-question-answer?id={id}";
         testQuestions = await client.GetFromJsonAsync<TestQuestion_TestQuestionAnswersDTO>(url);
 
     }
     private async Task updatequestion()
     {
         var Httpclient = clientFactory.CreateClient("Put");
-        var url = $"https://localhost:7046/api/TestQuestion/update_question_answer";
+        var url = $"https://apismartschools.azurewebsites.net/api/TestQuestion/update_question_answer";
         var respon = await Httpclient.PutAsJsonAsync(url, testQuestio);
 
     }
     private async Task deletequestion(Guid id, int level)
     {
         var Client = clientFactory.CreateClient("Delete");
-        var url = $"https://localhost:7046/api/TestQuestion/Delete_TestQuestion?Id={id}";
+        var url = $"https://apismartschools.azurewebsites.net/api/TestQuestion/Delete_TestQuestion?Id={id}";
         var respon = await Client.DeleteAsync(url);
         if (respon.IsSuccessStatusCode)
         {
@@ -274,32 +274,32 @@
     private async Task detailtestGrid()
     {
         var httpClient = clientFactory.CreateClient("Get");
-        var url = $"https://localhost:7046/api/Test/get-all-test";
+        var url = $"https://apismartschools.azurewebsites.net/api/Test/get-all-test";
         testList = await httpClient.GetFromJsonAsync<List<TestDTO>>(url);
     }
     private async Task detailpoint()
     {
         var httpclient = clientFactory.CreateClient("Get");
-        var url = $"https://localhost:7046/api/PointTypeDTO/GetAll_pointtype";
+        var url = $"https://apismartschools.azurewebsites.net/api/PointTypeDTO/GetAll_pointtype";
         pointTypeDTOs = await httpclient.GetFromJsonAsync<List<PointTypeDTO>>(url);
     }
     private async Task detailsubject()
     {
         var httpclient = clientFactory.CreateClient("Get");
-        var url = $"https://localhost:7046/api/Subject/get-all-subject";
+        var url = $"https://apismartschools.azurewebsites.net/api/Subject/get-all-subject";
         subjectDTO = await httpclient.GetFromJsonAsync<List<SubjectDTO>>(url);
     }
     private async Task detailclass()
     {
         var httpclient = clientFactory.CreateClient("Get");
-        var url = $"https://localhost:7046/api/Classes/get-all-class";
+        var url = $"https://apismartschools.azurewebsites.net/api/Classes/get-all-class";
         classDTOs = await httpclient.GetFromJsonAsync<List<ClassesDTO>>(url);
     }
     private List<TestQuestion_TestQuestionAnswersDTO> selectedQuestions = new List<TestQuestion_TestQuestionAnswersDTO>();
 
     private async Task LoadQuestions(Guid testId, int level)
     {
-        var response = await client.GetAsync($"https://localhost:7046/api/Test/{testId}/questions?level={level}");
+        var response = await client.GetAsync($"https://apismartschools.azurewebsites.net/api/Test/{testId}/questions?level={level}");
 
         if (response.IsSuccessStatusCode)
         {
@@ -315,7 +315,7 @@
     private async Task delete(Guid id)
     {
         var httpclient = clientFactory.CreateClient("Delete");
-        var url = $"https://localhost:7046/api/TestQuestion/Delete_TestQuestion?Id={id}";
+        var url = $"https://apismartschools.azurewebsites.net/api/TestQuestion/Delete_TestQuestion?Id={id}";
         var responseMessage = await httpclient.DeleteAsync(url);
         NavigationManager.NavigateTo(NavigationManager.Uri, forceLoad: true);
 
@@ -330,7 +330,7 @@
     }
     private async Task DownloadExcelTemplate()
     {
-        var response = await client.GetAsync("https://localhost:7046/api/TestQuestion/export-template");
+        var response = await client.GetAsync("https://apismartschools.azurewebsites.net/api/TestQuestion/export-template");
         if (response.IsSuccessStatusCode)
         {
             var content = await response.Content.ReadAsByteArrayAsync();
@@ -374,7 +374,7 @@
                 content.Add(new StringContent(username.ToString()), "Createbyname");
             }
 
-            var response = await client.PostAsync($"https://localhost:7046/api/TestQuestion/import_questions?id={testQuestions.TestId}", content);
+            var response = await client.PostAsync($"https://apismartschools.azurewebsites.net/api/TestQuestion/import_questions?id={testQuestions.TestId}", content);
             if (response.IsSuccessStatusCode)
             {
                 await Jsruntime.InvokeVoidAsync("Swal.fire", new
@@ -415,7 +415,7 @@
     private async Task question(Guid id)
     {
 
-        testQuestionss = await client.GetFromJsonAsync<List<listdetailquestion>>($"https://localhost:7046/api/TestQuestion/get-question-details/{id}");
+        testQuestionss = await client.GetFromJsonAsync<List<listdetailquestion>>($"https://apismartschools.azurewebsites.net/api/TestQuestion/get-question-details/{id}");
     }
 
     private async Task CheckForDuplicates()
@@ -466,7 +466,7 @@
     private async Task Submit()
     {
         var httpClient = clientFactory.CreateClient("Post");
-        var url = $"https://localhost:7046/api/Test/create-test-testcode-examroomtestcode";
+        var url = $"https://apismartschools.azurewebsites.net/api/Test/create-test-testcode-examroomtestcode";
         var response = await httpClient.PostAsJsonAsync<TestDTO>(url, testDTO);
         if (response.IsSuccessStatusCode)
         {
@@ -510,7 +510,7 @@
     private async Task Deletetest(Guid id)
     {
         var httpClient = clientFactory.CreateClient("Delete");
-        var url = $"https://localhost:7046/api/Test/delete-test?id={id}";
+        var url = $"https://apismartschools.azurewebsites.net/api/Test/delete-test?id={id}";
         var res = await httpClient.DeleteAsync(url);
         StateHasChanged();
         NavigationManager.NavigateTo(NavigationManager.Uri, forceLoad: true);
@@ -520,7 +520,7 @@
     {
 
         var httpClient = clientFactory.CreateClient("Get");
-        var url = $"https://localhost:7046/api/Test/get-list-test";
+        var url = $"https://apismartschools.azurewebsites.net/api/Test/get-list-test";
         testList = await httpClient.GetFromJsonAsync<List<TestDTO>>(url);
     }
     @code {

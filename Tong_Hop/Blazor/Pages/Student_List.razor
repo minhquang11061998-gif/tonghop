@@ -198,8 +198,8 @@
     protected override async Task OnInitializedAsync()
     {
         var httpClient = clientFactory.CreateClient("student");
-        listStudents = await httpClient.GetFromJsonAsync<List<StudentDTO>>("https://localhost:7046/api/Student/get-all-student2");
-        roleDTOs = await httpClient.GetFromJsonAsync<List<RoleDTO>>("https://localhost:7046/api/Role/get-all-role");
+        listStudents = await httpClient.GetFromJsonAsync<List<StudentDTO>>("https://apismartschools.azurewebsites.net/api/Student/get-all-student2");
+        roleDTOs = await httpClient.GetFromJsonAsync<List<RoleDTO>>("https://apismartschools.azurewebsites.net/api/Role/get-all-role");
         StateHasChanged();
     }
 
@@ -228,7 +228,7 @@
         selectedUserId = Id;
 
         var httpClient = clientFactory.CreateClient("student");
-        userDTO = await httpClient.GetFromJsonAsync<UserDTO>($"https://localhost:7046/api/User/get-by-id-user?id={Id}");
+        userDTO = await httpClient.GetFromJsonAsync<UserDTO>($"https://apismartschools.azurewebsites.net/api/User/get-by-id-user?id={Id}");
         isCreateNoticeModalVisible = true;
 
     }
@@ -257,7 +257,7 @@
         content.Add(new StringContent(userDTO.Id.ToString()), "Id"); // Đảm bảo gửi Id
 
         // Gửi yêu cầu PUT
-        var response = await httpClient.PutAsync("https://localhost:7046/api/User/update-user", content);
+        var response = await httpClient.PutAsync("https://apismartschools.azurewebsites.net/api/User/update-user", content);
 
         if (response.IsSuccessStatusCode)
         {

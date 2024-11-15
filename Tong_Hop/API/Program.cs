@@ -47,16 +47,29 @@ var app = builder.Build();
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
+    // Cấu hình Swagger cho môi trường phát triển
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Dispatch API V1");
+        c.RoutePrefix = string.Empty; // Hiển thị Swagger tại URL gốc
+    });
 }
-
+else
+{
+    // Bật Swagger ngay cả trong môi trường Production
+    app.UseSwagger();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Dispatch API V1");
+        c.RoutePrefix = string.Empty;
+    });
+}
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.UseCors(m);
-
 app.MapControllers();
 
 app.Run();

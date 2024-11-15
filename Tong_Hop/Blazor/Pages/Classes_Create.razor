@@ -1,9 +1,10 @@
 ﻿@page "/create-class"
+@layout AdminLayout
 @using System.Text.Json
 @using DataBase.DTOs
 @using DataBase.Models
 @inject HttpClient http
-@layout AdminLayout
+
 @inject NavigationManager navi
 
 <h3>Tạo lớp học</h3>
@@ -78,8 +79,8 @@
 
     private async Task LoadTeachersAndGrades()
     {
-        teachers = await http.GetFromJsonAsync<List<Teachers>>("api/Teacher/get-all-teacher");
-        grades = await http.GetFromJsonAsync<List<GradeDTO>>("api/Grade/get-grade");
+        teachers = await http.GetFromJsonAsync<List<Teachers>>("https://apismartschools.azurewebsites.net/api/Teacher/get-all-teacher");
+        grades = await http.GetFromJsonAsync<List<GradeDTO>>("https://apismartschools.azurewebsites.net/api/Grade/get-grade");
     }
     private async Task HandleValidSubmit()
     {
@@ -87,7 +88,7 @@
         Console.WriteLine($"Class Item: {JsonSerializer.Serialize(classItem)}");
 
         // Thực hiện gửi yêu cầu tạo lớp học
-        var response = await http.PostAsJsonAsync("api/Classes/create-class", classItem);
+        var response = await http.PostAsJsonAsync("https://apismartschools.azurewebsites.net/api/Classes/create-class", classItem);
 
         // Kiểm tra phản hồi từ server
         if (response.IsSuccessStatusCode)

@@ -1,16 +1,19 @@
-using Blazor.Data;
+﻿using Blazor.Data;
 
 
 var builder = WebApplication.CreateBuilder(args);
-
+builder.Environment.EnvironmentName = "Development";
 // Add services to the container.
 builder.Services.AddRazorPages();
-builder.Services.AddServerSideBlazor();
+builder.Services.AddServerSideBlazor()
+    .AddCircuitOptions(options => options.DetailedErrors = true);
+
 builder.Services.AddHttpClient();
 builder.Services.AddSingleton<WeatherForecastService>();
 builder.Services.AddHttpClient();
 builder.Services.AddScoped(C =>
- new HttpClient { BaseAddress = new Uri("https://localhost:7046") });
+ new HttpClient { BaseAddress = new Uri("https://apismartschools.azurewebsites.net/") });
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

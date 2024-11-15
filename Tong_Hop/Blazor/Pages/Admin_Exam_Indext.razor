@@ -131,7 +131,7 @@
         {
             // Gửi yêu cầu tạo câu hỏi ngẫu nhiên
            
-            var response = await client.PostAsJsonAsync($"https://localhost:7046/api/TestQuestion/randomize-questions-for-test-codes?testId={id}&easyCount={easyCount}&mediumCount={mediumCount}&hardCount={hardCount}&veryHardCount={veryHardCount}", selectedQuestions);
+            var response = await client.PostAsJsonAsync($"https://apismartschools.azurewebsites.net/api/TestQuestion/randomize-questions-for-test-codes?testId={id}&easyCount={easyCount}&mediumCount={mediumCount}&hardCount={hardCount}&veryHardCount={veryHardCount}", selectedQuestions);
 
             if (response.IsSuccessStatusCode)
             {
@@ -165,14 +165,14 @@
     private async Task LoadTestList()
     {
         var client = clientFactory.CreateClient("Get");
-        var url = "https://localhost:7046/api/Test/get-all-test";
+        var url = "https://apismartschools.azurewebsites.net/api/Test/get-all-test";
         testList = await client.GetFromJsonAsync<List<TestDTO>>(url);
     }
 
     private async Task LoadDetailTest(Guid id)
     {
         var client = clientFactory.CreateClient("Get");
-        var url = $"https://localhost:7046/api/TestQuestion/Get-testcodes-by-testid?testId={id}";
+        var url = $"https://apismartschools.azurewebsites.net/api/TestQuestion/Get-testcodes-by-testid?testId={id}";
         detailDTOs = await client.GetFromJsonAsync<List<DetailDTO>>(url);
     }
 

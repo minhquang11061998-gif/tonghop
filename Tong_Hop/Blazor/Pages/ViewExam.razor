@@ -113,7 +113,6 @@ else
         </div>
     </div>
 }
-
 @code {
     [Parameter]
     public int CodeTest { get; set; }
@@ -176,8 +175,8 @@ else
         try
         {
             isLoading = true;
-            hist = await client.GetFromJsonAsync<HistDTO>($"api/ViewExam/test-testcode-question-await?CodeTest={CodeTest}");
-            infomationDTOs = await client.GetFromJsonAsync<List<infomationDTO>>($"https://localhost:7046/api/ViewExam/information_exam?code={CodeTest}&id={isdtudent}");
+            hist = await client.GetFromJsonAsync<HistDTO>($"https://apismartschools.azurewebsites.net/api/ViewExam/test-testcode-question-await?CodeTest={CodeTest}");
+            infomationDTOs = await client.GetFromJsonAsync<List<infomationDTO>>($"https://apismartschools.azurewebsites.net/api/ViewExam/information_exam?code={CodeTest}&id={isdtudent}");
         }
         catch (Exception ex)
         {
@@ -198,7 +197,7 @@ else
             examhistories.TestQuestionAnswerId = idAnswer; // Gán giá trị ID của đáp án
             examhistories.Id = Guid.NewGuid(); // Tạo ID duy nhất cho lịch sử
 
-            var response = await client.PostAsJsonAsync($"api/ViewExam/create-hist?CodeTesst={codetest}&GuidId={isdtudent}&answerId={idAnswer}", examhistories);
+            var response = await client.PostAsJsonAsync($"https://apismartschools.azurewebsites.net/api/ViewExam/create-hist?CodeTesst={codetest}&GuidId={isdtudent}&answerId={idAnswer}", examhistories);
 
             if (!response.IsSuccessStatusCode)
             {

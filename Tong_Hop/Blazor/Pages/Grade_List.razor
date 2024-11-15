@@ -278,7 +278,7 @@
     {
 
         var httpClient = clientFactory.CreateClient("student");
-        gradeDTOs = await httpClient.GetFromJsonAsync<List<GradeDTO>>("https://localhost:7046/api/Grade/get-grade");
+        gradeDTOs = await httpClient.GetFromJsonAsync<List<GradeDTO>>("https://apismartschools.azurewebsites.net/api/Grade/get-grade");
         StateHasChanged();
         LoadGrades();
         LoadClasses();
@@ -312,7 +312,7 @@
         selectedGradeId = id;
 
         var httpClient = clientFactory.CreateClient("student");
-        gradeDTO = await httpClient.GetFromJsonAsync<GradeDTO>($"https://localhost:7046/api/Grade/get-by-id?id={id}");
+        gradeDTO = await httpClient.GetFromJsonAsync<GradeDTO>($"https://apismartschools.azurewebsites.net/api/Grade/get-by-id?id={id}");
         isCreateGradeModalVisible = true;
     }
 
@@ -324,13 +324,13 @@
         if (selectedGradeId == Guid.Empty)
         {
             // Tạo mới
-            response = await httpClient.PostAsJsonAsync("https://localhost:7046/api/Grade/create-grade", gradeDTO);
+            response = await httpClient.PostAsJsonAsync("https://apismartschools.azurewebsites.net/api/Grade/create-grade", gradeDTO);
         }
         else
         {
             // Cập nhật
             gradeDTO.Id = selectedGradeId;
-            response = await httpClient.PutAsJsonAsync("https://localhost:7046/api/Grade/update-grade", gradeDTO);
+            response = await httpClient.PutAsJsonAsync("https://apismartschools.azurewebsites.net/api/Grade/update-grade", gradeDTO);
         }
 
         if (response.IsSuccessStatusCode)
@@ -361,7 +361,7 @@
     private async Task DeleteGrade()
     {
         var httpClient = clientFactory.CreateClient("student");
-        var response = await httpClient.DeleteAsync($"https://localhost:7046/api/Grade/delete-grade?id={selectedGradeId}");
+        var response = await httpClient.DeleteAsync($"https://apismartschools.azurewebsites.net/api/Grade/delete-grade?id={selectedGradeId}");
 
         if (response.IsSuccessStatusCode)
         {
@@ -391,13 +391,13 @@
 
     private async Task LoadClasses()
     {
-        classes = await client.GetFromJsonAsync<List<Classes>>("https://localhost:7046/api/Classes/get-all-class");
+        classes = await client.GetFromJsonAsync<List<Classes>>("https://apismartschools.azurewebsites.net/api/Classes/get-all-class");
     }
 
     private async Task LoadTeachersAndGrades()
     {
-        teachers = await client.GetFromJsonAsync<List<Teachers>>("api/Teacher/get-all-teacher");
-        grades = await client.GetFromJsonAsync<List<Grades>>("api/Grade/get-grade");
+        teachers = await client.GetFromJsonAsync<List<Teachers>>("https://apismartschools.azurewebsites.net/api/Teacher/get-all-teacher");
+        grades = await client.GetFromJsonAsync<List<Grades>>("https://apismartschools.azurewebsites.net/api/Grade/get-grade");
     }
 
     private void Create()
@@ -412,7 +412,7 @@
 
     private async void DeleteClass(Guid id)
     {
-        var response = await client.DeleteAsync($"api/Classes/delete-class/{id}");
+        var response = await client.DeleteAsync($"https://apismartschools.azurewebsites.net/api/Classes/delete-class/{id}");
         if (response.IsSuccessStatusCode)
         {
             await LoadClasses();
@@ -436,7 +436,7 @@
     {
         selectedClassId = classId;
         // Gọi API để lấy danh sách học sinh của lớp đã chọn
-        student_User_Classes = await client.GetFromJsonAsync<List<Student_User_ClassDTO>>($"api/StudentClass/get-classID/{classId}");
+        student_User_Classes = await client.GetFromJsonAsync<List<Student_User_ClassDTO>>($"https://apismartschools.azurewebsites.net/api/StudentClass/get-classID/{classId}");
         StateHasChanged();
     }
 
@@ -455,13 +455,13 @@
 
     private async Task LoadStudentClasses()
     {
-        studentClasses = await client.GetFromJsonAsync<List<StudentClassDTO>>($"api/StudentClass/get-classID/{classId}");
+        studentClasses = await client.GetFromJsonAsync<List<StudentClassDTO>>($"https://apismartschools.azurewebsites.net/api/StudentClass/get-classID/{classId}");
     }
 
     private async Task LoadStudentsAndClasses()
     {
-        students = await client.GetFromJsonAsync<List<Students>>("api/Student/get-all-student2");
-        classes1 = await client.GetFromJsonAsync<List<Classes>>("api/Classes/get-all-class");
+        students = await client.GetFromJsonAsync<List<Students>>("https://apismartschools.azurewebsites.net/api/Student/get-all-student2");
+        classes1 = await client.GetFromJsonAsync<List<Classes>>("https://apismartschools.azurewebsites.net/api/Classes/get-all-class");
     }
 
     private void CreateStudentClass()
@@ -482,7 +482,7 @@
 
     private async Task ConfirmDeleteStudentClass()
     {
-        var response = await client.DeleteAsync($"api/StudentClass/delete?id={deleteId}");
+        var response = await client.DeleteAsync($"https://apismartschools.azurewebsites.net/api/StudentClass/delete?id={deleteId}");
         if (response.IsSuccessStatusCode)
         {
             await LoadStudentClasses();
@@ -500,7 +500,7 @@
 
     private async Task LoadGrades()
     {
-        classDTOs = await client.GetFromJsonAsync<List<ClassesDTO>>($"api/Grade/get-classid?");
+        classDTOs = await client.GetFromJsonAsync<List<ClassesDTO>>($"https://apismartschools.azurewebsites.net/api/Grade/get-classid?");
 
 
         StateHasChanged();
