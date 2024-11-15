@@ -30,6 +30,7 @@ namespace API.Controllers
                  where test.Code == code && student.Id==Guid.Parse(id)
                  select new infomationDTO
                  {
+                     nametesst= test.Name,
                      Namesubject = subject.Name,
                      codesubject = subject.Code,
                      timeexam = test.Minute ?? 0, // Xử lý nếu Minute có thể null
@@ -75,6 +76,7 @@ namespace API.Controllers
                     {
                         QuestionId = tctq.TestQuestion.Id,
                         QuestionName = tctq.TestQuestion.QuestionName,
+                        type= tctq.TestQuestion.Type,
                         Answers = tctq.TestQuestion.TestQuestionAnswer.Select(a => new Answer
                         {
                             AnswerId = a.Id,
@@ -85,16 +87,28 @@ namespace API.Controllers
 
             return Ok(result);
         }
+        [HttpGet("GetExamDuration")]
+        public async Task<IActionResult> GetExamDuration(int codeTest)
+        {
+            var exam = await _db.Tests.FirstOrDefaultAsync(e => e.Code == codeTest);
+            if (exam == null)
+            {
+                return NotFound("Không tìm thấy bài thi.");
+            }
 
+            return Ok(exam.Minute); // Trả về thời gian làm bài (phút)
+        }
         [HttpGet("Chọn đáp an")]
         public async Task<ActionResult> IdExamroomstudent(int CodeTesst, Guid GuidId)
         {
             var examroomstudent = await (from a in _db.Tests
+                                         join testquestion in _db.TestQuestions on a.Id equals testquestion.TestId
                                          join b in _db.Exam_Room_TestCodes on a.Id equals b.TestId
                                          join c in _db.Exam_Room_Students on b.Id equals c.ExamRoomTestCodeId
                                          where a.Code == CodeTesst && c.StudentId == GuidId
                                          select new
                                          {
+                                             testquestion.Type,
                                              c.Id
                                          }).ToListAsync();
             return Ok(examroomstudent);
@@ -164,7 +178,6 @@ namespace API.Controllers
 
             return NotFound("Không tìm thấy lịch sử câu trả lời. ");
         }
-
         [HttpGet("check-answer-history")]
         public async Task<ActionResult<int>> CheckAnswerHistory(int codetest, Guid questionId, Guid studentId)
         {

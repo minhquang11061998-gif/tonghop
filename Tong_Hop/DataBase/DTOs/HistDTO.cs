@@ -10,6 +10,7 @@ namespace DataBase.DTOs
     public class infomationDTO
     {
         public string Namesubject { get; set; }
+        public string nametesst {  get; set; }
         public string codesubject { get; set; }
         public int timeexam { get; set; }
         public string namestudent { get; set; }
@@ -27,6 +28,7 @@ namespace DataBase.DTOs
     public class Question
     {
         public Guid QuestionId { get; set; }
+        public int type { get; set; }
         public string QuestionName { get; set; }
         public List<Answer> Answers { get; set; }
     }
