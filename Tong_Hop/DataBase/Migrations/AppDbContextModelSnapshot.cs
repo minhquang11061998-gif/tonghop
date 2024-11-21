@@ -230,6 +230,29 @@ namespace DataBase.Migrations
                     b.ToTable("Exams");
                 });
 
+            modelBuilder.Entity("DataBase.Models.FaceFeatures", b =>
+                {
+                    b.Property<Guid>("Guid")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("StudentID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("StudentsId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<byte[]>("img")
+                        .IsRequired()
+                        .HasColumnType("varbinary(max)");
+
+                    b.HasKey("Guid");
+
+                    b.HasIndex("StudentsId");
+
+                    b.ToTable("FaceFeatures");
+                });
+
             modelBuilder.Entity("DataBase.Models.Grades", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1003,6 +1026,13 @@ namespace DataBase.Migrations
                     b.Navigation("Subject");
                 });
 
+            modelBuilder.Entity("DataBase.Models.FaceFeatures", b =>
+                {
+                    b.HasOne("DataBase.Models.Students", null)
+                        .WithMany("FaceFeatures")
+                        .HasForeignKey("StudentsId");
+                });
+
             modelBuilder.Entity("DataBase.Models.Learning_Summary", b =>
                 {
                     b.HasOne("DataBase.Models.PointTypes", null)
@@ -1318,6 +1348,8 @@ namespace DataBase.Migrations
             modelBuilder.Entity("DataBase.Models.Students", b =>
                 {
                     b.Navigation("Exam_Room_Student");
+
+                    b.Navigation("FaceFeatures");
 
                     b.Navigation("Learning_Summaries");
 

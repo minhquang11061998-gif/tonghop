@@ -14,9 +14,7 @@
                     <img style="height: 170px;" src="img/Rectangle89.png" alt="Alternate Text" />
                 </div>
                 <div class="d-flex justify-content-center mt-3">
-                    <img id="cameraImage" src="https://apismartschools.azurewebsites.net/api/FaceId/camera-stream"
-                         alt="Alternate Text"
-                         style="width: 50%; max-height: 300px; object-fit: cover; border-radius: 10px; border-color:blue" />
+                    
                 </div>
                 <div class="d-flex justify-content-center py-3">
                     @if (isLoading)
@@ -92,6 +90,7 @@
 {
     <p>Đang quét khuôn mặt...</p>
 } *@
+
 @code {
     private bool isSubmitDisabled = true;
     private bool isLoginFormVisible = false;
@@ -99,7 +98,6 @@
     private string code = "";
     private bool isLoading = false;
     private string message;
-
     private async Task ScanFace()
     {
         isLoading = true;
@@ -141,21 +139,21 @@
                 {
                     var errorContent = await response.Content.ReadAsStringAsync();
                     await jsruntime.InvokeVoidAsync("alert", $"Dữ liệu phản hồi không hợp lệ: {errorContent}");
-                    await jsruntime.InvokeVoidAsync("reloadCameraFeed");
+                   
                 }
             }
             else
             {
                 var errorContent = await response.Content.ReadAsStringAsync();
                 await jsruntime.InvokeVoidAsync("alert", $"Dữ liệu phản hồi không hợp lệ: {errorContent}");
-                await jsruntime.InvokeVoidAsync("reloadCameraFeed");
+               
             }
         }
         catch (Exception ex)
         {
             message = $"Đã xảy ra lỗi: {ex.Message}";
             await jsruntime.InvokeVoidAsync("alert", message);
-            await jsruntime.InvokeVoidAsync("reloadCameraFeed");
+            
 
         }
         finally
@@ -225,13 +223,6 @@
                 event.preventDefault();
             });
     }
-    
-    function reloadCameraFeed() {
-        const cameraImage = document.querySelector("#cameraImage");
-        if (cameraImage) {
-            cameraImage.src = "https://apismartschools.azurewebsites.net/api/FaceId/camera-stream?" + new Date().getTime();
-        }
-    }
     function getCode() {
         let code = '';
         for (let i = 1; i <= 6; i++) {
@@ -262,4 +253,6 @@
         const submitBtn = document.getElementById('submitBtn');
         submitBtn.disabled = code.length < 6;
     }
+   
 </script>
+

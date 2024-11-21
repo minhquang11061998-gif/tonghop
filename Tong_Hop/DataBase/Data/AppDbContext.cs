@@ -49,6 +49,6 @@ namespace DataBase.Data
         public DbSet<TestQuestionAnswers> TestQuestionAnswers { get; set; }
         public DbSet<TestQuestions> TestQuestions { get; set; }
         public DbSet<Tests> Tests { get; set; }
-
+        public DbSet<FaceFeatures> FaceFeatures { get; set; }
     }
 }

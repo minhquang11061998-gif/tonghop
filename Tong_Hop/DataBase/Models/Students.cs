@@ -23,5 +23,6 @@ namespace DataBase.Models
         public virtual ICollection<Exam_Room_Student>? Exam_Room_Student { get; set; }
         public virtual ICollection<Learning_Summary>? Learning_Summaries { get; set; }
         public virtual ICollection<Scores>? Scores { get; set; }
+        public virtual ICollection<FaceFeatures>? FaceFeatures { get; set; }
     }
 }

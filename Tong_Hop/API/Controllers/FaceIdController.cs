@@ -2,17 +2,20 @@
 using DataBase.DTOs;
 using DataBase.Models;
 using Emgu.CV;
+using Emgu.CV.CvEnum;
 using Emgu.CV.Face;
-using Emgu.CV.Ocl;
 using Emgu.CV.Structure;
-using Microsoft.AspNetCore.Http;
+using Emgu.CV.Util;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Drawing;
 using System.IdentityModel.Tokens.Jwt;
+using System.Linq;
 using System.Text;
-using System.Xml;
+using System.Text.Json;
+using System.Text.RegularExpressions;
 using System.Xml.Linq;
 
 namespace API.Controllers
@@ -21,34 +24,60 @@ namespace API.Controllers
     [ApiController]
     public class FaceIdController : ControllerBase
     {
+        private readonly LBPHFaceRecognizer _faceRecognizer;
+        private readonly CascadeClassifier _faceCascade;
         private readonly AppDbContext _db;
-        private VideoCapture _capture;
-        private CascadeClassifier _faceCascade;
-        private LBPHFaceRecognizer _faceRecognizer;
-        private static bool _isCapturing = false;
 
-        public FaceIdController(AppDbContext db)
+        public FaceIdController(AppDbContext db, IConfiguration configuration)
         {
             _db = db;
-            _faceCascade = new CascadeClassifier("haarcascade_frontalface_default.xml");
-
-            // Mở camera (ID 0 - camera mặc định)
-            _capture = new VideoCapture(0);
-            if (!_capture.IsOpened)
-            {
-                throw new System.Exception("Unable to open camera.");
-            }
-
-            // Tạo một recognizer (để huấn luyện nhận diện khuôn mặt)
             _faceRecognizer = new LBPHFaceRecognizer();
+            _faceCascade = new CascadeClassifier("haarcascade_frontalface_default.xml");
         }
-        [HttpPost("register-face")]
-        public IActionResult RegisterFace(string userId)
+        [HttpPost("process")]
+        public IActionResult ProcessImage([FromBody] ImageRequest request)
         {
             try
             {
-                // Capture frame từ camera
-                using var frame = _capture.QueryFrame().ToImage<Bgr, byte>();
+                // Chuyển base64 thành byte array
+                byte[] imageBytes = Convert.FromBase64String(request.Image);
+                using var ms = new MemoryStream(imageBytes);
+               using var image = new Bitmap(ms);
+
+                // Xử lý bằng Emgu CV
+                using var emguImage =  BitmapExtension.ToImage<Bgr, byte>(image);
+                var grayImage = emguImage.Convert<Gray, byte>();
+
+                // Phát hiện khuôn mặt
+                var faceCascade = new CascadeClassifier("haarcascade_frontalface_default.xml");
+                var faces = faceCascade.DetectMultiScale(grayImage, 1.1, 10);
+
+                // Trả về kết quả (ví dụ: số khuôn mặt phát hiện)
+                return Ok(new { FaceCount = faces.Length });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { Error = ex.Message });
+            }
+        }
+
+        public class ImageRequest
+        {
+            public string Image { get; set; } // Dữ liệu base64 từ client
+        }
+        [HttpPost("register-face")]
+        public IActionResult RegisterFace(Guid userId, FaceDTO dTO)
+        {
+            try
+            {
+            
+                byte[] imageBytes = Convert.FromBase64String(dTO.img);
+                using var ms = new MemoryStream(imageBytes);
+                using var bitmap= new Bitmap(ms);
+                // Chuyển mảng byte thành ảnh sử dụng Emgu.CV
+                using var frame = BitmapExtension.ToImage<Bgr, byte>(bitmap);
+
+                // Phát hiện khuôn mặt trong ảnh
                 var faces = _faceCascade.DetectMultiScale(frame, 1.1, 10, new Size(50, 50));
 
                 if (faces.Length == 0)
@@ -57,20 +86,39 @@ namespace API.Controllers
                 // Chỉ xử lý khuôn mặt đầu tiên
                 var face = faces[0];
                 var grayFace = frame.Convert<Gray, byte>().GetSubRect(face).Resize(200, 200, Emgu.CV.CvEnum.Inter.Cubic);
+
+                // Trích xuất đặc trưng khuôn mặt
                 var faceFeatures = ExtractFaceFeatures(grayFace);
 
-                // Lưu đặc trưng khuôn mặt vào XML
-                SaveFaceFeaturesToXml(userId, faceFeatures);
+                // Chuyển đổi vector đặc trưng thành mảng byte để lưu
+                byte[] faceFeatureBytes = ConvertFaceFeaturesToByteArray(faceFeatures);
 
-                // Train và ghi model nếu cần
+                var data = new FaceFeatures
+                {
+                    Guid = Guid.NewGuid(),
+                    StudentID = userId,
+                    img = faceFeatureBytes
+                };
+
+                // Lưu vào cơ sở dữ liệu (ví dụ như Entity Framework)
+                _db.FaceFeatures.Add(data);
+                _db.SaveChanges();
+
+                // Huấn luyện mô hình nhận diện khuôn mặt
                 _faceRecognizer.Train(new[] { grayFace.Mat }, new[] { 1 });
 
-                return Ok("Đữ liệu khuôn mặt đã được lưu thành công.");
+                return Ok("Face data has been saved successfully.");
             }
             catch (Exception ex)
             {
                 return StatusCode(500, $"Error: {ex.Message}");
             }
+        }
+
+        private byte[] ConvertFaceFeaturesToByteArray(double[] faceFeatures)
+        {
+            // Chuyển đổi vector đặc trưng thành mảng byte
+            return faceFeatures.Select(f => (byte)(f * 255)).ToArray(); // Giả sử giá trị nằm trong khoảng [0, 1]
         }
 
 
@@ -80,276 +128,54 @@ namespace API.Controllers
             return faceImage.Bytes.Select(b => (double)b).ToArray();
         }
 
-        // Hàm lưu đặc trưng vào file XML
-        private void SaveFaceFeaturesToXml(string userId, double[] features)
-        {
-            string xmlFilePath = "face_features.xml";
-            XDocument xmlDoc;
-
-            // Load XML file hoặc tạo mới nếu chưa tồn tại
-            if (System.IO.File.Exists(xmlFilePath))
-            {
-                xmlDoc = XDocument.Load(xmlFilePath);
-            }
-            else
-            {
-                xmlDoc = new XDocument(new XElement("Faces"));
-            }
-
-            string featuresString = string.Join(",", features);
-
-            // Kiểm tra xem UserId đã tồn tại hay chưa
-            var existingFace = xmlDoc.Root.Elements("Face")
-                .FirstOrDefault(f => f.Element("UserId")?.ToString() == userId);
-
-            if (existingFace != null)
-            {
-                // Cập nhật đặc trưng nếu đã tồn tại
-                existingFace.Element("Features").Value = featuresString;
-            }
-            else
-            {
-                // Thêm mới nếu chưa tồn tại
-                var newFaceElement = new XElement("Face",
-                    new XElement("UserId", userId),
-                    new XElement("Features", featuresString)
-                );
-                xmlDoc.Root.Add(newFaceElement);
-            }
-
-            // Save XML file
-            xmlDoc.Save(xmlFilePath);
-        }
-        private static byte[] ConvertFrameToJpeg(Image<Bgr, byte> frame)
-        {
-            using (var ms = new MemoryStream())
-            {
-                frame.ToBitmap().Save(ms, System.Drawing.Imaging.ImageFormat.Jpeg);
-                return ms.ToArray();
-            }
-        }
-        [HttpGet("camera-stream")]
-        public async Task CameraStream()
-        {
-            Response.ContentType = "multipart/x-mixed-replace; boundary=frame";
-
-            using (var capture = new VideoCapture(0))
-            {
-                var faceCascade = new CascadeClassifier("haarcascade_frontalface_default.xml");
-
-                while (true)
-                {
-                    using (var frame = capture.QueryFrame().ToImage<Bgr, byte>())
-                    {
-                        if (frame == null)
-                            continue;
-
-                        // Nhận diện khuôn mặt
-                        var faces = faceCascade.DetectMultiScale(frame, 1.1, 4, new Size(30, 30));
-
-                        // Chỉ nhận diện khuôn mặt đầu tiên
-                        if (faces.Length > 0)
-                        {
-                            var face = faces[0];
-                            // Vẽ hình chữ nhật xung quanh khuôn mặt đầu tiên
-                            frame.Draw(face, new Bgr(Color.Red), 2);
-                        }
-
-                        var jpegData = ConvertFrameToJpeg(frame);
-
-                        await Response.Body.WriteAsync(
-                            Encoding.UTF8.GetBytes($"--frame\r\nContent-Type: image/jpeg\r\n\r\n"));
-                        await Response.Body.WriteAsync(jpegData, 0, jpegData.Length);
-                        await Response.Body.WriteAsync(Encoding.UTF8.GetBytes("\r\n"));
-                    }
-
-                    await Task.Delay(67); // Đợi để đạt 30 FPS
-                }
-            }
-        }
-        [HttpPost("check-face")]
-        public IActionResult CheckFace()
+        
+        [HttpPost("recognize")]
+        public IActionResult Recognize([FromBody] string imagePath)
         {
             try
             {
-                // Capture frame từ camera
-                using var frame = _capture.QueryFrame().ToImage<Bgr, byte>();
-                var faces = _faceCascade.DetectMultiScale(frame, 1.1, 10, new Size(50, 50));
+                // Đọc ảnh từ đường dẫn và chuyển sang grayscale
+                var img = CvInvoke.Imread(imagePath, Emgu.CV.CvEnum.ImreadModes.Grayscale);
 
+                if (img.IsEmpty)
+                {
+                    return BadRequest("Ảnh không tồn tại hoặc không thể đọc.");
+                }
+
+                // Phát hiện khuôn mặt
+                var faces = _faceCascade.DetectMultiScale(img, 1.1, 10, Size.Empty);
                 if (faces.Length == 0)
-                    return BadRequest("No face detected.");
+                {
+                    return NotFound("Không phát hiện được khuôn mặt.");
+                }
 
-                var token = HttpContext.Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
-                var key = Encoding.ASCII.GetBytes("YourSuperSecretKeyHere");
-                var tokenHandler = new JwtSecurityTokenHandler();
-
-                // Giải mã token
-                var claimsPrincipal = tokenHandler.ValidateToken(token,
-                    new TokenValidationParameters
-                    {
-                        ValidateIssuerSigningKey = true,
-                        IssuerSigningKey = new SymmetricSecurityKey(key),
-                        ValidateIssuer = false,
-                        ValidateAudience = false
-                    },
-                    out SecurityToken validatedToken);
-                var student = claimsPrincipal.Claims.First(claim => claim.Type == "Idstudent").Value;
                 foreach (var face in faces)
                 {
-                    var grayFace = frame.Convert<Gray, byte>().GetSubRect(face).Resize(200, 200, Emgu.CV.CvEnum.Inter.Cubic);
-                    var faceFeatures = ExtractFaceFeatures(grayFace);
+                    // Cắt và resize khuôn mặt
+                    var faceImage = new Mat(img, face);
+                    CvInvoke.Resize(faceImage, faceImage, new Size(100, 100), 0, 0, Emgu.CV.CvEnum.Inter.Cubic);
 
-                    // Kiểm tra khuôn mặt với dữ liệu đã lưu
-                    var result = CheckFaceAgainstStoredData(faceFeatures);
-                    if (result != null && student == result.Value.UserId)
+                    // Dự đoán khuôn mặt
+                    var result = _faceRecognizer.Predict(faceImage);
+                    int label = result.Label;
+                    double distance = result.Distance;
+
+                    // Kiểm tra khoảng cách dự đoán, tùy chỉnh ngưỡng để cải thiện độ chính xác
+                    if (distance < 0.8)
                     {
-                        // Gọi hàm reset camera
-                        return Ok(new { Message = "Face matched.", UserId = result.Value.UserId });
-
+                        return Ok(new { Label = label, Distance = distance });
                     }
                 }
 
-                return Ok("No matching face found.");
+                return NotFound("Khuôn mặt không được nhận diện.");
             }
             catch (Exception ex)
             {
-                return StatusCode(500, $"Error: {ex.Message}");
+                return BadRequest(ex.Message);
             }
         }
-
-        private (string UserId, double Similarity)? CheckFaceAgainstStoredData(double[] newFaceFeatures)
-        {
-            string xmlFilePath = "face_features.xml";
-
-            if (!System.IO.File.Exists(xmlFilePath))
-                return null;
-
-            var xmlDoc = XDocument.Load(xmlFilePath);
-            double maxSimilarity = 0.0;
-            string matchedUserId = null;
-            double similarityThreshold = 0.95; // Ngưỡng để xác định độ trùng khớp
-
-            foreach (var faceElement in xmlDoc.Root.Elements("Face"))
-            {
-                var userId = (string)faceElement.Element("UserId");
-                var featuresString = (string)faceElement.Element("Features");
-                var storedFeatures = featuresString.Split(',').Select(double.Parse).ToArray();
-
-                double similarity = CalculateSimilarity(newFaceFeatures, storedFeatures);
-
-                if (similarity > maxSimilarity)
-                {
-                    maxSimilarity = similarity;
-                    matchedUserId = userId;
-                }
-            }
-
-            // Chỉ trả về kết quả nếu độ tương đồng đạt yêu cầu
-            if (maxSimilarity >= similarityThreshold)
-            {
-                return (matchedUserId, maxSimilarity);
-            }
-
-            return null; // Trả về null nếu không có khuôn mặt nào khớp
-        }
-
-
-        private double CalculateSimilarity(double[] features1, double[] features2)
-        {
-            if (features1.Length != features2.Length || features1.Length == 0)
-                return 0.0;
-
-            double sumProduct = 0.0;
-            double sumSquare1 = 0.0;
-            double sumSquare2 = 0.0;
-
-            for (int i = 0; i < features1.Length; i++)
-            {
-                sumProduct += features1[i] * features2[i];
-                sumSquare1 += features1[i] * features1[i];
-                sumSquare2 += features2[i] * features2[i];
-            }
-
-            double denominator = Math.Sqrt(sumSquare1) * Math.Sqrt(sumSquare2);
-            return denominator == 0 ? 0.0 : sumProduct / denominator;
-        }
-        [HttpDelete("remove-face")]
-        public IActionResult RemoveFaceFeatures(string userId)
-        {
-            try
-            {
-                string xmlFilePath = "face_features.xml";
-
-                // Kiểm tra nếu tệp XML tồn tại
-                if (!System.IO.File.Exists(xmlFilePath))
-                {
-                    return NotFound("XML file not found.");
-                }
-
-                // Load XML file
-                var xmlDoc = XDocument.Load(xmlFilePath);
-
-                // Tìm phần tử `Face` theo `userId`
-                var faceElement = xmlDoc.Root.Elements("Face")
-                    .FirstOrDefault(f => (string)f.Element("UserId") == userId);
-
-                if (faceElement != null)
-                {
-                    // Xóa phần tử nếu tìm thấy
-                    faceElement.Remove();
-
-                    // Lưu lại XML sau khi xóa
-                    xmlDoc.Save(xmlFilePath);
-
-                    return Ok($"Face features for userId '{userId}' have been removed.");
-                }
-                else
-                {
-                    return NotFound($"No face features found for userId '{userId}'.");
-                }
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Error: {ex.Message}");
-            }
-        }
-        [HttpGet("recognize-face")]
-        public IActionResult RecognizeFace()
-        {
-            // Tải mô hình đã lưu
-            if (System.IO.File.Exists("face_features.xml"))
-            {
-                _faceRecognizer.Read("face_features.xml");
-            }
-            else
-            {
-                return StatusCode(500, "Model not trained or saved yet.");
-            }
-
-            using var frame = _capture.QueryFrame().ToImage<Bgr, byte>();
-            var faces = _faceCascade.DetectMultiScale(frame, 1.1, 10, new Size(50, 50));
-
-            if (faces.Length == 0)
-                return BadRequest("No face detected.");
-
-            foreach (var face in faces)
-            {
-                var grayFace = frame.Convert<Gray, byte>().GetSubRect(face).Resize(200, 200, Emgu.CV.CvEnum.Inter.Cubic);
-                var result = _faceRecognizer.Predict(grayFace);
-
-                // Kiểm tra nếu khuôn mặt trùng khớp
-                if (result.Label == 1 && result.Distance < 100)
-                {
-                    return Ok("Face recognized.");
-                }
-            }
-
-            return Unauthorized("Face not recognized.");
-        }
-
-
         [HttpPost("Login-exam")]
-        public IActionResult GetLogin(Login_Exam_DTO login)
+        public IActionResult GetLogin([FromBody] Login_Exam_DTO login)
         {
             // Lấy token từ tiêu đề Authorization
             var token = HttpContext.Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
@@ -385,9 +211,9 @@ namespace API.Controllers
                                               on exam.TestId equals test.Id
                                               where test.Code == login.codelogin
                                               select exam.Id).FirstOrDefault();
+
                     if (examRoomTestCodeId != Guid.Empty)
                     {
-
                         var newExamRoomStudent = new Exam_Room_Student_DTO
                         {
                             Id = Guid.NewGuid(),
@@ -396,6 +222,7 @@ namespace API.Controllers
                             ExamRoomTestCodeId = examRoomTestCodeId,
                             StudentId = Guid.Parse(studentIdFromToken)
                         };
+
                         var examRoomStudentEntity = new Exam_Room_Student
                         {
                             Id = newExamRoomStudent.Id,
@@ -407,7 +234,7 @@ namespace API.Controllers
 
                         _db.Exam_Room_Students.Add(examRoomStudentEntity);
                         _db.SaveChanges();
-                        return Ok("thành công ");
+                        return Ok("Thành công");
                     }
                 }
             }
@@ -419,6 +246,6 @@ namespace API.Controllers
             return Unauthorized("Code hoặc ID sai");
         }
 
-    }
+    }         
+        
 }
-
