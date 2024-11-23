@@ -396,18 +396,33 @@ namespace API.Controllers
                             ExamRoomTestCodeId = examRoomTestCodeId,
                             StudentId = Guid.Parse(studentIdFromToken)
                         };
-                        var examRoomStudentEntity = new Exam_Room_Student
+                        var data = (from a in _db.Tests
+                                    join b in _db.Exam_Room_TestCodes on a.Id equals b.TestId
+                                    join c in _db.Exam_Room_Students on b.Id equals c.ExamRoomTestCodeId
+                                    where a.Code == login.codelogin
+                                    select new
+                                    {
+                                        IdStudent = c.StudentId,
+                                    }).ToList();
+                        if (data.Any(x => x.IdStudent == newExamRoomStudent.StudentId))
                         {
-                            Id = newExamRoomStudent.Id,
-                            ChenkTime = newExamRoomStudent.ChenkTime,
-                            Status = newExamRoomStudent.Status,
-                            ExamRoomTestCodeId = newExamRoomStudent.ExamRoomTestCodeId,
-                            StudentId = newExamRoomStudent.StudentId
-                        };
+                            return BadRequest("Bạn đã là bài thi rồi");
+                        }
+                        else 
+                        {
+                            var examRoomStudentEntity = new Exam_Room_Student
+                            {
+                                Id = newExamRoomStudent.Id,
+                                ChenkTime = newExamRoomStudent.ChenkTime,
+                                Status = newExamRoomStudent.Status,
+                                ExamRoomTestCodeId = newExamRoomStudent.ExamRoomTestCodeId,
+                                StudentId = newExamRoomStudent.StudentId
+                            };
 
-                        _db.Exam_Room_Students.Add(examRoomStudentEntity);
-                        _db.SaveChanges();
-                        return Ok("thành công ");
+                            _db.Exam_Room_Students.Add(examRoomStudentEntity);
+                            _db.SaveChanges();
+                            return Ok("thành công ");
+                        }
                     }
                 }
             }
