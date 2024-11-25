@@ -10,6 +10,7 @@ namespace DataBase.DTOs
     public class UserDTO
     {
         public Guid Id { get; set; }
+        public Guid idclass { get; set; }
         public string? FullName { get; set; }
         public string? Avartar { get; set; }
         public string? Email { get; set; }
