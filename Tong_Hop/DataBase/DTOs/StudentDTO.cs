@@ -27,4 +27,17 @@ namespace Data.DTOs
         public Guid UserId { get; set; }
         public bool IsRegistered { get; set; }
     }
+    public class GetallStudentDT0
+    {
+        public Guid Id { get; set; }
+        public Guid idclass { get; set; }
+        public string? Name { get; set; }
+        public string? codestudent { get; set; }
+        public string? Email { get; set; }
+        public string? PhoneNumber { get; set; }
+        public string?  picture { get; set; }
+        public string?  Username { get; set; }
+        public string?  Password { get; set; }
+        public DateTime  dateofbirt { get; set; }
+    }
 }

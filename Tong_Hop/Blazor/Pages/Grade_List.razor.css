@@ -1,0 +1,103 @@
+﻿.grade-management {
+    margin-top: 20px;
+}
+
+.custom-table {
+    background-color: #f8f9fa;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+thead.thead-blue th {
+    background-color: #007bff;
+    color: white;
+    text-align: center;
+    font-weight: bold;
+}
+
+.table-hover tbody tr:hover {
+    background-color: #e2f0ff;
+}
+
+.table td, .table th {
+    text-align: center;
+    vertical-align: middle;
+}
+
+button.btn {
+    margin: 5px;
+    padding: 6px 10px;
+    font-size: 12px;
+    border-radius: 5px;
+}
+
+button.btn-warning {
+    background-color: #ffc107;
+    border-color: #ffc107;
+}
+
+button.btn-danger {
+    background-color: #dc3545;
+    border-color: #dc3545;
+}
+
+button.btn-primary {
+    background-color: #007bff;
+    border-color: #007bff;
+}
+
+button:hover {
+    opacity: 0.9;
+}
+
+.table {
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+.custom-context-menu {
+    display: none;
+    position: absolute;
+    z-index: 1000;
+    background-color: #ffffff;
+    border: 1px solid #ccc;
+    box-shadow: 2px 2px 10px rgba(0,0,0,0.2);
+    padding: 10px;
+}
+
+    .custom-context-menu.show {
+        display: block;
+    }
+/* Định dạng cơ bản cho menu ngữ cảnh */
+.context-menu {
+    position: absolute;
+    z-index: 1000;
+    width: 150px;
+    background-color: #ffffff;
+    border: 1px solid #cccccc;
+    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
+    border-radius: 5px;
+    display: none; /* Mặc định là ẩn */
+}
+
+/* Các mục bên trong menu ngữ cảnh */
+.context-menu-item {
+    padding: 10px;
+    cursor: pointer;
+    font-size: 14px;
+    color: #333333;
+    transition: background-color 0.3s ease;
+}
+
+    /* Màu nền khi di chuột vào từng mục */
+    .context-menu-item:hover {
+        background-color: #f0f0f0;
+    }
+
+    /* Thêm khoảng cách giữa các phần tử, nếu cần */
+    .context-menu-item + .context-menu-item {
+        border-top: 1px solid #eeeeee;
+    }
+
+.text-white:hover {
+    color: mediumblue
+}
+
