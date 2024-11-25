@@ -70,8 +70,6 @@ namespace API.Controllers
                     Status = x.Status,
                     TeacherId = x.TeacherId,
                     GradeId = x.GradeId,
-                    
-
                 }).ToList();
 
                 return Ok(classdto);
