@@ -48,16 +48,7 @@
     </div>
 
 
-    <div class="mb-3">
-        <label for="subject" class="form-label">Môn học</label>
-        <select id="subject" class="form-select" @bind="classItem.SubjectId" required>
-            @foreach (var subject in subjects)
-            {
-                <option value="@subject.Id">@subject.Name</option>
-            }
-        </select>
-    </div>
-
+    
     <div class="mb-3">
         <label for="status" class="form-label">Ghi chú</label>
         <InputNumber id="status" class="form-control" @bind-Value="classItem.Status" required />

@@ -37,7 +37,33 @@ namespace API.Controllers
             var coute = await _db.Students.CountAsync();
             return Ok(coute);
         }
+        [HttpGet("get-all-ID-class")]
+        public async Task<ActionResult<List<GetallStudentDT0>>> Getidclass(Guid id)
+        {
+            var listStudent = from a in _db.Classes
+                              join b in _db.Student_Classes on a.Id equals b.ClassId
+                              join c in _db.Students on b.StudentId equals c.Id
+                              join d in _db.Users on c.UserId equals d.Id
+                              where a.Id == id
+                              select new GetallStudentDT0
+                              {
+                                  Id = d.Id,
+                                  idclass=a.Id,
+                                  codestudent = c.Code,
+                                  Name = d.FullName,
+                                  Email = d.Email,
+                                  PhoneNumber = d.PhoneNumber,
+                                  dateofbirt = (DateTime)d.DateOfBirth,
+                                  picture = d.Avartar,
+                                  Username = d.UserName,
+                                  Password = d.PasswordHash
 
+                              };
+            return Ok(listStudent);
+
+
+
+        }
         [HttpGet("get-all-student2")]
         public async Task<ActionResult<List<StudentDTO>>> GetAllName()
         {

@@ -27,10 +27,19 @@
     {
         try
         {
-            var httpClinet = clientFactory.CreateClient("DefaultClient");
-            var url = "https://localhost:7046/api/AdminIndex/get-bieudo-data";
-            chartData = await httpClinet.GetFromJsonAsync<List<ChartDTO>>(url);
-            isDataLoaded = true; // Đánh dấu dữ liệu đã được tải
+            // Tạo HttpClient
+            var httpClient = clientFactory.CreateClient("DefaultClient");
+
+            // Gọi API lấy dữ liệu biểu đồ
+            var chartUrl = "https://localhost:7046/api/AdminIndex/get-bieudo-data";
+            chartData = await httpClient.GetFromJsonAsync<List<ChartDTO>>(chartUrl);
+
+            // Gọi API lấy thông báo
+            var notificationUrl = "https://localhost:7046/api/Notification/get-all-notification";
+            notifications = await httpClient.GetFromJsonAsync<List<NotificationDTO>>(notificationUrl);
+
+            // Đánh dấu dữ liệu đã tải xong
+            isDataLoaded = true;
         }
         catch (Exception ex)
         {
@@ -244,7 +253,6 @@
 
     protected override async void OnInitialized()
     {
-        LoadNotifications();
         LoadClasses();
     }
     public async void Detail(Guid Id)

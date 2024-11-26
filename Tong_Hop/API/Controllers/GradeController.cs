@@ -128,21 +128,6 @@ namespace API.Controllers
             return BadRequest("Loi");
         }
 
-        [HttpGet("get-grade-data")]
-        public async Task<List<GradeDTO>> GetGradeData()
-        {
-            var gradeData = await _db.Grades
-                .Select(g => new GradeDTO
-                {
-                    Name = g.Name,
-                    TotalStudents = g.Class.SelectMany(c => c.Student_Classes).Count(),
-                    TotalClasses = g.Class.Count(),
-                    TotalTeachers = g.Class.Select(c => c.TeacherId).Distinct().Count()
-                }).ToListAsync();
-
-            return gradeData;
-        }
-
         [HttpGet("get-classid")]
         public async Task<ActionResult<IEnumerable<ClassesDTO>>> GetClassesByGradeId()
         {
