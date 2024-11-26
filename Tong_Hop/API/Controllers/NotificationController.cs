@@ -130,7 +130,6 @@ namespace API.Controllers
                 data.Content = notificationDTO.Content;
                 data.CreationTime = notificationDTO.CreationTime;
                 data.Status = notificationDTO.Status;
-                data.type = notificationDTO.type;
 
                 // Không cập nhật danh sách lớp, chỉ trả về danh sách lớp hiện tại nếu có
                 var classIds = data.Notification_Classe.Select(nc => nc.ClassId).ToList();
