@@ -11,7 +11,7 @@
 @inject IJSRuntime Jsruntime
 
 <div>
-    <div class="row py-1">
+    <div class="row fixed-top" style="margin-top:100px">
         <div class="border d-flex">
             <div class="col-2">
                 <div class="border shadow-sm" style="background-color:cornflowerblue">
@@ -25,7 +25,7 @@
                             <div>
                                 <!-- Hiển thị khối -->
                                 <span class="target" value="@item.Id" type="button" @onclick="() => ToggleGrade(item.Id)">
-                                    <i class="bi bi-folder-fill text-warning p-1"></i>Khối @item.Name
+                                    <i class="bi bi-folder-fill text-warning p-1 ps-2 fs-5"></i>Khối @item.Name
                                 </span>
 
                                 <!-- Menu ngữ cảnh -->
@@ -44,7 +44,7 @@
                                             @foreach (var classItem in classes.Where(c => c.GradeId == item.Id).OrderBy(c => c.Name))
                                             {
                                                 <div>
-                                                    <span class="target" value="@classItem.Id" @onclick="()=>GetAllIDclass(classItem.Id)" @oncontextmenu="(e) => OnRightClick(e, classItem.Id)"><i class="bi bi-folder-fill text-warning p-1"></i>@classItem.Name</span>
+                                                    <span class="target" type="button" value="@classItem.Id" @onclick="()=>GetAllIDclass(classItem.Id)" @oncontextmenu="(e) => OnRightClick(e, classItem.Id)"><i class="bi bi-folder-fill text-warning p-1"></i>@classItem.Name</span>
                                                     <div id="contextMenu" class="context-menu">
                                                         <div class="context-menu-item" @onclick="showimportstudent">nhập học sinh</div>
                                                         <div class="context-menu-item" @onclick="()=>deleteclass(classItem.Id)">Xóa</div>
@@ -106,9 +106,9 @@
                         <h5 class="text-white" style="font-size:15px">Thông tin chi tiết</h5>
                     </div>
                 </div>
-                <div>
-                    <table class="table table-hover table-striped align-middle">
-                        <thead class="table-info text-center">
+                <div class="table-wrapper">
+                    <table class="table table-hover table-striped ">
+                        <thead class="table-primary text-center">
                             <tr>
                                 <th>STT</th>
                                 <th>Mã Học Sinh</th>
@@ -158,7 +158,6 @@
                             }
                         </tbody>
                     </table>
-
                 </div>
                 <div class="modal fade @(isCreateGradeModalVisible ? "show" : "")" tabindex="-1" style="display:@(isCreateGradeModalVisible ? "block" : "none"); background-color: rgba(0,0,0,0.5);">
                     <div class="modal-dialog modal-lg modal-dialog-centered">
@@ -234,29 +233,92 @@
                 <h5 class="modal-title">Thêm mới học sinh</h5>
                 <button type="button" class="btn-close" aria-label="Close" @onclick="HideCreateGradeModal"></button>
             </div>
-
             <!-- Modal Body -->
             <div class="modal-body">
-                <div class="mb-3">
-                    <div class="p-2 d-flex justify-content-around">
-                        <!-- Nút thêm file Excel -->
-                        <button type="button" class="btn btn-outline-primary btn-lg" @onclick="showexcel">
-                            <i class="bi bi-file-earmark-excel"></i> Thêm từ file Excel
-                        </button>
+                <div class="container">
+                    <!-- Form nhập thông tin -->
+                    <EditForm Model="@user" class="p-4 shadow-sm bg-white rounded">
+                        <DataAnnotationsValidator />
+                        <div class="row g-2">
+                            <h5 class="text-primary">Thông tin cá nhân</h5>
+                            <div class="col-md-6">
+                                <label for="fullName" class="form-label">Họ và tên:</label>
+                                <InputText id="fullName" class="form-control" @bind-Value="@user.FullName" placeholder="Nhập họ và tên" />
+                                <ValidationMessage For="@(() => user.FullName)" class="text-danger small" />
+                            </div>
 
-                        <!-- Nút tải file mẫu Excel, lớn hơn -->
-                        <button type="button" class="btn btn-outline-success btn-lg" @onclick="dowloadexcel">
-                            <i class="bi bi-download"></i> Tải file mẫu
-                        </button>
-                    </div>
+                            <div class="col-md-6">
+                                <label for="avatarFile" class="form-label">Hình ảnh:</label>
+                                <InputFile id="avatarFile" class="form-control" OnChange="@HandleFileSelecteds" />
+                            </div>
+
+                            <div class="col-md-6">
+                                <label for="email" class="form-label">Email:</label>
+                                <InputText id="email" class="form-control" @bind-Value="@user.Email" placeholder="Nhập email" />
+                                <ValidationMessage For="@(() => user.Email)" class="text-danger small" />
+                            </div>
+
+                            <div class="col-md-6">
+                                <label for="dateOfBirth" class="form-label">Ngày sinh:</label>
+                                <InputDate id="dateOfBirth" class="form-control" @bind-Value="@user.DateOfBirth" />
+                                <ValidationMessage For="@(() => user.DateOfBirth)" class="text-danger small" />
+                            </div>
+                        </div>
+
+                        <!-- Tài khoản và trạng thái -->
+                        <div class="row g-4 mt-4">
+                            <h5 class="text-primary">Thông tin tài khoản</h5>
+                            <div class="col-md-6">
+                                <label for="userName" class="form-label">Tên đăng nhập:</label>
+                                <InputText id="userName" class="form-control" @bind-Value="@user.UserName" placeholder="Nhập tên đăng nhập" />
+                                <ValidationMessage For="@(() => user.UserName)" class="text-danger small" />
+                            </div>
+
+                            <div class="col-md-6">
+                                <label for="password" class="form-label">Mật khẩu:</label>
+                                <InputText id="password" type="password" class="form-control" @bind-Value="@user.PasswordHash" placeholder="Nhập mật khẩu" />
+                                <ValidationMessage For="@(() => user.PasswordHash)" class="text-danger small" />
+                            </div>
+
+                            <div class="col-md-6">
+                                <label for="phoneNumber" class="form-label">Số điện thoại:</label>
+                                <InputText id="phoneNumber" class="form-control" @bind-Value="@user.PhoneNumber" placeholder="Nhập số điện thoại" />
+                                <ValidationMessage For="@(() => user.PhoneNumber)" class="text-danger small" />
+                            </div>
+
+                            <div class="col-md-6">
+                                <label for="status" class="form-label">Trạng thái:</label>
+                                <InputSelect id="status" class="form-select" @bind-Value="@user.Status">
+                                    <option value="1">Hoạt động</option>
+                                    <option value="2">Không hoạt động</option>
+                                </InputSelect>
+                                <ValidationMessage For="@(() => user.Status)" class="text-danger small" />
+                            </div>
+                        </div>
+                    </EditForm>
                 </div>
+            </div>
 
-                <!-- Các nút hành động -->
-                
+            <!-- Modal Footer -->
+            <div class="modal-footer">
+                <div class="d-flex justify-content-around">
+                    <!-- Nút thêm file Excel -->
+                    <button type="button" class="btn btn-outline-primary btn-lg" @onclick="showexcel">
+                        <i class="bi bi-file-earmark-excel"></i> Thêm từ file Excel
+                    </button>
+
+                    <!-- Nút tải file mẫu Excel -->
+                    <button type="button" class="btn btn-outline-success btn-lg" @onclick="dowloadexcel">
+                        <i class="bi bi-download"></i> Tải file mẫu
+                    </button>
+                    <button type="submit" @onclick="()=>HandleValidSubmit(classesDTOs.Id)" class="btn btn-primary">Lưu Thông Tin</button>
+                </div>
+               
             </div>
         </div>
     </div>
 </div>
+
 <div class="modal fade @(showupdatestudent ? "show" : "")" tabindex="-1" aria-hidden="true" style="display:@(showupdatestudent ? "block" : "none"); background-color: rgba(0,0,0,0.5);">
     <div class="modal-dialog modal-dialog-centered modal-md">
         <div class="modal-content">
@@ -278,7 +340,7 @@
                     <!-- Ảnh -->
                     <div class="col-12 col-md-6 mb-3">
                         <label for="avatar" class="form-label fw-bold">Ảnh:</label>
-                        <input type="text" id="avatar" class="form-control" @bind="userDTOs.Avartar" placeholder="URL ảnh đại diện" />
+                        <input type="text" id="avatarFile" class="form-control" @bind="userDTOs.Avartar" placeholder="URL ảnh đại diện" />
                     </div>
 
                     <!-- Email -->
@@ -349,9 +411,11 @@
     private List<Grades> grades = new List<Grades>();
     private List<GetallStudentDT0> getallStudentDT0s = new List<GetallStudentDT0>();
     private UserDTO userDTOs = new UserDTO();
+    private Users user = new Users();
     private Guid? selectedClassId;
     private string teacherid;
     private IBrowserFile selectedFile;
+    private IBrowserFile avatarFile;
     private async Task tokenget()
     {
         var token = await Jsruntime.InvokeAsync<string>("localStorage.getItem", "YourSuperSecretKeyHere");
@@ -364,6 +428,52 @@
         teacherid = jsonToken?.Claims.FirstOrDefault(c => c.Type == "Idteacher")?.Value;
 
     }
+    private void HandleFileSelecteds(InputFileChangeEventArgs e)
+    {
+        avatarFile = e.File; // Lấy file được chọn
+    }
+    private async Task HandleValidSubmit(Guid id)
+    {
+        user.RoleId = Guid.Parse("26948BA2-17C8-4B73-BD5B-08CCA2DB0F92");
+        user.IsLocked = true;
+        var content = new MultipartFormDataContent();
+
+
+        content.Add(new StringContent(user.FullName), "FullName");
+        content.Add(new StringContent(user.Email), "Email");
+        content.Add(new StringContent(user.UserName), "UserName");
+        content.Add(new StringContent(user.PasswordHash), "PasswordHash");
+        content.Add(new StringContent(user.PhoneNumber), "PhoneNumber");
+        content.Add(new StringContent(user.IsLocked.ToString()), "IsLocked");
+        content.Add(new StringContent(user.RoleId.ToString()), "RoleId");
+        content.Add(new StringContent(user.Status.ToString()), "status");
+        content.Add(new StringContent(user.DateOfBirth.ToString()), "dateOfBirth");
+
+        // Thêm file avatar vào content
+        if (avatarFile != null)
+        {
+            var stream = avatarFile.OpenReadStream(); // Giới hạn kích thước file 1MB
+            var fileContent = new StreamContent(stream);
+            fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(avatarFile.ContentType);
+            content.Add(fileContent, "avatarFile", avatarFile.Name);
+        }
+
+        // Gửi request đến API
+        var response = await client.PostAsync($"https://localhost:7046/api/User/create-user?id={id}", content);
+        if (response.IsSuccessStatusCode)
+        {
+
+            user = new Users(); // Reset form
+            importexcelmodal = false;
+            await GetAllIDclass(id);
+        }
+        else
+        {
+            await Jsruntime.InvokeVoidAsync("alert", "thêm dữ liệu thất bại");
+        }
+    }
+
+
     private async Task delete(Guid id, Guid idclass)
     {
         var respon = await client.DeleteAsync($"https://localhost:7046/api/User/delete-user?id={id}");
@@ -536,8 +646,8 @@
     {
         if (selectedGradeId1 == gradeID)
         {
+            selectedGradeId1 = null;
 
-           
         }
         else
         {
