@@ -134,7 +134,7 @@ namespace API.Controllers
 
 
         [HttpPost("create-user")]
-        public async Task<IActionResult> Create([FromForm] UserDTO user, IFormFile avatarFile)
+        public async Task<IActionResult> Create([FromForm] UserDTO user, IFormFile avatarFile,Guid id)
         {
             try
             {
@@ -205,6 +205,15 @@ namespace API.Controllers
                             UserId = data.Id
                         };
                         await _db.Students.AddAsync(student);
+                        var studentclass = new Student_Class
+                        {
+                            Id = Guid.NewGuid(),
+                            JoinTime = DateTime.Now,
+                            Status = 1,
+                            StudentId = student.Id,
+                            ClassId = id
+                        };
+                        await _db.AddAsync(studentclass);
                     }
                     else if (role.Name == "Teacher")
                     {
@@ -387,10 +396,6 @@ namespace API.Controllers
             return Ok("Tải ảnh thành công");
         }
 
-        public class TestCodeRequest
-        {
-            public string TestCode { get; set; }
-        }
         [HttpPost("login")]
         public IActionResult Login([FromBody] LoginModelDTO model)
         {

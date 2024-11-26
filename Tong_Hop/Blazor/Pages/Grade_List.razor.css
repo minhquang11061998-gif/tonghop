@@ -70,6 +70,7 @@ button:hover {
 .context-menu {
     position: absolute;
     z-index: 1000;
+    margin-top:-100px;
     width: 150px;
     background-color: #ffffff;
     border: 1px solid #cccccc;
@@ -100,4 +101,25 @@ button:hover {
 .text-white:hover {
     color: mediumblue
 }
+.table-wrapper {
+    max-height: 550px; /* Đặt chiều cao tối đa cho nội dung cuộn */
+    overflow-y: auto; /* Thêm thanh cuộn dọc */
+    display: block; /* Đảm bảo cuộn được phần tbody */
+}
 
+.table {
+    width: 100%; /* Đảm bảo bảng chiếm đủ chiều rộng */
+    border-collapse: collapse; /* Định dạng chuẩn cho bảng */
+    table-layout: fixed; /* Cố định kích thước cột */
+}
+
+    .table thead {
+        position: sticky; /* Cố định phần thead */
+        top: 0;
+        z-index: 2;
+        background-color: #e9ecef; /* Màu nền cho thead */
+    }
+
+.no-scroll {
+    overflow: hidden; /* Ngăn cuộn */
+}
