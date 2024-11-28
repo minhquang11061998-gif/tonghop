@@ -100,7 +100,7 @@
                             @foreach (var (studentSummary, index) in learningSummaryList.Select((item, idx) => (item, idx)))
                             {
                                 <tr>
-                                    <td class="text-center">@index + 1</td>
+                                    <td class="text-center">@((index + 1))</td>
                                     <td>@studentSummary.StudentName</td>
                                     @foreach (var subject in Subjects)
                                     {
