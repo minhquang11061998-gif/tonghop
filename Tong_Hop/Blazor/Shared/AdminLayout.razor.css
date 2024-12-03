@@ -44,3 +44,9 @@ article {
     padding-right: 15px; /* Thêm khoảng cách để tránh đè lên thanh cuộn */
     padding-bottom: 60px;
 }
+.main-background {
+    background-image: url('../wwwroot/img/Thiết kế chưa có tên (2).png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}
