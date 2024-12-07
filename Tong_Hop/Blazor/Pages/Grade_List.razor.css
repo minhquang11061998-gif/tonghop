@@ -119,7 +119,15 @@ button:hover {
         z-index: 2;
         background-color: #e9ecef; /* Màu nền cho thead */
     }
+@media (max-height: 500px) {
+    .table-wrapper {
+        max-height: 550px; /* Đặt chiều cao tối đa cho nội dung cuộn */
+        overflow-y: auto; /* Thêm thanh cuộn dọc */
+        display: block;
+    }
 
-.no-scroll {
-    overflow: hidden; /* Ngăn cuộn */
+    .table td, .table th {
+        padding: 8px;
+    }
 }
+

@@ -50,3 +50,35 @@ article {
     background-position: center;
     background-repeat: no-repeat;
 }
+.title-bar {
+    height: 40px;
+    -webkit-app-region: drag; /* Kéo cửa sổ */
+}
+
+.taskbar {
+    height: 60px;
+    display: flex;
+    align-items: center;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.body-container {
+    background-color: #f3f3f3;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.content {
+    padding: 16px;
+    background: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+.body-container {
+    background-image: url('/img/Untitled-1.png');
+    background-size: cover; /* Đảm bảo ảnh nền bao phủ toàn bộ */
+    background-position: center; /* Căn giữa hình nền */
+    background-repeat: no-repeat; /* Không lặp lại */
+    height: 100vh; /* Chiều cao toàn màn hình */
+}
