@@ -39,10 +39,10 @@
     width: 300px; /* Điều chỉnh kích thước khung biểu đồ */
     height: 300px;
     padding: 10px;
-    border: 1px solid #ddd; /* Đường viền mỏng xung quanh biểu đồ */
+/*    border: 1px solid #ddd;*/ /* Đường viền mỏng xung quanh biểu đồ */
     border-radius: 15px; /* Tăng độ bo tròn */
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1); /* Đổ bóng mờ lớn hơn */
-    background-color: #f9f9f9; /* Màu nền */
+
     display: flex;
     align-items: center;
     justify-content: center;
@@ -194,4 +194,43 @@ h2.text-center {
 
 .shadow-sm {
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.15);
+}
+.nav-link {
+    transition: transform 0.2s ease-in-out, box-shadow 0.3s ease;
+    text-transform: uppercase;
+    font-weight: bold;
+}
+
+    .nav-link:hover {
+        transform: scale(1.05);
+        box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.2);
+        color: white !important;
+    }
+
+.card {
+    border-radius: 10px;
+}
+
+    .card:hover {
+        opacity: 0.9;
+    }
+.scrollable-sidebar {
+    max-height: 670px; /* Giới hạn chiều cao của sidebar bằng chiều cao màn hình */
+    overflow-y: auto; /* Bật cuộn dọc khi nội dung vượt quá chiều cao */
+    padding-right: 5px; /* Thêm khoảng cách để cuộn dễ nhìn */
+}
+/* Thêm hiệu ứng fade cho modal */
+.modal.fade {
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+}
+
+.modal.show {
+    opacity: 1;
+}
+
+.modal-body {
+    background-color: white;
+    padding: 20px;
+    border-radius: 5px;
 }
