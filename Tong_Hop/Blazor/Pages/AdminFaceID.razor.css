@@ -30,3 +30,8 @@
         background-color: #c82333;
         box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
     }
+.table-wrapper {
+    max-height: 550px; /* Đặt chiều cao tối đa cho nội dung cuộn */
+    overflow-y: auto; /* Thêm thanh cuộn dọc */
+    display: block; /* Đảm bảo cuộn được phần tbody */
+}
