@@ -27,17 +27,22 @@
                     </NavLink>
                 </li>
                 <li class="nav-item mb-3">
+                    <NavLink style="background-color:cornflowerblue" class="nav-link text-center p-3  text-white rounded" @onclick="cathi">
+                        <i class="bi bi-book fs-2"></i><br /> Quản li ca thi
+                    </NavLink>
+                </li>
+                <li class="nav-item mb-3">
                     <NavLink class="nav-link text-center p-3 bg-warning text-dark rounded" @onclick="point">
                         <i class="bi bi-bar-chart-line fs-2"></i><br /> Điểm
                     </NavLink>
                 </li>
                 <li class="nav-item mb-3">
-                    <NavLink class="nav-link text-center p-3 bg-danger text-white rounded" href="exam-result">
+                    <NavLink class="nav-link text-center p-3 bg-danger text-white rounded" @onclick="examresult">
                         <i class="bi bi-layout-text-window-reverse fs-2"></i><br /> Quản lý Phúc khảo
                     </NavLink>
                 </li>
                 <li class="nav-item">
-                    <NavLink class="nav-link text-center p-3 bg-secondary text-white rounded" href="teacher-system">
+                    <NavLink class="nav-link text-center p-3 bg-secondary text-white rounded" @onclick="teacher_system">
                         <i class="bi bi-info-square fs-2"></i><br /> Thông tin Liên hệ
                     </NavLink>
                 </li>
@@ -120,6 +125,15 @@
             builder.CloseComponent();
         };
         ModalInstance?.ShowModal();
+    }private void cathi()
+    {
+        ModalTitle = "Quản lí ca thi";
+        ModalContent = builder =>
+        {
+            builder.OpenComponent(0, typeof(Admin_Exam_Indext));
+            builder.CloseComponent();
+        };
+        ModalInstance?.ShowModal();
     }
     private void question()
     {
@@ -135,7 +149,27 @@
         ModalTitle = "Quản lí điểm";
         ModalContent = builder =>
         {
-            builder.OpenComponent(0, typeof(AdminFaceID));
+            builder.OpenComponent(0, typeof(AdminTongKet));
+            builder.CloseComponent();
+        };
+        ModalInstance?.ShowModal();
+    }
+    private void examresult()
+    {
+        ModalTitle = "Quản lí phúc khảo";
+        ModalContent = builder =>
+        {
+            builder.OpenComponent(0, typeof(Admin_ExamResult));
+            builder.CloseComponent();
+        };
+        ModalInstance?.ShowModal();
+    }
+    private void teacher_system()
+    {
+        ModalTitle = "Thông tin liên hệ";
+        ModalContent = builder =>
+        {
+            builder.OpenComponent(0, typeof(Admin_System));
             builder.CloseComponent();
         };
         ModalInstance?.ShowModal();
