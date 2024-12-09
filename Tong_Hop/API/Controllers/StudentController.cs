@@ -48,6 +48,7 @@ namespace API.Controllers
                               select new GetallStudentDT0
                               {
                                   Id = d.Id,
+                                  idstudent=c.Id,
                                   idclass=a.Id,
                                   codestudent = c.Code,
                                   Name = d.FullName,
