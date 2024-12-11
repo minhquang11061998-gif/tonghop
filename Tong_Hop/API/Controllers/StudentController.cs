@@ -4,6 +4,7 @@ using DataBase.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Xml.Linq;
 
 namespace API.Controllers
 {
@@ -40,31 +41,64 @@ namespace API.Controllers
         [HttpGet("get-all-ID-class")]
         public async Task<ActionResult<List<GetallStudentDT0>>> Getidclass(Guid id)
         {
-            var listStudent = from a in _db.Classes
-                              join b in _db.Student_Classes on a.Id equals b.ClassId
-                              join c in _db.Students on b.StudentId equals c.Id
-                              join d in _db.Users on c.UserId equals d.Id
-                              where a.Id == id
-                              select new GetallStudentDT0
-                              {
-                                  Id = d.Id,
-                                  idstudent=c.Id,
-                                  idclass=a.Id,
-                                  codestudent = c.Code,
-                                  Name = d.FullName,
-                                  Email = d.Email,
-                                  PhoneNumber = d.PhoneNumber,
-                                  dateofbirt = (DateTime)d.DateOfBirth,
-                                  picture = d.Avartar,
-                                  Username = d.UserName,
-                                  Password = d.PasswordHash
+         
+            var xmlFilePath = "face_features.xml";
 
-                              };
+            // Tải danh sách UserId từ file XML
+            var registrationStatuses = LoadRegistrationStatusesFromXml(xmlFilePath);
+
+            // Truy vấn danh sách sinh viên
+            var listStudent = (from a in _db.Classes
+                               join b in _db.Student_Classes on a.Id equals b.ClassId
+                               join c in _db.Students on b.StudentId equals c.Id
+                               join d in _db.Users on c.UserId equals d.Id
+                               where a.Id == id
+                               select new GetallStudentDT0
+                               {
+                                   Id = d.Id,
+                                   idstudent = c.Id,
+                                   idclass = a.Id,
+                                   codestudent = c.Code,
+                                   Name = d.FullName,
+                                   Email = d.Email,
+                                   PhoneNumber = d.PhoneNumber,
+                                   dateofbirt = (DateTime)d.DateOfBirth,
+                                   picture = d.Avartar,
+                                   Username = d.UserName,
+                                   Password = d.PasswordHash,
+                                   // Kiểm tra trạng thái
+                                   RegistrationStatus = registrationStatuses.ContainsKey(c.Id)
+                                               ? registrationStatuses[c.Id]
+                                               : "chưa đăng kí"
+                               }).ToList();
+
             return Ok(listStudent);
-
-
-
         }
+
+        private Dictionary<Guid, string> LoadRegistrationStatusesFromXml(string xmlFilePath)
+        {
+            var registrationStatuses = new Dictionary<Guid, string>();
+
+            // Tải file XML
+            var doc = XDocument.Load(xmlFilePath);
+
+            // Duyệt qua tất cả các `Face`
+            var users = doc.Descendants("Face");
+
+            foreach (var user in users)
+            {
+                var userIdStr = user.Element("UserId")?.Value;
+
+                if (Guid.TryParse(userIdStr, out var userId))
+                {
+                    // Gắn trạng thái "đã đăng ký" nếu UserId tồn tại trong XML
+                    registrationStatuses[userId] = "đã đăng kí";
+                }
+            }
+
+            return registrationStatuses;
+        }
+
         [HttpGet("get-all-student2")]
         public async Task<ActionResult<List<StudentDTO>>> GetAllName()
         {
