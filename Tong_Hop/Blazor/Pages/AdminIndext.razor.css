@@ -195,11 +195,7 @@ h2.text-center {
 .shadow-sm {
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.15);
 }
-.nav-link {
-    transition: transform 0.2s ease-in-out, box-shadow 0.3s ease;
-    text-transform: uppercase;
-    font-weight: bold;
-}
+
 
     .nav-link:hover {
         transform: scale(1.05);
@@ -214,11 +210,8 @@ h2.text-center {
     .card:hover {
         opacity: 0.9;
     }
-.scrollable-sidebar {
-    max-height: 670px; /* Giới hạn chiều cao của sidebar bằng chiều cao màn hình */
-    overflow-y: auto; /* Bật cuộn dọc khi nội dung vượt quá chiều cao */
-    padding-right: 5px; /* Thêm khoảng cách để cuộn dễ nhìn */
-}
+
+
 /* Thêm hiệu ứng fade cho modal */
 .modal.fade {
     opacity: 0;
@@ -233,4 +226,24 @@ h2.text-center {
     background-color: white;
     padding: 20px;
     border-radius: 5px;
+}
+.scrollable-sidebar {
+    overflow-y: auto;
+    max-height: 100vh; /* Sidebar luôn vừa màn hình */
+}
+
+.nav-link {
+    font-size: 0.9rem; /* Thu nhỏ font nếu cần */
+}
+
+@media (max-width: 1200px) {
+    .nav-link {
+        padding: 1rem !important; /* Đảm bảo padding nhỏ hơn cho màn hình nhỏ hơn xl */
+    }
+}
+
+@media (min-width: 1200px) {
+    .nav-link {
+        padding: 3rem !important; /* Đảm bảo padding lớn hơn cho màn hình xl */
+    }
 }

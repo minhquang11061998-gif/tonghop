@@ -48,7 +48,6 @@
                                                     <div id="contextMenu" class="context-menu">
                                                         <div class="context-menu-item" @onclick="showimportstudent">nhập học sinh</div>
                                                         <div class="context-menu-item" @onclick="()=>deleteclass(classItem.Id)">Xóa</div>
-
                                                     </div>
                                                 </div>
 
@@ -392,10 +391,6 @@
         </div>
     </div>
 </div>
-
-
-
-
 @code {
     private Guid a;
     private bool isCreateGradeModalVisible = false;
@@ -452,7 +447,8 @@
         // Thêm file avatar vào content
         if (avatarFile != null)
         {
-            var stream = avatarFile.OpenReadStream(); // Giới hạn kích thước file 1MB
+            var maxFileSize = 1 * 1024 * 1024;
+            var stream = avatarFile.OpenReadStream(maxFileSize); // Giới hạn kích thước file 1MB
             var fileContent = new StreamContent(stream);
             fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(avatarFile.ContentType);
             content.Add(fileContent, "avatarFile", avatarFile.Name);
