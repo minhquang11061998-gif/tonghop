@@ -7,7 +7,7 @@
 @inject NavigationManager NavigationManager
 @inject IJSRuntime Jsruntime
 <div>
-    <div class="row py-1">
+    <div class="row">
         <div class="border d-flex">
             <div class="col-2">
                 <div class="border shadow-sm" style="background-color:cornflowerblue">
@@ -148,7 +148,7 @@
                                 <option value="value">--chọn--</option>
                                 @foreach (var item in classDTOs)
                                 {
-                                    <option value="@item.Code">@item.Name </option>
+                                    <option value="@item.Id">@item.Name </option>
                                 }
                             </select>
                         </div>

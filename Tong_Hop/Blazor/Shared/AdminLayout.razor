@@ -4,7 +4,7 @@
 @inject HttpClient httpclient
 @inject NavigationManager navigate
 
-<main style="img">
+<main>
     <div class="fixed-top">
         <!-- Navbar trên cùng -->
         <nav class="navbar navbar-expand-lg navbar-light bg-light shadow-sm py-2" style="height:60px">
@@ -24,65 +24,9 @@
                 </div>
             </div>
         </nav>
-        <nav class="navbar navbar-expand-sm navbar-light  shadow-sm" style="background-color:#00A6AD;height:40px">
-            <div class="container">
-                <div class="collapse navbar-collapse">
-                    <ul class="navbar-nav mx-auto">
-                        <li class="nav-item">
-                            <NavLink class="nav-link text-white " href="" aria-hidden="true">
-                                <i class="bi bi-house-door fs-6 me-1"></i>Trang chủ
-                            </NavLink>
-                        </li>
-                        <li class="nav-item">
-                            <NavLink class="nav-link text-white " href="face-registration" aria-hidden="true">
-                                <i class="bi bi-emoji-smile fs-6 me-1"></i>Quản lý faceID
-                            </NavLink>
-                        </li>
-                        <li class="nav-item">
-                            <NavLink class="nav-link text-white " href="quanlystudent" aria-hidden="true">
-                                <i class="bi bi-mortarboard fs-6 me-1"></i>Quản lý học sinh
-                            </NavLink>
-                        </li>
-                        <li class="nav-item">
-                            <NavLink class="nav-link text-white " href="listGrade" aria-hidden="true">
-                                <i class="bi bi-mortarboard fs-6 me-1"></i>Quản lý khối
-                            </NavLink>
-                        </li>
-                        <li class="nav-item">
-                            <NavLink class="nav-link text-white " href="manage-test" aria-hidden="true">
-                                <i class="bi bi-book fs-6 me-1"></i>Quản lý đề thi
-                            </NavLink>
-                        </li>
-                        <li class="nav-item">
-                            <NavLink class="nav-link text-white " href="exam-room" aria-hidden="true">
-                                <i class="bi bi-stopwatch fs-6 me-1"></i>Quản lý ca thi
-                            </NavLink>
-                        </li>
-                        <li class="nav-item">
-                            <NavLink class="nav-link text-white " href="tongket" aria-hidden="true">
-                                <i class="bi bi-bar-chart-line fs-6 me-1"></i>Điểm
-                            </NavLink>
-                        </li>
-                        <li class="nav-item">
-                            <NavLink class="nav-link text-white " href="exam-result" aria-hidden="true">
-                                <i class="bi bi-layout-text-window-reverse fs-6 me-1"></i>Quản lý phúc khảo
-                            </NavLink>
-                        </li>
-                        <li class="nav-item">
-                            <NavLink class="nav-link text-white " href="teacher-system" aria-hidden="true">
-                                <i class="bi bi-info-square fs-6 me-1"></i>Thông tin liên hệ
-                            </NavLink>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-        </nav>
-
     </div>
-
-    <!-- Nội dung chính -->
-    <div style="margin-top:99px" class="body-container">
-        <div class="bg-white">
+    <div class="body-container">
+        <div>
             @Body
         </div>
     </div>
@@ -101,8 +45,10 @@
     </footer>
 </main>
 @code {
+   
     private TokenResponse tokenResponse;
     private string userName;
+    
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
@@ -128,7 +74,7 @@
             await jsRuntime.InvokeVoidAsync("localStorage.removeItem", "YourSuperSecretKeyHere");
             tokenResponse = null;
             userName = null;
-            navigate.NavigateTo("/");
+            // navigate.NavigateTo("/");
         }
     }
     private string ShortenContent(string content, int maxLength)

@@ -30,6 +30,7 @@ namespace Data.DTOs
     public class GetallStudentDT0
     {
         public Guid Id { get; set; }
+        public Guid idstudent { get; set; }
         public Guid idclass { get; set; }
         public string? Name { get; set; }
         public string? codestudent { get; set; }
@@ -39,5 +40,6 @@ namespace Data.DTOs
         public string?  Username { get; set; }
         public string?  Password { get; set; }
         public DateTime  dateofbirt { get; set; }
+        public string? RegistrationStatus { get; set; }
     }
 }

@@ -6,19 +6,186 @@
 @inject HttpClient client
 @inject IJSRuntime jsRuntime
 @inject NavigationManager nav
+<div class="container-fluid  my-5 position-fixed">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-12 col-sm-4 col-md-3 col-lg-2 bg-light shadow-sm py-3 scrollable-sidebar">
+            <ul class="nav flex-column">
+                <li class="nav-item mb-3">
+                    <NavLink class="nav-link text-center p-xl-1  bg-primary text-white rounded" @onclick="faceid">
+                        <i class="bi bi-emoji-smile fs-2"></i><br /> Quản lý FaceID
+                    </NavLink>
+                </li>
+                <li class="nav-item mb-3">
+                    <NavLink class="nav-link text-center p-xl-1  bg-success text-white rounded" @onclick="ShowGradeModal">
+                        <i class="bi bi-mortarboard fs-2"></i><br /> Quản lý học sinh
+                    </NavLink>
+                </li>
+                <li class="nav-item mb-3">
+                    <NavLink class="nav-link text-center p-xl-1 bg-info text-white rounded" @onclick="question">
+                        <i class="bi bi-book fs-2"></i><br /> Quản lý câu hỏi
+                    </NavLink>
+                </li>
+                <li class="nav-item mb-3">
+                    <NavLink style="background-color: cornflowerblue" class="nav-link text-center p-xl-1  text-white rounded" @onclick="cathi">
+                        <i class="bi bi-book fs-2"></i><br /> Quản lý ca thi
+                    </NavLink>
+                </li>
+                <li class="nav-item mb-3">
+                    <NavLink class="nav-link text-center p-xl-1 bg-warning text-dark rounded" @onclick="point">
+                        <i class="bi bi-bar-chart-line fs-2"></i><br /> Điểm
+                    </NavLink>
+                </li>
+                <li class="nav-item mb-3">
+                    <NavLink class="nav-link text-center p-xl-1 bg-danger text-white rounded" @onclick="examresult">
+                        <i class="bi bi-layout-text-window-reverse fs-2"></i><br /> Quản lý Phúc khảo
+                    </NavLink>
+                </li>
+                <li class="nav-item">
+                    <NavLink class="nav-link text-center p-xl-1 bg-secondary text-white rounded" @onclick="teacher_system">
+                        <i class="bi bi-info-square fs-2"></i><br /> Thông tin Liên hệ
+                    </NavLink>
+                </li>
+            </ul>
+        </div>
 
-<h3 class="text-center my-4">Thống kê biểu đồ</h3>
-<div class="chart-container">
-    <div class="chart-wrapper">
-        <canvas id="studentsPieChart"></canvas>
-    </div>
-    <div class="chart-wrapper">
-        <canvas id="classesPieChart"></canvas>
-    </div>
-    <div class="chart-wrapper">
-        <canvas id="teachersPieChart"></canvas>
+        <!-- Main Content -->
+        <div class="col-md-9 col-lg-10">
+            <div class="chart-container py-4">
+                <div class="row">
+                    <div class="col-md-4">
+                        <canvas id="studentsPieChart"></canvas>
+                    </div>
+                    <div class="col-md-4">
+                        <canvas id="classesPieChart"></canvas>
+                    </div>
+                    <div class="col-md-4">
+                        <canvas id="teachersPieChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="notification-section mt-4">
+                <div class="border p-4 rounded shadow-sm">
+                    <h2 class="text-center mb-4">Bảng thông báo</h2>
+                    <button class="btn btn-primary mb-3 w-100" @onclick="ShowCreateNoticeModal">Tạo Thông Báo</button>
+                    <div class="notification-list">
+                        @if (notifications != null && notifications.Count > 0)
+                        {
+                            @foreach (var notification in notifications.Take(4))
+                            {
+                                <div class="card notification-card mb-2">
+                                    <div class="card-body">
+                                        <h6 class="card-title">
+                                            <a @onclick="() => Detail(notification.Id)" class="notification-title text-primary">
+                                                <i class="bi bi-info-circle-fill"></i> @notification.Title
+                                            </a>
+                                        </h6>
+                                        <p class="card-text text-muted small">
+                                            Ngày tạo: @notification.CreationTime.ToString("dd/MM/yyyy HH:mm")
+                                        </p>
+                                    </div>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <p class="text-center">Không có thông báo nào.</p>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
+<FadeModal @ref="ModalInstance" Title="@ModalTitle">
+    @ModalContent
+</FadeModal>
+@code {
+    private FadeModal? ModalInstance;
+    private RenderFragment? ModalContent;
+    private string ModalTitle = "";
+
+    private void ShowGradeModal()
+    {
+        ModalTitle = "Quản lý Khối";
+        ModalContent = builder =>
+        {
+            builder.OpenComponent(0, typeof(Grade_List));
+            builder.CloseComponent();
+        };
+        ModalInstance?.ShowModal();
+    }
+    private void faceid()
+    {
+        ModalTitle = "Quản lí đăng nhập khuôn mặt";
+        ModalContent = builder =>
+        {
+            builder.OpenComponent(0, typeof(AdminFaceID));
+            builder.CloseComponent();
+        };
+        ModalInstance?.ShowModal();
+    }private void cathi()
+    {
+        ModalTitle = "Quản lí ca thi";
+        ModalContent = builder =>
+        {
+            builder.OpenComponent(0, typeof(Admin_Exam_Indext));
+            builder.CloseComponent();
+        };
+        ModalInstance?.ShowModal();
+    }
+    private void question()
+    {
+        ModalTitle = "Quản lí câu hỏi";
+        ModalContent = builder =>
+        {
+            builder.OpenComponent(0, typeof(AdminTestManager));
+            builder.CloseComponent();
+        };
+        ModalInstance?.ShowModal();
+    }private void point()
+    {
+        ModalTitle = "Quản lí điểm";
+        ModalContent = builder =>
+        {
+            builder.OpenComponent(0, typeof(AdminTongKet));
+            builder.CloseComponent();
+        };
+        ModalInstance?.ShowModal();
+    }
+    private void examresult()
+    {
+        ModalTitle = "Quản lí phúc khảo";
+        ModalContent = builder =>
+        {
+            builder.OpenComponent(0, typeof(Admin_ExamResult));
+            builder.CloseComponent();
+        };
+        ModalInstance?.ShowModal();
+    }
+    private void teacher_system()
+    {
+        ModalTitle = "Thông tin liên hệ";
+        ModalContent = builder =>
+        {
+            builder.OpenComponent(0, typeof(Admin_System));
+            builder.CloseComponent();
+        };
+        ModalInstance?.ShowModal();
+    }
+
+    private void ShowAnotherModal()
+    {
+        ModalTitle = "Quản lý Khác";
+        ModalContent = builder =>
+        {
+            builder.AddContent(0, "<p>Nội dung khác</p>");
+        };
+        ModalInstance?.ShowModal();
+    }
+}
+
 @code {
     private List<ChartDTO> chartData = new List<ChartDTO>();
     private bool isDataLoaded = false;
@@ -60,7 +227,7 @@
                 chartData = await httpClient.GetFromJsonAsync<List<ChartDTO>>(url);
                 if (chartData != null && chartData.Any())
                 {
-                    var gradeNames = new[] { 6, 7, 8, 9 };
+                    var gradeNames = new[] { 1, 2, 3, 4 };
                     var studentCounts = gradeNames.Select(name => chartData.FirstOrDefault(d => d.GradeName == name)?.TotalStudents ?? 0).ToArray();
                     var classCounts = gradeNames.Select(name => chartData.FirstOrDefault(d => d.GradeName == name)?.TotalClasses ?? 0).ToArray();
                     var teacherCounts = gradeNames.Select(name => chartData.FirstOrDefault(d => d.GradeName == name)?.TotalTeachers ?? 0).ToArray();
@@ -88,73 +255,6 @@
     }
 }
 
-<div class="chart-container">
-    <div class="chart-details">
-        <h3>Chú thích thống kê biểu đồ</h3>
-
-        <div class="chart-group">
-            <div class="chart-group-title">Biển đồ 1: Thống kê số lượng học sinh theo khối</div>
-            <ul>
-                @foreach (var grade in chartData.OrderBy(g => g.GradeName))
-                {
-                    <li>Khối @grade.GradeName: @grade.TotalStudents học sinh</li>
-                }
-            </ul>
-        </div>
-
-        <div class="chart-group">
-            <div class="chart-group-title">Biển đồ 2: Thống kê số lượng lớp theo khối</div>
-            <ul>
-                @foreach (var grade in chartData.OrderBy(g => g.GradeName))
-                {
-                    <li>Khối @grade.GradeName: @grade.TotalClasses lớp</li>
-                }
-            </ul>
-        </div>
-
-        <div class="chart-group">
-            <div class="chart-group-title">Biển đồ 3: Thống kê số lượng giáo viên theo khối</div>
-            <ul>
-                @foreach (var grade in chartData.OrderBy(g => g.GradeName))
-                {
-                    <li>Khối @grade.GradeName: @grade.TotalTeachers giáo viên</li>
-                }
-            </ul>
-        </div>
-    </div>
-
-    <div class="col-md-4 border p-4">
-        <h2 class="text-center mb-4">Bảng thông báo</h2>
-        <button class="btn btn-primary mb-3 w-100" @onclick="ShowCreateNoticeModal">Tạo Thông Báo</button>
-        <div class="notification-list-container">
-            @if (notifications != null && notifications.Count > 0)
-            {
-                @foreach (var notification in notifications.Take(4)) @* <!-- Giới hạn hiển thị 4 thông báo --> *@
-                {
-                    <div class="card notification-card mb-2">
-                        <div class="card-body">
-                            <h6 class="card-title">
-                                <a @onclick="() => Detail(notification.Id)" class="notification-title">
-                                    <i class="bi bi-info-circle-fill text-primary"></i>
-                                    @notification.Title
-                                </a>
-                            </h6>
-                            <p class="card-text text-muted small">
-                                Ngày tạo: @notification.CreationTime.ToString("dd/MM/yyyy HH:mm")
-                            </p>
-                        </div>
-                    </div>
-                }
-
-
-            }
-            else
-            {
-                <p class="text-center">Không có thông báo nào.</p>
-            }
-        </div>
-    </div>
-</div>
 
 <div class="modal fade @(isCreateNoticeModalVisible ? "show" : "")" tabindex="-1" style="display:@(isCreateNoticeModalVisible ? "block" : "none")">
     <div class="modal-dialog modal-lg">
