@@ -40,5 +40,6 @@ namespace Data.DTOs
         public string?  Username { get; set; }
         public string?  Password { get; set; }
         public DateTime  dateofbirt { get; set; }
+        public string? RegistrationStatus { get; set; }
     }
 }

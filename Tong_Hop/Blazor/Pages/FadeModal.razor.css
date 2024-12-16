@@ -12,7 +12,9 @@
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); /* Bóng đổ tạo hiệu ứng cửa sổ */
     z-index: 1050; /* Đảm bảo modal hiển thị trên các thành phần khác */
     overflow: hidden; /* Ẩn phần nội dung tràn ra ngoài */
-    
+  
+  
+
  
 }
 

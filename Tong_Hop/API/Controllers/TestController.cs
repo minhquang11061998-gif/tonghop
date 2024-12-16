@@ -157,23 +157,13 @@ namespace API.Controllers
             return new string(code);
         }
 
-        private int GetMaxStudent(string ClassesCode, Guid SubjectId)
+        private int GetMaxStudent(Guid ClassesCode)
         {
-            var ClassEntity = _db.Classes.FirstOrDefault(x => x.Code == ClassesCode);
+            var ClassEntity = _db.Classes.FirstOrDefault(x => x.Id == ClassesCode);
 
             if (ClassEntity == null)
             {
                 Console.WriteLine($"Không tìm thấy lớp với mã: {ClassesCode}");
-                return 0;
-            }
-
-            var gradeID = ClassEntity.GradeId;
-
-            var subjectGrade = _db.Subject_Grades.FirstOrDefault(x => x.GradeId == gradeID && x.SubjectId == SubjectId);
-
-            if (subjectGrade == null)
-            {
-                Console.WriteLine($"Không tìm thấy SubjectId {SubjectId} cho GradeId {gradeID}");
                 return 0;
             }
 
@@ -186,12 +176,12 @@ namespace API.Controllers
             try
             {
                 // Kiểm tra nếu classCode có tồn tại
-                if (string.IsNullOrEmpty(testDTO.ClassCode))
+                if (testDTO.ClassCode==null)
                 {
                     return NotFound("ClassCode không được để trống.");
                 }
 
-                int maxStudents = GetMaxStudent(testDTO.ClassCode, testDTO.SubjectId);
+                int maxStudents = GetMaxStudent(testDTO.ClassCode);
                 if (maxStudents == null)
                 {
                     return BadRequest("Không tìm thấy số lượng sinh viên tối đa cho lớp học.");
