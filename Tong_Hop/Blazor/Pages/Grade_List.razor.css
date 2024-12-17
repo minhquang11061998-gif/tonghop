@@ -22,6 +22,7 @@ thead.thead-blue th {
 .table td, .table th {
     text-align: center;
     vertical-align: middle;
+    white-space: nowrap;
 }
 
 button.btn {
@@ -52,6 +53,8 @@ button:hover {
 
 .table {
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    table-layout: fixed;
 }
 .custom-context-menu {
     display: none;
@@ -70,7 +73,7 @@ button:hover {
 .context-menu {
     position: absolute;
     z-index: 1000;
-    margin-top:-100px;
+    margin-left:-170px;
     width: 150px;
     background-color: #ffffff;
     border: 1px solid #cccccc;
@@ -101,11 +104,7 @@ button:hover {
 .text-white:hover {
     color: mediumblue
 }
-.table-wrapper {
-    max-height: 550px; /* Đặt chiều cao tối đa cho nội dung cuộn */
-    overflow-y: auto; /* Thêm thanh cuộn dọc */
-    display: block; /* Đảm bảo cuộn được phần tbody */
-}
+
 
 .table {
     width: 100%; /* Đảm bảo bảng chiếm đủ chiều rộng */
@@ -119,11 +118,19 @@ button:hover {
         z-index: 2;
         background-color: #e9ecef; /* Màu nền cho thead */
     }
-@media (max-height: 500px) {
+@media (min-width: 1025px) {
     .table-wrapper {
-        max-height: 550px; /* Đặt chiều cao tối đa cho nội dung cuộn */
+        max-height: 500px; /* Đặt chiều cao tối đa cho nội dung cuộn */
         overflow-y: auto; /* Thêm thanh cuộn dọc */
         display: block;
+    }
+
+    @media(min-width: 1920px) {
+        .table-wrapper {
+            max-height: 800px;
+            overflow-y: auto;
+            display: block;
+        }
     }
 
     .table td, .table th {
@@ -131,3 +138,7 @@ button:hover {
     }
 }
 
+body {
+    height: 100vh;
+    width: 100vw;
+}

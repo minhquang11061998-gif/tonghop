@@ -56,11 +56,13 @@
     position: absolute;
     z-index: 1000;
     width: 150px;
+    margin-left:-170px;
     background-color: #ffffff;
     border: 1px solid #cccccc;
     box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
     border-radius: 5px;
     display: none; /* Mặc định là ẩn */
+
 }
 
 /* Các mục bên trong menu ngữ cảnh */

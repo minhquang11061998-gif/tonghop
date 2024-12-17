@@ -157,23 +157,13 @@ namespace API.Controllers
             return new string(code);
         }
 
-        private int GetMaxStudent(string ClassesCode, Guid SubjectId)
+        private int GetMaxStudent(Guid ClassesCode)
         {
-            var ClassEntity = _db.Classes.FirstOrDefault(x => x.Code == ClassesCode);
+            var ClassEntity = _db.Classes.FirstOrDefault(x => x.Id == ClassesCode);
 
             if (ClassEntity == null)
             {
                 Console.WriteLine($"Không tìm thấy lớp với mã: {ClassesCode}");
-                return 0;
-            }
-
-            var gradeID = ClassEntity.GradeId;
-
-            var subjectGrade = _db.Subject_Grades.FirstOrDefault(x => x.GradeId == gradeID && x.SubjectId == SubjectId);
-
-            if (subjectGrade == null)
-            {
-                Console.WriteLine($"Không tìm thấy SubjectId {SubjectId} cho GradeId {gradeID}");
                 return 0;
             }
 
@@ -186,12 +176,12 @@ namespace API.Controllers
             try
             {
                 // Kiểm tra nếu classCode có tồn tại
-                if (string.IsNullOrEmpty(testDTO.ClassCode))
+                if (testDTO.ClassCode==null)
                 {
                     return NotFound("ClassCode không được để trống.");
                 }
 
-                int maxStudents = GetMaxStudent(testDTO.ClassCode, testDTO.SubjectId);
+                int maxStudents = GetMaxStudent(testDTO.ClassCode);
                 if (maxStudents == null)
                 {
                     return BadRequest("Không tìm thấy số lượng sinh viên tối đa cho lớp học.");
@@ -259,23 +249,17 @@ namespace API.Controllers
         [HttpDelete("delete-test")]
         public async Task<IActionResult> Delete_test(Guid id)
         {
-            var data = await _db.Tests.FirstOrDefaultAsync(x => x.Id == id);
-            var ListTestCode = _db.TestCodes.ToList().FirstOrDefault(x => x.TestId == data.Id);
-            var testquestion = _db.TestQuestions.ToList().FirstOrDefault(x => x.TestId == data.Id);
-            if (testquestion != null)
-            {
-                _db.Remove(testquestion);
-                _db.Remove(ListTestCode);
-                _db.Remove(data);
-            }
-            else if (ListTestCode != null)
-            {
-                _db.Remove(ListTestCode);
-                _db.Remove(data);
-            }
+            var test = await _db.Tests.FirstOrDefaultAsync(x => x.Id == id);
+            if (test == null) return NotFound("Test không tồn tại.");
+            var testCodes = await _db.TestCodes.Where(x => x.TestId == id).ToListAsync();
+            var testQuestions = await _db.TestQuestions.Where(x => x.TestId == id).ToListAsync();
+            if (testQuestions.Any()) _db.TestQuestions.RemoveRange(testQuestions);
+            if (testCodes.Any()) _db.TestCodes.RemoveRange(testCodes);
+            _db.Tests.Remove(test);
             await _db.SaveChangesAsync();
-            return Ok("đã xóa");
+            return Ok("Đã xóa thành công.");
         }
+
 
 
     }
