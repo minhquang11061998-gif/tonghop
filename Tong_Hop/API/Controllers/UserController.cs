@@ -2,6 +2,7 @@
 using DataBase.Data;
 using DataBase.DTOs;
 using DataBase.Models;
+using Emgu.CV;
 using Emgu.CV.Features2D;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -198,6 +199,7 @@ namespace API.Controllers
                 {
                     if (role.Name == "Student")
                     {
+                        // Thêm học sinh
                         var student = new Students
                         {
                             Id = Guid.NewGuid(),
@@ -206,7 +208,9 @@ namespace API.Controllers
                         };
                         await _db.Students.AddAsync(student);
                         await _db.SaveChangesAsync();
-                        var studentclass = new Student_Class
+
+                        // Thêm vào Student_Classes
+                        var studentClass = new Student_Class
                         {
                             Id = Guid.NewGuid(),
                             JoinTime = DateTime.Now,
@@ -214,16 +218,10 @@ namespace API.Controllers
                             StudentId = student.Id,
                             ClassId = id
                         };
-                        await _db.AddAsync(studentclass);
-                        await UpdateClass(id);
+                        await _db.Student_Classes.AddAsync(studentClass);
                         await _db.SaveChangesAsync();
-                        //var classupdate = await _db.Classes.FirstOrDefaultAsync(c => c.Id == id);
-                        //if (classupdate != null)
-                        //{
-                        //    classupdate.MaxStudent = await _db.Student_Classes.Where(x => x.ClassId == id).CountAsync();
-                        //    _db.Classes.Update(classupdate); 
-                        //    await _db.SaveChangesAsync();
-                        //}
+                        await updateclass(id);
+
                     }
                     else if (role.Name == "Teacher")
                     {
@@ -345,13 +343,33 @@ namespace API.Controllers
                         classEntity.MaxStudent -= 1;
                         _db.Classes.Update(classEntity);
                     }
-                }
+                    var tests = await (from t in _db.Tests
+                                       join subject in _db.Subjects on t.SubjectId equals subject.Id
+                                       join subjectGrade in _db.Subject_Grades on subject.Id equals subjectGrade.SubjectId
+                                       join grade in _db.Grades on subjectGrade.GradeId equals grade.Id
+                                       join classEntityJoin in _db.Classes on grade.Id equals classEntityJoin.GradeId
+                                       where classEntityJoin.Id == studentClass.ClassId
+                                       select t).ToListAsync();
 
+                    foreach (var test in tests)
+                    {
+                        test.MaxStudent -= 1;
+                        _db.Tests.Update(test);
+                        var testCodes = await _db.TestCodes
+                            .Where(tc => tc.TestId == test.Id)
+                            .OrderBy(tc => tc.Id)
+                            .ToListAsync();
+                        if (testCodes.Count > test.MaxStudent)
+                        {
+                            var excessTestCodes = testCodes.Skip(test.MaxStudent).ToList();
+                            _db.TestCodes.RemoveRange(excessTestCodes);
+                        }
+                    }
+                }
                 if (studentClasses.Any())
                 {
                     _db.Student_Classes.RemoveRange(studentClasses);
                 }
-
                 _db.Students.Remove(student);
             }
             var teacher = await _db.Teachers.FirstOrDefaultAsync(x => x.UserId == id);
@@ -576,16 +594,8 @@ namespace API.Controllers
                             ClassId = id
                         };
                         await _db.Student_Classes.AddAsync(studentclass);
-                        await UpdateClass(id);
                         await _db.SaveChangesAsync();
-                        
-                        //var classupdate = await _db.Classes.FirstOrDefaultAsync(c => c.Id == id);
-                        //if (classupdate != null)
-                        //{
-                        //    classupdate.MaxStudent = await _db.Student_Classes.Where(x => x.ClassId == id).CountAsync();
-                        //    _db.Classes.Update(classupdate); 
-                        //    await _db.SaveChangesAsync();
-                        //}
+                        await updateclass(id);
                     }
                 }
             }
@@ -608,66 +618,29 @@ namespace API.Controllers
 
             return new string(code);
         }
-        private async Task UpdateClass(Guid ClId)
+        private async Task updateclass(Guid id)
         {
-            try
+            var classUpdate = await _db.Classes.FirstOrDefaultAsync(c => c.Id == id);
+            if (classUpdate != null)
             {
-                var IdClass = await _db.Classes.FirstOrDefaultAsync(x => x.Id == ClId);
-
-                if (IdClass == null)
-                {
-                    return;
-                }
-
-                var StCl = await _db.Student_Classes.Where(x => x.ClassId == ClId).ToListAsync();
-
-                var MaxSt = StCl.Count();
-
-                var updateMaxStudentTest = await (from cl in _db.Classes
-                                                  join gr in _db.Grades on cl.GradeId equals gr.Id
-                                                  join sg in _db.Subject_Grades on gr.Id equals sg.GradeId
-                                                  join subj in _db.Subjects on sg.SubjectId equals subj.Id
-                                                  join test in _db.Tests on subj.Id equals test.SubjectId
-                                                  where cl.Id == ClId
-                                                  select test).ToListAsync();
-
-                if (updateMaxStudentTest == null)
-                {
-                    IdClass.MaxStudent = MaxSt+IdClass.MaxStudent;
-
-                    _db.Classes.Update(IdClass);
-
-                    await _db.SaveChangesAsync();
-                }
-                else
-                {
-                    IdClass.MaxStudent = MaxSt + IdClass.MaxStudent;
-
-                    _db.Classes.Update(IdClass);
-
-                    foreach (var test in updateMaxStudentTest)
-                    {
-                        test.MaxStudent = MaxSt + IdClass.MaxStudent;
-                        _db.Tests.Update(test);
-                    }
-
-                    await _db.SaveChangesAsync();
-
-                    await SyncTestCodesForClass(ClId);
-
-                    return;
-                }
+                classUpdate.MaxStudent = await _db.Student_Classes.Where(x => x.ClassId == id).CountAsync();
+                _db.Classes.Update(classUpdate);
+                await _db.SaveChangesAsync();
             }
-            catch (Exception ex)
+            var testsToUpdate = await (from test in _db.Tests
+                                       join subject in _db.Subjects on test.SubjectId equals subject.Id
+                                       join subjectGrade in _db.Subject_Grades on subject.Id equals subjectGrade.SubjectId
+                                       join grade in _db.Grades on subjectGrade.GradeId equals grade.Id
+                                       join Class in _db.Classes on grade.Id equals Class.GradeId
+                                       where Class.Id == id
+                                       select test).ToListAsync();
+            foreach (var test in testsToUpdate)
             {
-                return;
+                test.MaxStudent = classUpdate.MaxStudent;
+                _db.Tests.Update(test);
+                await _db.SaveChangesAsync();
             }
-        }
-
-        private async Task SyncTestCodesForClass(Guid id)
-        {
             var testClass = await (from test in _db.Tests
-                                   join tc in _db.TestCodes on test.Id equals tc.TestId
                                    join subj in _db.Subjects on test.SubjectId equals subj.Id
                                    join sg in _db.Subject_Grades on subj.Id equals sg.SubjectId
                                    join grade in _db.Grades on sg.GradeId equals grade.Id
@@ -675,54 +648,38 @@ namespace API.Controllers
                                    where cl.Id == id
                                    select new
                                    {
-                                       Test = test,           // Toàn bộ đối tượng Test
-                                       MaxStudent = cl.MaxStudent, // Lấy MaxStudent từ bảng Classes
-                                       ClassId = cl.Id,       // Lấy Id từ bảng Classes       
-                                       TotalTestCodes = _db.TestCodes.Where(tc => tc.TestId == test.Id).ToList() // Đếm số TestCode có Test.Id tương ứng
+                                       Test = test,
+                                       MaxStudent = cl.MaxStudent,
+                                       ClassId = cl.Id
                                    }).ToListAsync();
-
-            if (testClass == null)
-            {
-                return;
-            }
 
             foreach (var test in testClass)
             {
+                // Đếm số lượng TestCodes hiện tại cho TestId
+                var currentTestCodesCount = await _db.TestCodes.CountAsync(tc => tc.TestId == test.Test.Id);
 
-                int count = test.TotalTestCodes.Count;
+                // Tính toán số lượng TestCodes cần thêm mới dựa trên MaxStudent
+                int codesToAdd = test.MaxStudent - currentTestCodesCount;
 
-                if (count < test.MaxStudent)
+                if (codesToAdd > 0)
                 {
-                    // Thêm TestCode còn thiếu
-                    for (int i = 0; i < test.MaxStudent - count; i++)
+                    // Thêm TestCodes mới tương ứng với số lượng còn thiếu
+                    var newTestCodes = Enumerable.Range(0, codesToAdd).Select(_ => new TestCodes
                     {
-                        var newTestCode = new TestCodes
-                        {
-                            Id = Guid.NewGuid(),
-                            Code = RamdomCodeTestCode(8),
-                            Status = 1,
-                            TestId = test.Test.Id,
-                        };
+                        Id = Guid.NewGuid(),
+                        Code = RamdomCodeTestCode(8), 
+                        Status = 1,
+                        TestId = test.Test.Id
+                    }).ToList();
 
-                        await _db.TestCodes.AddAsync(newTestCode);
-                    }
+                    await _db.TestCodes.AddRangeAsync(newTestCodes);
+                    await _db.SaveChangesAsync();
                 }
-                else if (count > test.MaxStudent)
-                {
-                    var excessTestCodes = test.TotalTestCodes
-                        .Skip(test.MaxStudent) // Bỏ qua những TestCodes nằm trong giới hạn
-                        .ToList();
-
-                    _db.TestCodes.RemoveRange(excessTestCodes);
-
-                }
-                await _db.SaveChangesAsync();
-                return;
             }
-
+            
         }
         #endregion
-       
+
         [HttpGet("export-sample")]
         public IActionResult ExportSampleExcel()
         {

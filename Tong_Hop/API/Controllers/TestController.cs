@@ -249,23 +249,17 @@ namespace API.Controllers
         [HttpDelete("delete-test")]
         public async Task<IActionResult> Delete_test(Guid id)
         {
-            var data = await _db.Tests.FirstOrDefaultAsync(x => x.Id == id);
-            var ListTestCode = _db.TestCodes.ToList().FirstOrDefault(x => x.TestId == data.Id);
-            var testquestion = _db.TestQuestions.ToList().FirstOrDefault(x => x.TestId == data.Id);
-            if (testquestion != null)
-            {
-                _db.Remove(testquestion);
-                _db.Remove(ListTestCode);
-                _db.Remove(data);
-            }
-            else if (ListTestCode != null)
-            {
-                _db.Remove(ListTestCode);
-                _db.Remove(data);
-            }
+            var test = await _db.Tests.FirstOrDefaultAsync(x => x.Id == id);
+            if (test == null) return NotFound("Test không tồn tại.");
+            var testCodes = await _db.TestCodes.Where(x => x.TestId == id).ToListAsync();
+            var testQuestions = await _db.TestQuestions.Where(x => x.TestId == id).ToListAsync();
+            if (testQuestions.Any()) _db.TestQuestions.RemoveRange(testQuestions);
+            if (testCodes.Any()) _db.TestCodes.RemoveRange(testCodes);
+            _db.Tests.Remove(test);
             await _db.SaveChangesAsync();
-            return Ok("đã xóa");
+            return Ok("Đã xóa thành công.");
         }
+
 
 
     }
