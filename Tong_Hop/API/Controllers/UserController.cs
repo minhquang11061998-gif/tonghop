@@ -145,7 +145,7 @@ namespace API.Controllers
                 if (avatarFile != null && avatarFile.Length > 0)
                 {
                     // Đường dẫn thư mục lưu trữ ảnh
-                    var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "Avatars");
+                    var uploadsFolder = Path.Combine(Directory.GetParent(Directory.GetCurrentDirectory()).FullName, "Blazor", "wwwroot", "Avatars");
 
                     // Tạo thư mục nếu chưa tồn tại
                     if (!Directory.Exists(uploadsFolder))
@@ -519,7 +519,7 @@ namespace API.Controllers
             var users = new List<UserDTO>();
 
             // Thư mục lưu ảnh
-            var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "Avatars");
+            var uploadsFolder = Path.Combine(Directory.GetParent(Directory.GetCurrentDirectory()).FullName, "Blazor", "wwwroot", "Avatars");
             if (!Directory.Exists(uploadsFolder))
             {
                 Directory.CreateDirectory(uploadsFolder);
