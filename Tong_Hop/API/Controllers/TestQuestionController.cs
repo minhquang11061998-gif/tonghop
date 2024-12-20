@@ -497,7 +497,7 @@ namespace API.Controllers
                 var stream = new MemoryStream();
                 package.SaveAs(stream);
                 stream.Position = 0;
-                return File(stream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "MauCauHoi.xlsx");
+                return File(stream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "Template_Cauhoi.xlsx");
             }
         }
 

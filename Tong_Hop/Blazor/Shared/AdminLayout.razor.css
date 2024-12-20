@@ -20,17 +20,7 @@
 }
 
 /* Cố định sidebar bên trái */
-.fixed-sidebar {
-    position: fixed;
-    top: 0;
-    left: 0;
-    height: 100vh; /* Chiều cao toàn màn hình */
-    width: 250px; /* Chiều rộng sidebar */
-    background-color: #f8f9fa;
-    box-shadow: 2px 0 5px rgba(0,0,0,0.1);
-    z-index: 1030;
-    overflow-y: auto; /* Bật cuộn dọc nếu nội dung vượt quá */
-}
+
 
 /* Đảm bảo nội dung bên dưới navbar không bị che khuất */
 article {

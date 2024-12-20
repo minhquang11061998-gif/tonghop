@@ -31,7 +31,7 @@
                                 {
                                     <ul>
                                         <li class="nav-link">
-                                            <span class="target" type="button" @onclick="() => LoadQuestions(item.Id, 1)">
+                                            <span class="target" type="button" @onclick="() => LoadQuestions(item.Id, 1)" @oncontextmenu="(e)=>rightclick(item.Id,1)">
                                                 <i class="bi bi-folder-fill text-warning"></i> Câu hỏi dễ
                                             </span>
                                             <div id="contextMenu" class="context-menu">
@@ -41,7 +41,7 @@
                                             </div>
                                         </li>
                                         <li class="nav-link">
-                                            <span class="target" type="button" @onclick="() => LoadQuestions(item.Id, 2)">
+                                            <span class="target" type="button" @onclick="() => LoadQuestions(item.Id, 2)" @oncontextmenu="(e)=>rightclick(item.Id,2)">
                                                 <i class="bi bi-folder-fill text-warning"></i> Câu hỏi trung bình
                                             </span>
                                             <div id="contextMenu" class="context-menu">
@@ -51,7 +51,7 @@
                                             </div>
                                         </li>
                                         <li class="nav-link">
-                                            <span class="target" type="button" @onclick="() => LoadQuestions(item.Id, 3)">
+                                            <span class="target" type="button" @onclick="() => LoadQuestions(item.Id, 3)" @oncontextmenu="(e)=>rightclick(item.Id,3)">
                                                 <i class="bi bi-folder-fill text-warning"></i> Câu hỏi Khó
                                             </span>
                                             <div id="contextMenu" class="context-menu">
@@ -61,7 +61,7 @@
                                             </div>
                                         </li>
                                         <li class="nav-link">
-                                            <span class="target" type="button" @onclick="() => LoadQuestions(item.Id, 4)">
+                                            <span class="target" type="button" @onclick="() => LoadQuestions(item.Id, 4)" @oncontextmenu="(e)=>rightclick(item.Id,4)">
                                                 <i class="bi bi-folder-fill text-warning"></i> Câu hỏi nâng cao
                                             </span>
                                             <div id="contextMenu" class="context-menu">
@@ -274,6 +274,10 @@
 </div>
 
 @code {
+    private void rightclick(Guid id,int lever){
+        testQuestion.TestId=id;
+        testQuestion.Level = lever;
+    }
     private void OpenModal(){
         showcreatequestion = true;
     }
@@ -305,12 +309,12 @@
         }
         catch (Exception)
         {
-            
+
         }
 
     }
-   
-   
+
+
     private async Task detailquestion(Guid id)
     {
         var client = clientFactory.CreateClient("Get");
@@ -515,9 +519,9 @@
                     var handler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
                     var jsonToken = handler.ReadToken(token) as System.IdentityModel.Tokens.Jwt.JwtSecurityToken;
 
-                    username = jsonToken?.Claims.FirstOrDefault(c => c.Type == "name")?.Value;
+                    username = jsonToken?.Claims.FirstOrDefault(c => c.Type == "nameab")?.Value;
                     testQuestio.CreatedByName = username;
-
+                    testQuestion.CreatedByName = username;
                     if (string.IsNullOrEmpty(username))
                     {
                         Console.WriteLine("Không tìm thấy tên người dùng trong token.");

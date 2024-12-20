@@ -32,7 +32,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="wwwroot\Avatars\" />
+    <Folder Include="wwwroot\" />
   </ItemGroup>
 
 </Project>

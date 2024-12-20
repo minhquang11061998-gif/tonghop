@@ -1,22 +1,50 @@
 ﻿.modal-fullscreen {
-    position: fixed; /* Đảm bảo modal ở vị trí cố định */
-    top: 10px;
-    left: 180px; /* Căn giữa theo chiều ngang */
-    transform: translateX(-50%); /* Đẩy modal về chính giữa */
-    width: 90vw; /* Chiều rộng của modal, có thể điều chỉnh theo ý */
-    height: 80vh; /* Chiều cao của modal */
-    max-width: 1300px; /* Giới hạn chiều rộng */
-    max-height: 900px; /* Giới hạn chiều cao */
-    margin: 0;
-    border-radius: 10px; /* Bo góc */
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); /* Bóng đổ tạo hiệu ứng cửa sổ */
-    z-index: 1050; /* Đảm bảo modal hiển thị trên các thành phần khác */
-    overflow: hidden; /* Ẩn phần nội dung tràn ra ngoài */
-  
-  
+    position: fixed; /* Modal ở vị trí cố định */
+    top:10px;
 
+    transform: translate(-50%, -50%); /* Căn chỉnh chính giữa */
+    
  
+    background-color: #fff; /* Màu nền */
+    border-radius: 10px; /* Bo góc */
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); /* Bóng đổ */
+    z-index: 1050; /* Đảm bảo modal nổi trên các thành phần khác */
+    overflow: hidden; /* Ẩn nội dung tràn */
 }
+
+/* Responsive modal trên các thiết bị nhỏ hơn */
+@media (min-width: 1200px) {
+    .modal-fullscreen {
+        width: 98vw; /* Chiều rộng modal thu nhỏ hơn */
+        height: 70vh; /* Chiều cao modal thu nhỏ hơn */
+        left:10px
+        
+    }
+}
+
+/*@media (max-width: 1200px) {
+    .modal-fullscreen {
+        width: 85vw;   
+        height: 65vh;  
+    }
+}*/
+
+@media (max-width: 768px) {
+    .modal-fullscreen {
+        width: 95vw; /* Chiều rộng modal gần toàn màn hình */
+        height: 60vh; /* Chiều cao modal thu nhỏ */
+        border-radius: 5px; /* Giảm bo góc để phù hợp hơn */
+    }
+}
+
+@media (max-width: 576px) {
+    .modal-fullscreen {
+        width: 100vw; /* Chiều rộng toàn màn hình */
+        height: 50vh; /* Chiều cao modal */
+        border-radius: 0; /* Không bo góc trên màn hình rất nhỏ */
+    }
+}
+
 
 .modal-content {
     height: 100%;

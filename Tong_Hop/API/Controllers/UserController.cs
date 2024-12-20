@@ -145,7 +145,7 @@ namespace API.Controllers
                 if (avatarFile != null && avatarFile.Length > 0)
                 {
                     // Đường dẫn thư mục lưu trữ ảnh
-                    var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "Avatars");
+                    var uploadsFolder = Path.Combine(Directory.GetParent(Directory.GetCurrentDirectory()).FullName, "Blazor", "wwwroot", "Avatars");
 
                     // Tạo thư mục nếu chưa tồn tại
                     if (!Directory.Exists(uploadsFolder))
@@ -379,11 +379,15 @@ namespace API.Controllers
             }
             _db.Users.Remove(user);
             await _db.SaveChangesAsync();
-
+            var deleteavatar = Path.Combine(Directory.GetParent(Directory.GetCurrentDirectory()).FullName, "Blazor", "wwwroot", "Avatars");
+            var filename = $"{id}.jpg";
+            var filepath=Path.Combine(deleteavatar, filename);
+            if (System.IO.File.Exists(filepath))
+            {
+                System.IO.File.Delete(filepath);
+            } 
             return Ok("Xóa thành công");
         }
-
-
         [HttpPost("upload-avatar")]
         public async Task<IActionResult> UploadAvatar(Guid Id, IFormFile avatarFile)
         {
@@ -451,9 +455,7 @@ namespace API.Controllers
                          new Claim("email",data.Email.ToString()),
                          new Claim("numberPhone",data.PhoneNumber.ToString()),
                          new Claim("CodeStudent", studentId.Code.ToString()),
-                         //new Claim("CodeTeacher", teacherId.Code.ToString())
-                            //new Claim("Id", student != null ? student.Name : "N/A"),
-                            //new Claim("Idteacher",teacher != null? teacher.Code:"N/A")
+                         
                         }),
                         Expires = DateTime.UtcNow.AddMinutes(15),
                         SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature),
@@ -481,10 +483,8 @@ namespace API.Controllers
                          new Claim("email",data.Email.ToString()),
                          new Claim("numberPhone",data.PhoneNumber.ToString()),
                          
-                         //new Claim("CodeStudent", studentId.Code.ToString()),
                          new Claim("CodeTeacher", teacherId.Code.ToString())
-                            //new Claim("Id", student != null ? student.Name : "N/A"),
-                            //new Claim("Idteacher",teacher != null? teacher.Code:"N/A")
+                            
                         }),
                         Expires = DateTime.UtcNow.AddMinutes(15),
                         SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature),
@@ -519,7 +519,7 @@ namespace API.Controllers
             var users = new List<UserDTO>();
 
             // Thư mục lưu ảnh
-            var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "Avatars");
+            var uploadsFolder = Path.Combine(Directory.GetParent(Directory.GetCurrentDirectory()).FullName, "Blazor", "wwwroot", "Avatars");
             if (!Directory.Exists(uploadsFolder))
             {
                 Directory.CreateDirectory(uploadsFolder);
