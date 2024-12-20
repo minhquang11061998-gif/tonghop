@@ -120,7 +120,7 @@ button:hover {
     }
 @media (min-width: 1025px) {
     .table-wrapper {
-        max-height: 665px; /* Đặt chiều cao tối đa cho nội dung cuộn */
+        max-height: 500px; /* Đặt chiều cao tối đa cho nội dung cuộn */
         overflow-y: auto; /* Thêm thanh cuộn dọc */
         display: block;
     }
@@ -141,4 +141,8 @@ button:hover {
 body {
     height: 100vh;
     width: 100vw;
+}
+td {
+    overflow: hidden;
+    text-overflow: ellipsis;
 }

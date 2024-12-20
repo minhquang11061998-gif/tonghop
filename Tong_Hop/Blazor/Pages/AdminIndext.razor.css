@@ -236,14 +236,11 @@ h2.text-center {
     font-size: 0.9rem; /* Thu nhỏ font nếu cần */
 }
 
-@media (max-width: 1200px) {
-    .nav-link {
-        padding: 1rem !important; /* Đảm bảo padding nhỏ hơn cho màn hình nhỏ hơn xl */
-    }
-}
+
 
 @media (min-width: 1200px) {
     .nav-link {
-        padding: 3rem !important; /* Đảm bảo padding lớn hơn cho màn hình xl */
+       max-height:220px;
+
     }
 }

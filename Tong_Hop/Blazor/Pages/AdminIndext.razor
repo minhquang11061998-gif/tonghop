@@ -12,7 +12,7 @@
         <div class="col-12 col-sm-4 col-md-3 col-lg-2 bg-light shadow-sm py-3 scrollable-sidebar">
             <ul class="nav flex-column">
                 <li class="nav-item mb-3">
-                    <NavLink class="nav-link text-center p-xl-1  bg-primary text-white rounded" @onclick="faceid">
+                    <NavLink class="nav-link text-center   bg-primary text-white rounded" @onclick="faceid">
                         <i class="bi bi-emoji-smile fs-2"></i><br /> Quản lý FaceID
                     </NavLink>
                 </li>
@@ -108,7 +108,7 @@
 
     private void ShowGradeModal()
     {
-        ModalTitle = "Quản lý Khối";
+        ModalTitle = "Quản lý Lớp học";
         ModalContent = builder =>
         {
             builder.OpenComponent(0, typeof(Grade_List));
@@ -137,7 +137,7 @@
     }
     private void question()
     {
-        ModalTitle = "Quản lí câu hỏi";
+        ModalTitle = "Quản lí câu hỏi và đề thi";
         ModalContent = builder =>
         {
             builder.OpenComponent(0, typeof(AdminTestManager));

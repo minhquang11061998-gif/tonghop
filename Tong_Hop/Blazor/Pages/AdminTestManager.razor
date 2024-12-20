@@ -31,25 +31,46 @@
                                 {
                                     <ul>
                                         <li class="nav-link">
-                                            <span type="button" @onclick="() => LoadQuestions(item.Id, 1)">
+                                            <span class="target" type="button" @onclick="() => LoadQuestions(item.Id, 1)" @oncontextmenu="(e)=>rightclick(item.Id,1)">
                                                 <i class="bi bi-folder-fill text-warning"></i> Câu hỏi dễ
                                             </span>
+                                            <div id="contextMenu" class="context-menu">
+                                                <div class="context-menu-item" @onclick="OpenModal">Thêm câu hỏi</div>
+                                                <div class="context-menu-item" >Xóa</div>
+                                                <div class="context-menu-item" onclick="alert('Mục 3 được chọn!')">Đổi tên</div>
+                                            </div>
                                         </li>
                                         <li class="nav-link">
-                                            <span type="button" @onclick="() => LoadQuestions(item.Id, 2)">
+                                            <span class="target" type="button" @onclick="() => LoadQuestions(item.Id, 2)" @oncontextmenu="(e)=>rightclick(item.Id,2)">
                                                 <i class="bi bi-folder-fill text-warning"></i> Câu hỏi trung bình
                                             </span>
+                                            <div id="contextMenu" class="context-menu">
+                                                <div class="context-menu-item" @onclick="OpenModal">Thêm câu hỏi</div>
+                                                <div class="context-menu-item">Xóa</div>
+                                                <div class="context-menu-item" onclick="alert('Mục 3 được chọn!')">Đổi tên</div>
+                                            </div>
                                         </li>
                                         <li class="nav-link">
-                                            <span type="button" @onclick="() => LoadQuestions(item.Id, 3)">
+                                            <span class="target" type="button" @onclick="() => LoadQuestions(item.Id, 3)" @oncontextmenu="(e)=>rightclick(item.Id,3)">
                                                 <i class="bi bi-folder-fill text-warning"></i> Câu hỏi Khó
                                             </span>
+                                            <div id="contextMenu" class="context-menu">
+                                                <div class="context-menu-item" @onclick="OpenModal">Thêm câu hỏi</div>
+                                                <div class="context-menu-item">Xóa</div>
+                                                <div class="context-menu-item" onclick="alert('Mục 3 được chọn!')">Đổi tên</div>
+                                            </div>
                                         </li>
                                         <li class="nav-link">
-                                            <span type="button" @onclick="() => LoadQuestions(item.Id, 4)">
+                                            <span class="target" type="button" @onclick="() => LoadQuestions(item.Id, 4)" @oncontextmenu="(e)=>rightclick(item.Id,4)">
                                                 <i class="bi bi-folder-fill text-warning"></i> Câu hỏi nâng cao
                                             </span>
+                                            <div id="contextMenu" class="context-menu">
+                                                <div class="context-menu-item" @onclick="OpenModal">Thêm câu hỏi</div>
+                                                <div class="context-menu-item">Xóa</div>
+                                                <div class="context-menu-item" onclick="alert('Mục 3 được chọn!')">Đổi tên</div>
+                                            </div>
                                         </li>
+
                                     </ul>
                                 }
                             </div>
@@ -207,9 +228,63 @@
             </div>
         </div>
     </div>
-    
+
 </div>
+<div class="modal fade @(showcreatequestion ? "show" : "")" tabindex="-1" style="display:@(showcreatequestion ? "block" : "none")">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Tạo câu hỏi mới</h5>
+                <button type="button" class="btn-close" ></button>
+            </div>
+            <div class="modal-body">
+                <label>Loại câu hỏi:</label>
+                <select @onchange="ChangeQuestionType" class="form-select">
+                    <option value="1">Trắc nghiệm 1 đáp án</option>
+                    <option value="2">Trắc nghiệm nhiều đáp án</option>
+                    <option value="3">Đúng/Sai</option>
+                </select>
+                <div class="mb-3">
+                    <label for="questionName">Tên câu hỏi:</label>
+                    <input id="questionName" class="form-control" @bind="testQuestion.QuestionName" placeholder="Nhập tên câu hỏi..." />
+                </div>
+                @foreach (var (answer, index) in testQuestion.Answers.Select((value, i) => (value, i)))
+                {
+                    <div class="mb-2">
+                        <input class="form-control" @onchange="e => UpdateAnswer(e, index)" value="@answer" placeholder="Nhập đáp án..." />
+                        @if (testQuestion.QuestionType == 1)
+                        {
+                            <input type="radio" name="correctAnswer" @onclick="() => SetCorrectAnswer(index)" />
+                        }
+                        else if (testQuestion.QuestionType == 2)
+                        {
+                            <input type="checkbox" @onchange="e => ToggleCorrectAnswer(index, (bool)e.Value)" />
+                        }
+                    </div>
+                }
+                <button class="btn btn-sm btn-primary" @onclick="AddAnswerField">Thêm đáp án</button>
+                <div class="text-danger">@Message</div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" @onclick="closemodal" >Đóng</button>
+                <button class="btn btn-primary" @onclick="CreateQuestionWithAnswers">Lưu câu hỏi</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @code {
+    private void rightclick(Guid id,int lever){
+        testQuestion.TestId=id;
+        testQuestion.Level = lever;
+    }
+    private void OpenModal(){
+        showcreatequestion = true;
+    }
+    private void closemodal(){
+        showcreatequestion = false;
+    }
+    private bool showcreatequestion = false;
     private List<listdetailquestion> testQuestionss = new List<listdetailquestion>();
     private TestQuestion_TestQuestionAnswersDTO testQuestions = new TestQuestion_TestQuestionAnswersDTO();
     private List<TestDTO> testList = new List<TestDTO>();
@@ -234,12 +309,12 @@
         }
         catch (Exception)
         {
-            
+
         }
 
     }
-   
-   
+
+
     private async Task detailquestion(Guid id)
     {
         var client = clientFactory.CreateClient("Get");
@@ -444,9 +519,9 @@
                     var handler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
                     var jsonToken = handler.ReadToken(token) as System.IdentityModel.Tokens.Jwt.JwtSecurityToken;
 
-                    username = jsonToken?.Claims.FirstOrDefault(c => c.Type == "name")?.Value;
+                    username = jsonToken?.Claims.FirstOrDefault(c => c.Type == "nameab")?.Value;
                     testQuestio.CreatedByName = username;
-
+                    testQuestion.CreatedByName = username;
                     if (string.IsNullOrEmpty(username))
                     {
                         Console.WriteLine("Không tìm thấy tên người dùng trong token.");
@@ -523,7 +598,7 @@
         var url = $"https://localhost:7046/api/Test/get-list-test";
         testList = await httpClient.GetFromJsonAsync<List<TestDTO>>(url);
     }
-    @code {
+ 
         private bool isCreateTestModalVisible = false;
         private bool isQuestionDetailModalVisible = false;
         private bool isQuestionDetailModalVisibles = false;
@@ -566,6 +641,121 @@
         {
             isQuestionDetailModalVisibless = false;
         }
+    
+    private TestQuestion_TestQuestionAnswersDTO testQuestion = new  TestQuestion_TestQuestionAnswersDTO()
+        {
+            QuestionType = 1,
+            Answers = new List<string> { "" },
+            CorrectAnswers = new List<string>()
+        };
+
+    private string Message;
+
+    // Thay đổi loại câu hỏi
+    private void ChangeQuestionType(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out int type))
+        {
+            testQuestion.QuestionType = type;
+            testQuestion.Answers.Clear();
+            testQuestion.CorrectAnswers.Clear();
+
+            if (type == 1 || type == 2)
+                testQuestion.Answers.AddRange(new string[] { "" });
+            else if (type == 3)
+                testQuestion.Answers.AddRange(new[] { "True", "False" });
+        }
+        StateHasChanged();
+    }
+
+    // Thêm đáp án mới
+    private void AddAnswerField()
+    {
+        if (testQuestion.QuestionType == 1 || testQuestion.QuestionType == 2)
+        {
+            if (testQuestion.Answers.Count < 4)
+                testQuestion.Answers.Add("");
+        }
+        else
+        {
+            testQuestion.Answers.Add("");
+        }
+    }
+
+    // Cập nhật đáp án
+    private void UpdateAnswer(ChangeEventArgs e, int index)
+    {
+        if (index >= 0 && index < testQuestion.Answers.Count)
+            testQuestion.Answers[index] = e.Value?.ToString() ?? "";
+    }
+
+    // Chọn đáp án đúng (1 đáp án)
+    private void SetCorrectAnswer(int index)
+    {
+        if (index >= 0 && index < testQuestion.Answers.Count)
+        {
+            testQuestion.CorrectAnswers.Clear();
+            testQuestion.CorrectAnswers.Add(testQuestion.Answers[index]);
+        }
+    }
+
+    // Chọn/bỏ chọn đáp án đúng (nhiều đáp án)
+    private void ToggleCorrectAnswer(int index, bool isChecked)
+    {
+        if (index >= 0 && index < testQuestion.Answers.Count)
+        {
+            var answer = testQuestion.Answers[index];
+            if (isChecked)
+                testQuestion.CorrectAnswers.Add(answer);
+            else
+                testQuestion.CorrectAnswers.Remove(answer);
+        }
+    }
+
+    // Gửi câu hỏi lên API
+    private async Task CreateQuestionWithAnswers()
+    {
+        // Kiểm tra dữ liệu hợp lệ
+        if (string.IsNullOrWhiteSpace(testQuestion.QuestionName) || testQuestion.Answers.Count == 0)
+        {
+            Message = "Vui lòng điền đầy đủ thông tin câu hỏi và đáp án.";
+            return;
+        }
+
+        if (testQuestion.CorrectAnswers.Any(ca => !testQuestion.Answers.Contains(ca)))
+        {
+            Message = "Đáp án đúng phải nằm trong danh sách đáp án.";
+            return;
+        }
+
+        // Gửi lên API
+        var response = await client.PostAsJsonAsync("https://localhost:7046/api/TestQuestion/create_question_answwer", testQuestion);
+        if (response.IsSuccessStatusCode)
+        {
+            await ShowSuccessMessage("Câu hỏi đã được tạo thành công!");
+            ResetForm();
+        }
+        else
+        {
+            Message = $"Lỗi tạo câu hỏi: {await response.Content.ReadAsStringAsync()}";
+        }
+    }
+
+    // Hiển thị thông báo thành công
+    private async Task ShowSuccessMessage(string text)
+    {
+        await Jsruntime.InvokeVoidAsync("Swal.fire", new { title = "Thành công!", text, icon = "success" });
+        NavigationManager.NavigateTo(NavigationManager.Uri, forceLoad: true);
+    }
+    private void ResetForm()
+    {
+        testQuestion = new TestQuestion_TestQuestionAnswersDTO
+            {
+                QuestionType = 1,
+                Answers = new List<string> { "", "", "", "" },
+                CorrectAnswers = new List<string>()
+            };
+        Message = string.Empty;
     }
         
 }
