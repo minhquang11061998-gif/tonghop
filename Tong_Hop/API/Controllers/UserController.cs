@@ -538,6 +538,7 @@ namespace API.Controllers
         [HttpPost("import-excel")]
         public async Task<IActionResult> ImportUsersFromExcel(IFormFile file , Guid id)
         {
+            var roleStudent = await _db.Roles.Where(x => x.Name == "Student").Select(x => x.Id).FirstOrDefaultAsync();
             if (file == null || file.Length == 0)
             {
                 return BadRequest("File không hợp lệ.");
@@ -598,7 +599,7 @@ namespace API.Controllers
                             LockedEndTime = DateTime.Now,
                             CreationTime = DateTime.Now,
                             Status = 1,
-                            RoleId = Guid.Parse("26948ba2-17c8-4b73-bd5b-08cca2db0f92")
+                            RoleId = roleStudent
                         };
                         await _db.Users.AddAsync(user);
                         await _db.SaveChangesAsync();
