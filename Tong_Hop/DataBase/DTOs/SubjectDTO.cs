@@ -15,14 +15,7 @@ namespace DataBase.DTOs
         public DateTime CreationTime { get; set; }
         public int Status { get; set; }
         public List<Guid>? GradeIds { get; set; }
-        public List<PointTypeDto>? PointTypeIds { get; set; } // Thêm danh sách PointTypeId
         public Guid TeacherId { get; set; }
 
-    }
-
-    public class PointTypeDto
-    {
-        public Guid IdPointType { get; set; }
-        public int Quantity { get; set; } // Giá trị Quantity tuỳ thuộc vào từng PointType
     }
 }

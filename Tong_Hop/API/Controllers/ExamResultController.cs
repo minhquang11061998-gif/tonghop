@@ -17,108 +17,243 @@ namespace API.Controllers
             _db = db;
         }
 
-        [HttpGet("search-student-result")]
-        public async Task<ActionResult<IEnumerable<StudentExamResultDTO>>> GetStudentExamResult(string keyword)
-        {
-            if (string.IsNullOrEmpty(keyword))
-            {
-                return BadRequest("Keyword is required.");
-            }
-            // Truy vấn dữ liệu từ các bảng và ánh xạ sang DTO
-            var result = await (from student in _db.Students
-                                join studentClass in _db.Student_Classes on student.Id equals studentClass.StudentId
-                                join classEntity in _db.Classes on studentClass.ClassId equals classEntity.Id
-                                join grade in _db.Grades on classEntity.GradeId equals grade.Id
-                                join subjectGrade in _db.Subject_Grades on grade.Id equals subjectGrade.GradeId
-                                join subject in _db.Subjects on subjectGrade.SubjectId equals subject.Id
-                                join exam in _db.Exams on subject.Id equals exam.SubjectId
-                                join examRoom in _db.Exam_Rooms on exam.Id equals examRoom.ExamId
-                                join examRoomTestCode in _db.Exam_Room_TestCodes on examRoom.Id equals examRoomTestCode.ExamRoomId
-                                join examRoomStudent in _db.Exam_Room_Students on examRoomTestCode.Id equals examRoomStudent.ExamRoomTestCodeId
-                                join examRoomStudentAnswerHistory in _db.Exam_Room_Student_AnswerHistories on examRoomStudent.Id equals examRoomStudentAnswerHistory.ExamRoomStudentId
-                                join testQuestionAnswer in _db.TestQuestionAnswers on examRoomStudentAnswerHistory.TestQuestionAnswerId equals testQuestionAnswer.Id
-                                join testQuestion in _db.TestQuestions on testQuestionAnswer.TestQuestionId equals testQuestion.Id
-                                join testcodeTestQuestion in _db.TestCode_TestQuestion on testQuestion.Id equals testcodeTestQuestion.TestQuestionId
-                                join testcode in _db.TestCodes on testcodeTestQuestion.TestCodeId equals testcode.Id
-                                join test in _db.Tests on testcode.TestId equals test.Id
-                                join examHistory in _db.ExamHistorys on examRoomStudent.Id equals examHistory.ExamRoomStudentId
-                                where student.Code.Contains(keyword) || student.User.FullName.Contains(keyword)
-                                select new
-                                {
-                                    StudentID = student.Id,
-                                    examRoomTestCodeId = examRoomTestCode.Id,
-                                    GradeName = grade.Name,
-                                    ClassName = classEntity.Name,
-                                    StudentCode = student.Code,
-                                    StudentName = student.User.FullName,
-                                    SubjectName = subject.Name,
-                                    TestCode = testcode.Code,
-                                    RoomName = examRoom.Room.Name,
-                                    Answer = testQuestionAnswer.Answer,
-                                    RightAnswer = testQuestion.RightAnswer,
-                                    ExamTime = examHistory.CreationTime
-                                }).ToListAsync();
+		[HttpGet("get-search-result2")]
+		public async Task<ActionResult<IEnumerable<ExamHistoryDTO>>> GetSearchStudentExamResult(string keyword)
+		{
+			try
+			{
+				// Truy vấn dữ liệu với LEFT JOIN
+				var rawData = await (from examHistory in _db.ExamHistorys
 
-            // Nhóm kết quả và tính toán số lượng câu trả lời đúng và sai
-            var studentResult = result
-                .GroupBy(x => new { x.GradeName, x.ClassName, x.StudentID, x.examRoomTestCodeId, x.StudentCode, x.StudentName, x.SubjectName, x.TestCode, x.RoomName, x.ExamTime })
-                .Select(g => new StudentExamResultDTO
-                {
-                    StudentID = g.Key.StudentID,
-                    examRoomTestCodeId = g.Key.examRoomTestCodeId,
-                    GradeName = g.Key.GradeName,
-                    ClassName = g.Key.ClassName,
-                    StudentCode = g.Key.StudentCode,
-                    StudentName = g.Key.StudentName,
-                    SubjectName = g.Key.SubjectName,
-                    TestCode = g.Key.TestCode,
-                    RoomName = g.Key.RoomName,
-                    ExamTime = g.Key.ExamTime,
-                    CorrectAnswers = g.Count(x => x.Answer == x.RightAnswer),
-                    WrongAnswers = g.Count(x => x.Answer != x.RightAnswer),
-                })
-                .ToList();
+									 join examRoomStudent in _db.Exam_Room_Students
+										 on examHistory.ExamRoomStudentId equals examRoomStudent.Id into ersGroup
+									 from examRoomStudent in ersGroup.DefaultIfEmpty()
 
-            return Ok(studentResult);
-        }
+									 join examRoomTestCode in _db.Exam_Room_TestCodes
+										 on examRoomStudent.ExamRoomTestCodeId equals examRoomTestCode.Id into ertcGroup
+									 from examRoomTestCode in ertcGroup.DefaultIfEmpty()
 
-        [HttpGet("get-student-question")]
-        public async Task<ActionResult> GetStudentQuestion(Guid studentId, Guid examRoomTestCodeId)
-        {
-            var result = await (from student in _db.Students
-                                join studentClass in _db.Student_Classes on student.Id equals studentClass.StudentId
-                                join classEntity in _db.Classes on studentClass.ClassId equals classEntity.Id
-                                join grade in _db.Grades on classEntity.GradeId equals grade.Id
-                                join subjectGrade in _db.Subject_Grades on grade.Id equals subjectGrade.GradeId
-                                join subject in _db.Subjects on subjectGrade.SubjectId equals subject.Id
-                                join exam in _db.Exams on subject.Id equals exam.SubjectId
-                                join examRoom in _db.Exam_Rooms on exam.Id equals examRoom.ExamId
-                                join examRoomTestCode in _db.Exam_Room_TestCodes on examRoom.Id equals examRoomTestCode.ExamRoomId
-                                join examRoomStudent in _db.Exam_Room_Students on examRoomTestCode.Id equals examRoomStudent.ExamRoomTestCodeId
-                                join examRoomStudentAnswerHistory in _db.Exam_Room_Student_AnswerHistories on examRoomStudent.Id equals examRoomStudentAnswerHistory.ExamRoomStudentId
-                                join testQuestionAnswer in _db.TestQuestionAnswers on examRoomStudentAnswerHistory.TestQuestionAnswerId equals testQuestionAnswer.Id
-                                join testQuestion in _db.TestQuestions on testQuestionAnswer.TestQuestionId equals testQuestion.Id
-                                join testcodeTestQuestion in _db.TestCode_TestQuestion on testQuestion.Id equals testcodeTestQuestion.TestQuestionId
-                                join testcode in _db.TestCodes on testcodeTestQuestion.TestCodeId equals testcode.Id
-                                join test in _db.Tests on testcode.TestId equals test.Id
-                                where student.Id == studentId && examRoomTestCode.Id == examRoomTestCodeId
-                                select new TestQuestion_AnswersDTO
-                                {
-                                    QuestionName = testQuestion.QuestionName,
-                                    QuestionType = testQuestion.Type,
-                                    Level = testQuestion.Level,
-                                    CreatedByName = testQuestion.CreatedByName,
-                                    TestId = test.Id,
-                                    Answers = _db.TestQuestionAnswers
-                                                 .Where(tqAnswer => tqAnswer.TestQuestionId == testQuestion.Id)
-                                                 .Select(tqAnswer => tqAnswer.Answer).ToList(),
-                                    CorrectAnswers = _db.TestQuestionAnswers
-                                                        .Where(tqAnswer => tqAnswer.TestQuestionId == testQuestion.Id
-                                                                           && tqAnswer.Answer == testQuestion.RightAnswer)
-                                                        .Select(tqAnswer => tqAnswer.Answer).ToList()
-                                }).ToListAsync();
+									 join test in _db.Tests
+										 on examRoomTestCode.TestId equals test.Id into testGroup
+									 from test in testGroup.DefaultIfEmpty()
 
-            return Ok(result);
-        }
-    }
+									 join examRoomStudentAnswerHistory in _db.Exam_Room_Student_AnswerHistories
+										 on examRoomStudent.Id equals examRoomStudentAnswerHistory.ExamRoomStudentId into ersahGroup
+									 from examRoomStudentAnswerHistory in ersahGroup.DefaultIfEmpty()
+
+									 join testQuestionAnswer in _db.TestQuestionAnswers
+										 on examRoomStudentAnswerHistory.TestQuestionAnswerId equals testQuestionAnswer.Id into tqaGroup
+									 from testQuestionAnswer in tqaGroup.DefaultIfEmpty()
+
+									 join testQuestion in _db.TestQuestions
+										 on testQuestionAnswer.TestQuestionId equals testQuestion.Id into tqGroup
+									 from testQuestion in tqGroup.DefaultIfEmpty()
+
+									 join testcodeTestQuestion in _db.TestCode_TestQuestion
+										 on testQuestion.Id equals testcodeTestQuestion.TestQuestionId into tctqGroup
+									 from testcodeTestQuestion in tctqGroup.DefaultIfEmpty()
+
+									 join testcode in _db.TestCodes
+										 on testcodeTestQuestion.TestCodeId equals testcode.Id into testcodeGroup
+									 from testcode in testcodeGroup.DefaultIfEmpty()
+
+									 join examRoom in _db.Exam_Rooms
+										 on examRoomTestCode.ExamRoomId equals examRoom.Id into examRoomGroup
+									 from examRoom in examRoomGroup.DefaultIfEmpty()
+
+									 join student in _db.Students
+										 on examRoomStudent.StudentId equals student.Id into studentGroup
+									 from student in studentGroup.DefaultIfEmpty()
+
+									 join studentClass in _db.Student_Classes
+										 on student.Id equals studentClass.StudentId into scGroup
+									 from studentClass in scGroup.DefaultIfEmpty()
+
+									 join classEntity in _db.Classes
+										 on studentClass.ClassId equals classEntity.Id into classGroup
+									 from classEntity in classGroup.DefaultIfEmpty()
+
+									 join subject in _db.Subjects
+										 on test.SubjectId equals subject.Id into subjectGroup
+									 from subject in subjectGroup.DefaultIfEmpty()
+
+										 // Điều kiện tìm kiếm (nếu có keyword)
+									 where string.IsNullOrEmpty(keyword) || (student.User.FullName.Contains(keyword))
+
+									 select new ExamHistoryDTO
+									 {
+										 Id = examHistory.Id,
+										 Score = examHistory.Score,
+										 Note = examHistory.Note,
+										 CreationTime = examHistory.CreationTime,
+										 StudentCode = student != null ? student.Code : "N/A",
+										 StudentName = student != null ? student.User.FullName : "N/A",
+										 TestName = test != null ? test.Name : "N/A",
+										 TestCode = testcode != null ? testcode.Code : "N/A",
+										 ClassName = classEntity != null ? classEntity.Name : "N/A",
+										 SubjectName = subject != null ? subject.Name : "N/A"
+									 }).ToListAsync();
+
+				// Loại bỏ trùng lặp thủ công dựa trên Id
+				var distinctResult = rawData
+					.GroupBy(x => x.Id) // Nhóm theo Id
+					.Select(g => g.First()) // Chọn bản ghi đầu tiên trong nhóm
+					.ToList();
+
+				Console.WriteLine($"Số bản ghi sau khi loại bỏ trùng: {distinctResult.Count}");
+
+				return Ok(distinctResult);
+			}
+			catch (Exception ex)
+			{
+				return BadRequest($"Lỗi truy vấn: {ex.Message}");
+			}
+		}
+
+
+		[HttpGet("Get_Exam_Detail")]
+		public async Task<IActionResult> GetQuestionsAndAnswers(string testCode)
+		{
+			try
+			{
+				var result = await (from tcq in _db.TestCode_TestQuestion
+									join tc in _db.TestCodes on tcq.TestCodeId equals tc.Id
+									where tc.Code == testCode // Điều kiện so sánh mã TestCode
+									select new
+									{
+										QuestionId = tcq.TestQuestionId,
+										QuestionName = tcq.TestQuestion.QuestionName,
+										RightAnswer = tcq.TestQuestion.RightAnswer,
+										Answers = _db.TestQuestionAnswers
+											.Where(qa => qa.TestQuestionId == tcq.TestQuestionId)
+											.Select(qa => new
+											{
+												AnswerId = qa.Id,
+												Answer = qa.Answer
+											}).ToList(),
+										SelectedAnswer = _db.Exam_Room_Student_AnswerHistories
+											.Where(ah => _db.TestQuestionAnswers
+												.Where(qa => qa.TestQuestionId == tcq.TestQuestionId)
+												.Select(qa => qa.Id)
+												.Contains(ah.TestQuestionAnswerId))
+											.Select(ah => new
+											{
+												AnswerId = ah.TestQuestionAnswerId,
+												Answer = ah.TestQuestionAnswer.Answer
+											}).FirstOrDefault(),
+										IsCorrect = _db.Exam_Room_Student_AnswerHistories
+											.Where(ah => _db.TestQuestionAnswers
+												.Where(qa => qa.TestQuestionId == tcq.TestQuestionId)
+												.Select(qa => qa.Id)
+												.Contains(ah.TestQuestionAnswerId))
+											.Select(ah => ah.TestQuestionAnswer.Answer)
+											.FirstOrDefault() == tcq.TestQuestion.RightAnswer
+									})
+									.ToListAsync();
+
+				int correctAnswers = result.Count(q => q.IsCorrect); // Tổng câu đúng
+				int numberOfQuestions = result.Count(); // Tổng số câu hỏi
+				double totalScore = (10.0 / numberOfQuestions) * correctAnswers; // Điểm tổng
+				totalScore = Math.Round(totalScore, 2); // Làm tròn đến 2 chữ số sau dấu phẩy
+
+				if (!result.Any())
+				{
+					return NotFound(new { message = "No questions found for the provided TestCode." });
+				}
+
+				return Ok(new
+				{
+					numberOfQuestions = numberOfQuestions,
+					correctAnswers = correctAnswers,
+					totalScore = totalScore,
+					result = result
+				});
+			}
+			catch (Exception ex)
+			{
+				return StatusCode(500, new { message = ex.Message });
+			}
+		}
+
+
+		[HttpGet("get-result-by-class")]
+		public async Task<ActionResult<IEnumerable<ExamHistoryDTO>>> GetStudentExamResult2(Guid classId)
+		{
+			try
+			{
+				// Truy vấn dữ liệu với LEFT JOIN
+				var rawData = await (from examHistory in _db.ExamHistorys
+
+									 join examRoomStudent in _db.Exam_Room_Students
+										 on examHistory.ExamRoomStudentId equals examRoomStudent.Id into ersGroup
+									 from examRoomStudent in ersGroup.DefaultIfEmpty()
+
+									 join examRoomTestCode in _db.Exam_Room_TestCodes
+										 on examRoomStudent.ExamRoomTestCodeId equals examRoomTestCode.Id into ertcGroup
+									 from examRoomTestCode in ertcGroup.DefaultIfEmpty()
+
+									 join test in _db.Tests
+										 on examRoomTestCode.TestId equals test.Id into testGroup
+									 from test in testGroup.DefaultIfEmpty()
+
+									 join examRoomStudentAnswerHistory in _db.Exam_Room_Student_AnswerHistories on examRoomStudent.Id equals examRoomStudentAnswerHistory.ExamRoomStudentId
+									 join testQuestionAnswer in _db.TestQuestionAnswers on examRoomStudentAnswerHistory.TestQuestionAnswerId equals testQuestionAnswer.Id
+									 join testQuestion in _db.TestQuestions on testQuestionAnswer.TestQuestionId equals testQuestion.Id
+									 join testcodeTestQuestion in _db.TestCode_TestQuestion on testQuestion.Id equals testcodeTestQuestion.TestQuestionId
+
+									 join testcode in _db.TestCodes on testcodeTestQuestion.TestCodeId equals testcode.Id into testcodeGroup
+									 from testcode in testcodeGroup.DefaultIfEmpty()
+
+									 join examRoom in _db.Exam_Rooms
+										 on examRoomTestCode.ExamRoomId equals examRoom.Id into examRoomGroup
+									 from examRoom in examRoomGroup.DefaultIfEmpty()
+
+									 join student in _db.Students
+										 on examRoomStudent.StudentId equals student.Id into studentGroup
+									 from student in studentGroup.DefaultIfEmpty()
+
+									 join studentClass in _db.Student_Classes
+										 on student.Id equals studentClass.StudentId into scGroup
+									 from studentClass in scGroup.DefaultIfEmpty()
+
+									 join classEntity in _db.Classes
+										 on studentClass.ClassId equals classEntity.Id into classGroup
+									 from classEntity in classGroup.DefaultIfEmpty()
+
+									 join subject in _db.Subjects
+										 on test.SubjectId equals subject.Id into subjectGroup
+									 from subject in subjectGroup.DefaultIfEmpty()
+
+									 where classEntity.Id == classId // Lọc theo lớp học
+
+									 select new ExamHistoryDTO
+									 {
+										 Id = examHistory.Id,
+										 Score = examHistory.Score,
+										 Note = examHistory.Note,
+										 CreationTime = examHistory.CreationTime,
+										 StudentCode = student != null ? student.Code : "N/A",
+										 StudentName = student != null ? student.User.FullName : "N/A",
+										 TestName = test != null ? test.Name : "N/A",
+										 TestCode = testcode != null ? testcode.Code : "N/A",
+										 ClassName = classEntity != null ? classEntity.Name : "N/A",
+										 SubjectName = subject != null ? subject.Name : "N/A"
+									 }).ToListAsync();
+
+				// Loại bỏ trùng lặp thủ công dựa trên Id
+				var distinctResult = rawData
+					.GroupBy(x => x.Id) // Nhóm theo Id
+					.Select(g => g.First()) // Chọn bản ghi đầu tiên trong nhóm
+					.ToList();
+
+				Console.WriteLine($"Số bản ghi sau khi loại bỏ trùng: {distinctResult.Count}");
+
+				return Ok(distinctResult);
+			}
+			catch (Exception ex)
+			{
+				return BadRequest($"Lỗi truy vấn: {ex.Message}");
+			}
+		}
+	}
 }
