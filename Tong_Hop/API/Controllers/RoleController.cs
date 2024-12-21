@@ -1,9 +1,11 @@
-﻿using DataBase.Data;
+﻿using CloudinaryDotNet.Actions;
+using DataBase.Data;
 using DataBase.DTOs;
 using DataBase.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Role = DataBase.Models.Role;
 
 namespace API.Controllers
 {

@@ -416,7 +416,7 @@
     private string teacherid;
     private IBrowserFile selectedFile;
     private IBrowserFile avatarFile;
-  
+
     private async Task UploadImage(InputFileChangeEventArgs e)
     {
         if (e.File != null)
@@ -424,9 +424,9 @@
             // Đọc file và chuyển thành URL Base64 để hiển thị
             var buffer = new byte[e.File.Size];
             await e.File.OpenReadStream().ReadAsync(buffer);
-         
 
-         
+
+
         }
     }
     private async Task tokenget()
@@ -447,7 +447,7 @@
     }
     private async Task HandleValidSubmit(Guid id)
     {
-        user.RoleId = Guid.Parse("26948BA2-17C8-4B73-BD5B-08CCA2DB0F92");
+        
         user.IsLocked = true;
         var content = new MultipartFormDataContent();
 

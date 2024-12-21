@@ -167,6 +167,7 @@ namespace API.Controllers
         {
             try
             {
+                var roleStudent = await _db.Roles.Where(x => x.Name == "Student").Select(x => x.Id).FirstOrDefaultAsync();
                 var userId = Guid.NewGuid();
                 string avatarPath=null;
                 if (avatarFile == null || avatarFile.Length == 0)
@@ -207,7 +208,7 @@ namespace API.Controllers
                     CreationTime = currentDateTime, // Mặc định là thời gian hiện tại
                     LastMordificationTime = currentDateTime, // Mặc định là thời gian hiện tại
                     Status = user.Status,
-                    RoleId = user.RoleId,
+                    RoleId = roleStudent,
                 };
 
                 // Thêm User mới vào database
