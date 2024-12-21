@@ -161,10 +161,11 @@ namespace API.Controllers
             }
         }
 
-
+      
         [HttpPost("create-user")]
         public async Task<IActionResult> Create([FromForm] UserDTO user, IFormFile avatarFile,Guid id)
         {
+        
             try
             {
                 var userId = Guid.NewGuid();
