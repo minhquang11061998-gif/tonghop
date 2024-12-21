@@ -41,6 +41,7 @@ namespace API.Controllers
              ).Distinct().ToList();
             return Ok(infor);
         }
+
         [HttpGet("test-testcode-question-await")]
         public async Task<IActionResult> Get(int CodeTest)
         {
@@ -87,6 +88,7 @@ namespace API.Controllers
 
             return Ok(result);
         }
+
         [HttpGet("GetExamDuration")]
         public async Task<IActionResult> GetExamDuration(int codeTest)
         {
@@ -98,6 +100,7 @@ namespace API.Controllers
 
             return Ok(exam.Minute); // Trả về thời gian làm bài (phút)
         }
+
         [HttpGet("Chọn đáp an")]
         public async Task<ActionResult> IdExamroomstudent(int CodeTesst, Guid GuidId)
         {
@@ -178,6 +181,7 @@ namespace API.Controllers
 
             return NotFound("Không tìm thấy lịch sử câu trả lời. ");
         }
+
         [HttpGet("check-answer-history")]
         public async Task<ActionResult<int>> CheckAnswerHistory(int codetest, Guid questionId, Guid studentId)
         {
@@ -192,5 +196,139 @@ namespace API.Controllers
 
             return Ok(answerHistoryCount);
         }
+
+        #region code mới chưa có
+        [HttpGet("List_QuestionAndAnswers")]
+        public async Task<IActionResult> GetQuestionsAndAnswers(Guid testCodeId)
+        {
+            try
+            {
+                var result = await _db.TestCode_TestQuestion
+                .Where(tcq => tcq.TestCodeId == testCodeId)
+                .Select(tcq => new
+                {
+                    QuestionId = tcq.TestQuestionId,
+                    QuestionName = tcq.TestQuestion.QuestionName,
+                    RightAnswer = tcq.TestQuestion.RightAnswer,
+                    Answers = _db.TestQuestionAnswers
+                        .Where(qa => qa.TestQuestionId == tcq.TestQuestionId)
+                        .Select(qa => new
+                        {
+                            AnswerId = qa.Id,
+                            Answer = qa.Answer
+                        }).ToList(),
+                    SelectedAnswer = _db.Exam_Room_Student_AnswerHistories
+                        .Where(ah => _db.TestQuestionAnswers
+                            .Where(qa => qa.TestQuestionId == tcq.TestQuestionId)
+                            .Select(qa => qa.Id)
+                            .Contains(ah.TestQuestionAnswerId))
+                        .Select(ah => new
+                        {
+                            AnswerId = ah.TestQuestionAnswerId,
+                            Answer = ah.TestQuestionAnswer.Answer
+                        }).FirstOrDefault(),
+                    IsCorrect = _db.Exam_Room_Student_AnswerHistories
+                        .Where(ah => _db.TestQuestionAnswers
+                            .Where(qa => qa.TestQuestionId == tcq.TestQuestionId)
+                            .Select(qa => qa.Id)
+                            .Contains(ah.TestQuestionAnswerId))
+                        .Select(ah => ah.TestQuestionAnswer.Answer)
+                        .FirstOrDefault() == tcq.TestQuestion.RightAnswer
+                })
+                .ToListAsync();
+
+                int correctAnswers = result.Count(q => q.IsCorrect);// tổng câu đúng 
+                int numberOfQuestions = result.Count();
+                double totalScore = (10.0 / numberOfQuestions) * correctAnswers;
+                totalScore = Math.Round(totalScore, 2); // Làm tròn đến 2 chữ số sau dấu phẩy
+                if (!result.Any())
+                {
+                    return NotFound(new { message = "No questions found for the provided TestCodeId." });
+                }
+
+                return Ok(new
+                {
+                    numberOfQuestions = numberOfQuestions,
+                    correctAnswers = correctAnswers,
+                    totalScore = totalScore,
+                    result = result
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = ex.Message });
+            }
+        }
+
+        [HttpGet("Exam_results_storage")]
+        public async Task<ActionResult> ExamResultsStorage(int CodeTest, double ExamResultStorage, Guid IdStudent)
+        {
+            try
+            {
+                var result = await _db.Tests.FirstOrDefaultAsync(x => x.Code == CodeTest);
+
+                var data = new Scores
+                {
+                    Id = Guid.NewGuid(),
+                    Score = ExamResultStorage,
+                    PointTypeId = result.PointTypeId,
+                    SubjectId = result.SubjectId,
+                    StudentId = IdStudent
+                };
+
+                _db.Scores.Add(data);
+                _db.SaveChanges();
+
+                return Ok(data);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = ex.Message });
+            }
+        }
+
+        public class ExamHistoriesDTO
+        {
+            public Guid Id { get; set; }
+            public double Score { get; set; }
+            public string? Note { get; set; }
+            public DateTime CreationTime { get; set; }
+            public Guid ExamRoomStudentId { get; set; }
+        }
+
+        [HttpGet("Exam_Histories")]
+        public async Task<ActionResult> ExamHistories(int CodeTesst, double ExamResultStorage, Guid IdStudent)
+        {
+            try
+            {
+                var examroomstudent = await (from a in _db.Tests
+                                             join b in _db.Exam_Room_TestCodes on a.Id equals b.TestId
+                                             join c in _db.Exam_Room_Students on b.Id equals c.ExamRoomTestCodeId
+                                             where a.Code == CodeTesst && c.StudentId == IdStudent
+                                             select new
+                                             {
+                                                 c.Id
+                                             }).FirstOrDefaultAsync();
+
+                var data = new ExamHistorys
+                {
+                    Id = Guid.NewGuid(),
+                    Score = ExamResultStorage,
+                    Note = "",
+                    CreationTime = DateTime.Now,
+                    ExamRoomStudentId = examroomstudent.Id
+                };
+
+                _db.ExamHistorys.Add(data);
+                await _db.SaveChangesAsync();
+
+                return Ok(data);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+        #endregion
     }
 }
