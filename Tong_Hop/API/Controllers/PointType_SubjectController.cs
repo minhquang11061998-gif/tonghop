@@ -152,35 +152,5 @@ namespace API.Controllers
 
             return Ok(result.ToList());
         }
-
-        [HttpGet]
-        [Route("GetScores_code")]
-        public IActionResult GetScores(string code) // Thay đổi tham số thành code
-        {
-            // Lấy studentId từ code
-            var student = _db.Students.FirstOrDefault(s => s.Code == code);
-            if (student == null)
-            {
-                return NotFound("Không tìm thấy sinh viên với mã: " + code);
-            }
-
-            var studentId = student.Id;
-
-            var result = from s in _db.Scores
-                         join subj in _db.Subjects on s.SubjectId equals subj.Id
-                         join pt in _db.PointTypes on s.PointTypeId equals pt.Id
-                         join pts in _db.PointType_Subjects on pt.Id equals pts.PointTypeId
-                         where s.StudentId == studentId // Lọc theo StudentId
-                         group s by new { SubjectName = subj.Name, PointTypeName = pt.Name, pts.Quantity } into g
-                         select new
-                         {
-                             SubjectName = g.Key.SubjectName,
-                             PointTypeName = g.Key.PointTypeName,
-                             Quantity = g.Key.Quantity,
-                             Scores = string.Join(", ", g.Select(x => x.Score))
-                         };
-
-            return Ok(result.ToList());
-        }
     }
 }

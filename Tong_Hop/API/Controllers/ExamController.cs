@@ -11,7 +11,7 @@ namespace API.Controllers
     [ApiController]
     public class ExamController : ControllerBase
     {
-        private readonly AppDbContext _db;
+        private readonly AppDbContext _db;    
         public ExamController(AppDbContext db)
         {
             _db = db;

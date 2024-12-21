@@ -44,6 +44,7 @@ namespace API.Controllers
 
             return Ok(testdto);
         }
+
         [HttpGet("{testId}/questions")]
         public async Task<IActionResult> GetQuestions(Guid testId, [FromQuery] int level)
         {
@@ -66,6 +67,7 @@ namespace API.Controllers
 
             return Ok(questions);
         }
+
         [HttpGet("get-list-test")]
         public async Task<List<TestGridDTO>> GetListTest()
         {
@@ -99,6 +101,7 @@ namespace API.Controllers
 
             return testList;
         }
+
         [HttpGet("get-by-id-test")]
         public async Task<ActionResult<TestDTO>> GetById(Guid id)
         {
@@ -187,52 +190,75 @@ namespace API.Controllers
                     return BadRequest("Không tìm thấy số lượng sinh viên tối đa cho lớp học.");
                 }
 
-                // Tạo thực thể Test từ DTO
-                var newTest = new Tests
-                {
-                    Id = Guid.NewGuid(),
-                    Name = testDTO.Name,
-                    Code = RamdomCodeTest(6), // Tạo mã ngẫu nhiên
-                    CreationTime = DateTime.Now,
-                    Minute = testDTO.Minute,
-                    Status = testDTO.Status,
-                    SubjectId = testDTO.SubjectId,
-                    PointTypeId = testDTO.PointTypeId,
-                    MaxStudent = maxStudents,
-                };
+				var testCount = await (from t in _db.Tests
+									   join pts in _db.PointType_Subjects on t.PointTypeId equals pts.PointTypeId
+									   join subj in _db.Subjects on pts.SubjectId equals subj.Id
+									   join p in _db.PointTypes on pts.PointTypeId equals p.Id
+									   join gs in _db.Subject_Grades on subj.Id equals gs.SubjectId
+									   join g in _db.Grades on gs.GradeId equals g.Id
+									   join cl in _db.Classes on g.Id equals cl.GradeId
+									   where t.SubjectId == testDTO.SubjectId
+											 && t.PointTypeId == testDTO.PointTypeId
+											 && cl.Id == testDTO.ClassCode
+									   select t.Id).CountAsync();
 
-                // Thêm thực thể Test vào DbContext
-                await _db.Tests.AddAsync(newTest);
-                await _db.SaveChangesAsync();
+				var maxQuantity = await (from pts in _db.PointType_Subjects
+										 where pts.SubjectId == testDTO.SubjectId
+											   && pts.PointTypeId == testDTO.PointTypeId
+										 select pts.Quantity).FirstOrDefaultAsync();
 
-                // Tạo TestCode tương ứng với số lượng MaxStudent
-                for (int i = 0; i < maxStudents; i++)
-                {
-                    var newTestCode = new TestCodes
-                    {
-                        Id = Guid.NewGuid(),
-                        Code = RamdomCodeTestCode(8), // Tạo mã ngẫu nhiên
-                        Status = 1,
-                        TestId = newTest.Id, // Gán TestId
-                    };
 
-                    // Thêm thực thể TestCode vào DbContext
-                    await _db.TestCodes.AddAsync(newTestCode);
-                }
+				if (testCount < maxQuantity)
+				{
+					// Tạo thực thể Test từ DTO
+					var newTest = new Tests
+					{
+						Id = Guid.NewGuid(),
+						Name = testDTO.Name,
+						Code = RamdomCodeTest(6), // Tạo mã ngẫu nhiên
+						CreationTime = DateTime.Now,
+						Minute = testDTO.Minute,
+						Status = testDTO.Status,
+						SubjectId = testDTO.SubjectId,
+						PointTypeId = testDTO.PointTypeId,
+						MaxStudent = maxStudents,
+					};
 
-                var ExamRoomTest = new Exam_Room_TestCode
-                {
-                    Id = Guid.NewGuid(),
-                    TestId = newTest.Id,
-                    ExamRoomId = testDTO.ExamRoomId,
-                };
+					// Thêm thực thể Test vào DbContext
+					await _db.Tests.AddAsync(newTest);
+					await _db.SaveChangesAsync();
 
-                _db.Exam_Room_TestCodes.Add(ExamRoomTest);
-                await _db.SaveChangesAsync();
-                // Lưu thay đổi vào cơ sở dữ liệu
-                await _db.SaveChangesAsync();
+					// Tạo TestCode tương ứng với số lượng MaxStudent
+					for (int i = 0; i < maxStudents; i++)
+					{
+						var newTestCode = new TestCodes
+						{
+							Id = Guid.NewGuid(),
+							Code = RamdomCodeTestCode(8), // Tạo mã ngẫu nhiên
+							Status = 1,
+							TestId = newTest.Id, // Gán TestId
+						};
 
-                return Ok("Tạo bài kiểm tra và mã bài kiểm tra thành công.");
+						// Thêm thực thể TestCode vào DbContext
+						await _db.TestCodes.AddAsync(newTestCode);
+					}
+
+					var ExamRoomTest = new Exam_Room_TestCode
+					{
+						Id = Guid.NewGuid(),
+						TestId = newTest.Id,
+						ExamRoomId = testDTO.ExamRoomId,
+					};
+
+					_db.Exam_Room_TestCodes.Add(ExamRoomTest);
+					await _db.SaveChangesAsync();
+					// Lưu thay đổi vào cơ sở dữ liệu
+					await _db.SaveChangesAsync();
+
+					return Ok("Tạo bài kiểm tra và mã bài kiểm tra thành công.");
+				}
+
+                return BadRequest("Số lượng bài thi đã đủ");
             }
             catch (Exception ex)
             {

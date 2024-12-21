@@ -1,4 +1,6 @@
-﻿using Database.DTOs;
+﻿using CloudinaryDotNet;
+using CloudinaryDotNet.Actions;
+using Database.DTOs;
 using DataBase.Data;
 using DataBase.DTOs;
 using DataBase.Models;
@@ -8,12 +10,14 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using OfficeOpenXml;
 using OfficeOpenXml.Drawing;
 using System.Data;
 using System.Globalization;
 using System.IdentityModel.Tokens.Jwt;
+using System.Net;
 using System.Security.Claims;
 using System.Text;
 
@@ -23,12 +27,36 @@ namespace API.Controllers
     [ApiController]
     public class UserController : ControllerBase
     {
+        private readonly Cloudinary _cloud;
         private readonly AppDbContext _db;
-        public UserController(AppDbContext db)
+        public UserController(AppDbContext db,Cloudinary cloud)
         {
             _db = db;
+            _cloud = cloud;
         }
+        [HttpPost("upload")]
+        public async Task<IActionResult> UploadImage(IFormFile file)
+        {
+            if (file == null || file.Length == 0)
+            {
+                return BadRequest("No file uploaded.");
+            }
 
+            var uploadParams = new ImageUploadParams
+            {
+                File = new FileDescription(file.FileName, file.OpenReadStream()),
+                Transformation = new Transformation().Width(500).Height(500).Crop("fill").Gravity("face")
+            };
+
+            var uploadResult = await _cloud.UploadAsync(uploadParams);
+
+            if (uploadResult.StatusCode == System.Net.HttpStatusCode.OK)
+            {
+                return Ok(new { Url = uploadResult.SecureUrl.ToString() });
+            }
+
+            return StatusCode((int)uploadResult.StatusCode, uploadResult.Error.Message);
+        }
         private string RandomCode(int length)
         {
             const string CodeNew = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -133,40 +161,35 @@ namespace API.Controllers
             }
         }
 
-
+      
         [HttpPost("create-user")]
         public async Task<IActionResult> Create([FromForm] UserDTO user, IFormFile avatarFile,Guid id)
         {
+        
             try
             {
+                var roleStudent = await _db.Roles.Where(x => x.Name == "Student").Select(x => x.Id).FirstOrDefaultAsync();
                 var userId = Guid.NewGuid();
-                string avatarPath = null;
-
-                if (avatarFile != null && avatarFile.Length > 0)
+                string avatarPath=null;
+                if (avatarFile == null || avatarFile.Length == 0)
                 {
-                    // Đường dẫn thư mục lưu trữ ảnh
-                    var uploadsFolder = Path.Combine(Directory.GetParent(Directory.GetCurrentDirectory()).FullName, "Blazor", "wwwroot", "Avatars");
-
-                    // Tạo thư mục nếu chưa tồn tại
-                    if (!Directory.Exists(uploadsFolder))
-                    {
-                        Directory.CreateDirectory(uploadsFolder);
-                    }
-
-                    // Đặt tên file là userId + phần mở rộng của file gốc
-                    var fileName = userId.ToString() + Path.GetExtension(avatarFile.FileName);
-                    var filePath = Path.Combine(uploadsFolder, fileName);
-
-                    // Lưu file ảnh vào thư mục
-                    using (var fileStream = new FileStream(filePath, FileMode.Create))
-                    {
-                        await avatarFile.CopyToAsync(fileStream);
-                    }
-
-                    // Lưu đường dẫn ảnh để lưu vào database
-                    avatarPath = "/avatars/" + fileName;
+                    return BadRequest("No file uploaded.");
                 }
 
+                var uploadParams = new ImageUploadParams
+                {
+                    File = new FileDescription(avatarFile.FileName, avatarFile.OpenReadStream()),
+                    Transformation = new Transformation().Width(500).Height(500).Crop("fill").Gravity("face")
+                };
+
+                var uploadResult = await _cloud.UploadAsync(uploadParams);
+
+                if (uploadResult.StatusCode == System.Net.HttpStatusCode.OK)
+                {
+                    avatarPath= uploadResult.SecureUrl.ToString();
+                }
+
+               
                 // Cập nhật thời gian thay đổi cuối cùng
                 var currentDateTime = DateTime.UtcNow;
 
@@ -186,7 +209,7 @@ namespace API.Controllers
                     CreationTime = currentDateTime, // Mặc định là thời gian hiện tại
                     LastMordificationTime = currentDateTime, // Mặc định là thời gian hiện tại
                     Status = user.Status,
-                    RoleId = user.RoleId,
+                    RoleId = roleStudent,
                 };
 
                 // Thêm User mới vào database
@@ -246,17 +269,17 @@ namespace API.Controllers
         }
 
         [HttpPut("update-user")]
-        public async Task<IActionResult> Update(UserDTO userDTO)
+        public async Task<IActionResult> Update([FromForm]UserDTO userDTO, IFormFile newImage)
         {
             var data = await _db.Users.FirstOrDefaultAsync(x => x.Id == userDTO.Id);
 
             if (data == null)
             {
-                return NotFound("Khong tim thay user");
+                return NotFound("Không tìm thấy người dùng.");
             }
 
+            // Cập nhật thông tin người dùng
             data.FullName = userDTO.FullName;
-            data.Avartar = userDTO.Avartar;
             data.Email = userDTO.Email;
             data.UserName = userDTO.UserName;
             data.PasswordHash = userDTO.PasswordHash;
@@ -269,19 +292,66 @@ namespace API.Controllers
             data.Status = userDTO.Status;
             data.RoleId = userDTO.RoleId;
 
-            _db.Users.Update(data);
-            _db.SaveChanges();
+            // Nếu có hình ảnh mới, tải lên Cloudinary và cập nhật đường dẫn
+            if (newImage != null && newImage.Length > 0)
+            {
+                if (!string.IsNullOrEmpty(data.Avartar))
+                {
+                    var publicId = Path.GetFileNameWithoutExtension(data.Avartar); // Lấy public ID từ URL
+                    var deleteParams = new DeletionParams(publicId); // Tạo tham số xóa ảnh
+                    var deletionResult = await _cloud.DestroyAsync(deleteParams); // Xóa ảnh cũ trên Cloudinary
 
-            // Tìm role mới dựa trên rollID
+                    if (deletionResult.StatusCode != HttpStatusCode.OK)
+                    {
+                        return BadRequest("Không thể xóa ảnh cũ trên Cloudinary.");
+                    }
+                }
+
+                // Tải ảnh lên Cloudinary
+                using (var stream = new MemoryStream())
+                {
+                    await newImage.CopyToAsync(stream);
+                    stream.Position = 0; // Đặt lại vị trí stream về đầu để tải lên Cloudinary
+
+                    var uploadParams = new ImageUploadParams
+                    {
+                        File = new FileDescription(newImage.FileName, stream),
+                        Transformation = new Transformation().Width(500).Height(500).Crop("fill").Gravity("face"),
+                       
+                    };
+
+                    var uploadResult = await _cloud.UploadAsync(uploadParams);
+
+                    if (uploadResult.StatusCode != HttpStatusCode.OK)
+                    {
+                        return BadRequest("Cập nhật ảnh thất bại trên Cloudinary.");
+                    }
+
+                    // Cập nhật đường dẫn hình ảnh trong cơ sở dữ liệu
+                    data.Avartar = uploadResult.SecureUrl.ToString(); // Lưu đường dẫn hình ảnh mới
+                }
+            }
+            else
+            {
+                // Nếu không có hình ảnh mới, giữ nguyên ảnh cũ
+                data.Avartar = userDTO.Avartar;
+            }
+
+            // Cập nhật người dùng trong cơ sở dữ liệu
+            _db.Users.Update(data);
+            await _db.SaveChangesAsync();
+
+            // Tìm role mới dựa trên RoleId
             var newrole = await _db.Roles.FirstOrDefaultAsync(x => x.Id == data.RoleId);
 
             if (newrole == null)
             {
-                return NotFound("Khong co role khac");
+                return NotFound("Không có vai trò mới.");
             }
+
+            // Xử lý với role "Student"
             if (newrole.Name == "Student")
             {
-                // Kiểm tra và thêm Student nếu chưa tồn tại
                 var teacherid = await _db.Teachers.FirstOrDefaultAsync(x => x.UserId == data.Id);
                 if (teacherid != null)
                 {
@@ -295,31 +365,31 @@ namespace API.Controllers
                     };
 
                     _db.Students.Add(student);
-                    _db.SaveChanges();
+                    await _db.SaveChangesAsync();
                 }
             }
 
+            // Xử lý với role "Teacher"
             if (newrole.Name == "Teacher")
             {
-                // Kiểm tra và thêm Teacher nếu chưa tồn tại
                 var studentid = await _db.Students.FirstOrDefaultAsync(x => x.UserId == data.Id);
                 if (studentid != null)
                 {
                     _db.Students.Remove(studentid);
 
-                    var teachr = new Teachers
+                    var teacher = new Teachers
                     {
                         Id = Guid.NewGuid(),
                         Code = RandomCode(8),
                         UserId = data.Id
                     };
 
-                    _db.Teachers.Add(teachr);
-                    _db.SaveChanges();
+                    _db.Teachers.Add(teacher);
+                    await _db.SaveChangesAsync();
                 }
             }
 
-            return Ok("Update thành công");
+            return Ok("Cập nhật thành công.");
         }
 
         [HttpDelete("delete-user")]
@@ -379,56 +449,13 @@ namespace API.Controllers
             }
             _db.Users.Remove(user);
             await _db.SaveChangesAsync();
-            var deleteavatar = Path.Combine(Directory.GetParent(Directory.GetCurrentDirectory()).FullName, "Blazor", "wwwroot", "Avatars");
-            var filename = $"{id}.jpg";
-            var filepath=Path.Combine(deleteavatar, filename);
-            if (System.IO.File.Exists(filepath))
-            {
-                System.IO.File.Delete(filepath);
-            } 
+            var publicId = user.Avartar
+            .Split('/').Last().Split('.').First(); 
+            var deletionParams = new DeletionParams(publicId);
+            var deletionResult = await _cloud.DestroyAsync(deletionParams);
             return Ok("Xóa thành công");
         }
-        [HttpPost("upload-avatar")]
-        public async Task<IActionResult> UploadAvatar(Guid Id, IFormFile avatarFile)
-        {
-            if (avatarFile == null || avatarFile.Length == 0)
-            {
-                return BadRequest("Ảnh không hợp lệ");
-            }
-
-            // Tìm user theo ID
-            var user = await _db.Users.FirstOrDefaultAsync(x => x.Id == Id);
-            if (user == null)
-            {
-                return NotFound("Người dùng không tồn tại");
-            }
-
-            // Lưu ảnh vào thư mục và cập nhật đường dẫn
-            var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "avatars");
-            if (!Directory.Exists(uploadsFolder))
-            {
-                Directory.CreateDirectory(uploadsFolder);
-            }
-
-            var fileName = Guid.NewGuid().ToString() + Path.GetExtension(avatarFile.FileName);
-            var filePath = Path.Combine(uploadsFolder, fileName);
-
-            using (var fileStream = new FileStream(filePath, FileMode.Create))
-            {
-                await avatarFile.CopyToAsync(fileStream); // Lưu file vào thư mục
-            }
-
-            // Lưu đường dẫn ảnh vào cơ sở dữ liệu
-            user.Avartar = "/avatars/" + fileName;
-
-            // Cập nhật thời gian thay đổi cuối cùng
-            user.LastMordificationTime = DateTime.Now;
-
-            // Lưu thay đổi vào db
-            await _db.SaveChangesAsync();
-
-            return Ok("Tải ảnh thành công");
-        }
+        
 
         [HttpPost("login")]
         public IActionResult Login([FromBody] LoginModelDTO model)
@@ -511,19 +538,13 @@ namespace API.Controllers
         [HttpPost("import-excel")]
         public async Task<IActionResult> ImportUsersFromExcel(IFormFile file , Guid id)
         {
+            var roleStudent = await _db.Roles.Where(x => x.Name == "Student").Select(x => x.Id).FirstOrDefaultAsync();
             if (file == null || file.Length == 0)
             {
                 return BadRequest("File không hợp lệ.");
             }
 
             var users = new List<UserDTO>();
-
-            // Thư mục lưu ảnh
-            var uploadsFolder = Path.Combine(Directory.GetParent(Directory.GetCurrentDirectory()).FullName, "Blazor", "wwwroot", "Avatars");
-            if (!Directory.Exists(uploadsFolder))
-            {
-                Directory.CreateDirectory(uploadsFolder);
-            }
 
             using (var stream = new MemoryStream())
             {
@@ -547,15 +568,21 @@ namespace API.Controllers
 
                         if (pictures.Count > 0 && pictures.FirstOrDefault() is ExcelPicture excelPicture)
                         {
-                            var fileName = userId.ToString() + ".jpg"; 
-                            var filePath = Path.Combine(uploadsFolder, fileName);
-                            using (var imageStream = new FileStream(filePath, FileMode.Create))
+                            using (var imageStream = new MemoryStream(excelPicture.Image.ImageBytes))
                             {
-                                var imageBytes = excelPicture.Image.ImageBytes;
-                                await imageStream.WriteAsync(imageBytes, 0, imageBytes.Length);
+                                var uploadimg = new ImageUploadParams
+                                {
+                                    File = new FileDescription(userId.ToString(), imageStream),
+                                    Transformation = new Transformation().Width(500).Height(500).Crop("fill").Gravity("face")
+                                };
+                                var uploadResult = await _cloud.UploadAsync(uploadimg);
+                                if (uploadResult.StatusCode == System.Net.HttpStatusCode.OK)
+                                {
+                                    imagePath = uploadResult.SecureUrl.ToString();
+                                }
                             }
 
-                            imagePath = "/avatars/" + fileName; 
+                           
                         }
 
                         var user = new Users
@@ -572,7 +599,7 @@ namespace API.Controllers
                             LockedEndTime = DateTime.Now,
                             CreationTime = DateTime.Now,
                             Status = 1,
-                            RoleId = Guid.Parse("26948ba2-17c8-4b73-bd5b-08cca2db0f92")
+                            RoleId = roleStudent
                         };
                         await _db.Users.AddAsync(user);
                         await _db.SaveChangesAsync();

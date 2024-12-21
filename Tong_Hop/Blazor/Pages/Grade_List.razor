@@ -338,8 +338,13 @@
 
                     <!-- Ảnh -->
                     <div class="col-12 col-md-6 mb-3">
-                        <label for="avatar" class="form-label fw-bold">Ảnh:</label>
-                        <input type="text" id="avatarFile" class="form-control" @bind="userDTOs.Avartar" placeholder="URL ảnh đại diện" />
+                        <label for="avatarFile" class="form-label fw-bold">Ảnh đại diện:</label>
+                        <div class="d-flex align-items-center">
+                            <!-- Hiển thị ảnh đại diện -->
+                            <img src="@userDTOs.Avartar" alt="Ảnh đại diện" class="rounded-circle me-3"
+                            style="width: 50px; height: 50px; object-fit: cover; border: 1px solid #ccc;" />
+                            <InputFile OnChange="UploadImage" id="avatarFile" class="form-control" />
+                        </div>
                     </div>
 
                     <!-- Email -->
@@ -411,6 +416,20 @@
     private string teacherid;
     private IBrowserFile selectedFile;
     private IBrowserFile avatarFile;
+    private string? previewImage; // Ảnh mặc định nếu không có ảnh
+    private const long MaxFileSize = 10 * 1024 * 1024; // 10 MB
+
+    private async Task UploadImage(InputFileChangeEventArgs e)
+    {
+        if (e.File?.Size <= MaxFileSize)
+        {
+            var buffer = new byte[e.File.Size];
+            await e.File.OpenReadStream(MaxFileSize).ReadAsync(buffer);
+            previewImage = $"data:{e.File.ContentType};base64,{Convert.ToBase64String(buffer)}";
+            userDTOs.Avartar = previewImage;
+        }
+    }
+
     private async Task tokenget()
     {
         var token = await Jsruntime.InvokeAsync<string>("localStorage.getItem", "YourSuperSecretKeyHere");
@@ -429,7 +448,7 @@
     }
     private async Task HandleValidSubmit(Guid id)
     {
-        user.RoleId = Guid.Parse("26948BA2-17C8-4B73-BD5B-08CCA2DB0F92");
+       
         user.IsLocked = true;
         var content = new MultipartFormDataContent();
 
@@ -660,7 +679,6 @@
 
     protected override async Task OnInitializedAsync()
     {
-
         var httpClient = clientFactory.CreateClient("student");
         gradeDTOs = await httpClient.GetFromJsonAsync<List<GradeDTO>>("https://localhost:7046/api/Grade/get-grade");
         StateHasChanged();

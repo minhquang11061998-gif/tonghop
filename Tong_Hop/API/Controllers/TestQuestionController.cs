@@ -288,51 +288,96 @@ namespace API.Controllers
             return Ok("thêm câu hỏi thành công");
         }
 
+        #region làm lại
         [HttpPost("randomize-questions-for-test-codes")]
         public async Task<IActionResult> RandomizeQuestionsForTestCodes(Guid testId, int easyCount, int mediumCount, int hardCount, int veryHardCount)
         {
+            // Lấy tất cả các TestCode liên quan đến TestId
             var allTestCodes = await _db.TestCodes
-        .Include(tc => tc.Tests)
-        .Where(tc => tc.TestId == testId)
-        .ToListAsync();
+                .Where(tc => tc.TestId == testId)
+                .ToListAsync();
 
             if (allTestCodes == null || allTestCodes.Count == 0)
             {
                 return NotFound("Không tìm thấy mã kiểm tra liên quan đến bài thi.");
             }
 
+            // Lấy tất cả các câu hỏi của bài thi và phân loại theo mức độ
             var questions = await _db.TestQuestions.Where(x => x.TestId == testId).ToListAsync();
             var easyQuestions = questions.Where(x => x.Level == 1).ToList();
             var mediumQuestions = questions.Where(x => x.Level == 2).ToList();
             var hardQuestions = questions.Where(x => x.Level == 3).ToList();
             var veryHardQuestions = questions.Where(x => x.Level == 4).ToList();
 
+            // Kiểm tra số lượng câu hỏi đủ cho mỗi mức độ
             if (easyQuestions.Count < easyCount || mediumQuestions.Count < mediumCount ||
                 hardQuestions.Count < hardCount || veryHardQuestions.Count < veryHardCount)
             {
                 return BadRequest("Không đủ số câu hỏi cho một hoặc nhiều mức độ.");
             }
 
-            Random random = new Random(); // Để đảm bảo tính ngẫu nhiên
+            // Giới hạn số lần mỗi câu hỏi có thể được sử dụng trong tổng số TestCode
+            // Giả sử bạn muốn mỗi câu hỏi được sử dụng tối đa trong 4 TestCode
+            int maxUsagePerQuestion = 4;
 
-            var selectedEasyQuestions = easyQuestions.OrderBy(_ => random.Next()).Take(easyCount).ToList();
-            var selectedMediumQuestions = mediumQuestions.OrderBy(_ => random.Next()).Take(mediumCount).ToList();
-            var selectedHardQuestions = hardQuestions.OrderBy(_ => random.Next()).Take(hardCount).ToList();
-            var selectedVeryHardQuestions = veryHardQuestions.OrderBy(_ => random.Next()).Take(veryHardCount).ToList();
+            // Theo dõi số lần mỗi câu hỏi đã được sử dụng
+            var questionUsageCount = new Dictionary<Guid, int>();
 
-            var allSelectedQuestions = selectedEasyQuestions
-                .Concat(selectedMediumQuestions)
-                .Concat(selectedHardQuestions)
-                .Concat(selectedVeryHardQuestions)
-                .ToList();
+            // Khởi tạo dictionary với giá trị 0 cho mỗi câu hỏi
+            foreach (var question in questions)
+            {
+                questionUsageCount[question.Id] = 0;
+            }
+
+            Random globalRandom = new Random();
 
             foreach (var testCode in allTestCodes)
             {
-                Random testCodeRandom = new Random(); // Tạo random riêng cho mỗi testCode
+                var selectedQuestionsForTestCode = new List<TestQuestions>();
 
-                // Random hóa câu hỏi cho từng TestCode
-                var shuffledQuestions = allSelectedQuestions.OrderBy(_ => testCodeRandom.Next()).ToList();
+                // Hàm để chọn câu hỏi cho mỗi mức độ
+                List<TestQuestions> SelectQuestions(List<TestQuestions> pool, int count)
+                {
+                    // Lọc các câu hỏi chưa vượt quá giới hạn sử dụng và chưa được chọn cho TestCode hiện tại
+                    var availableQuestions = pool
+                        .Where(q => questionUsageCount[q.Id] < maxUsagePerQuestion &&
+                                    !selectedQuestionsForTestCode.Any(sq => sq.Id == q.Id))
+                        .OrderBy(q => globalRandom.Next())
+                        .Take(count)
+                        .ToList();
 
+                    if (availableQuestions.Count < count)
+                    {
+                        throw new InvalidOperationException("Không đủ câu hỏi để phân bổ cho TestCode.");
+                    }
+
+                    // Cập nhật số lần sử dụng và thêm vào danh sách đã chọn
+                    foreach (var q in availableQuestions)
+                    {
+                        selectedQuestionsForTestCode.Add(q);
+                        questionUsageCount[q.Id]++;
+                    }
+
+                    return availableQuestions;
+                }
+
+                try
+                {
+                    // Chọn câu hỏi cho mỗi mức độ
+                    SelectQuestions(easyQuestions, easyCount);
+                    SelectQuestions(mediumQuestions, mediumCount);
+                    SelectQuestions(hardQuestions, hardCount);
+                    SelectQuestions(veryHardQuestions, veryHardCount);
+                }
+                catch (InvalidOperationException ex)
+                {
+                    return BadRequest($"Lỗi khi phân bổ câu hỏi: {ex.Message}");
+                }
+
+                // Shuffle câu hỏi trong TestCode hiện tại
+                var shuffledQuestions = selectedQuestionsForTestCode.OrderBy(q => globalRandom.Next()).ToList();
+
+                // Thêm các câu hỏi vào TestCode_TestQuestion
                 foreach (var question in shuffledQuestions)
                 {
                     var testCodeQuestion = new TestCode_TestQuestion
@@ -349,6 +394,7 @@ namespace API.Controllers
 
             return Ok("THÀNH CÔNG");
         }
+        #endregion
 
         [HttpPut("update_question_answer")]
         public async Task<IActionResult> UpdateQuestion(TestQuestion_AnswersDTO dto)
