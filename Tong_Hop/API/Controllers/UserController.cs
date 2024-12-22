@@ -678,6 +678,8 @@ namespace API.Controllers
                         await _db.Student_Classes.AddAsync(studentclass);
                         await _db.SaveChangesAsync();
                         await updateclass(id);
+
+                        MaxScor_Subj(student.Id, id);
                     }
                 }
             }
