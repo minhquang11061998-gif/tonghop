@@ -245,6 +245,8 @@ namespace API.Controllers
                         await _db.SaveChangesAsync();
                         await updateclass(id);
 
+                        MaxScor_Subj(student.Id, id);
+
                     }
                     else if (role.Name == "Teacher")
                     {
@@ -267,6 +269,59 @@ namespace API.Controllers
                 return BadRequest(ex.ToString());
             }
         }
+
+        #region thêm điểm mặc định bằng 0 cho từng môn và đầu điểm
+        private async Task MaxScor_Subj(Guid IdStudent, Guid IdClass)
+        {
+            try
+            {
+                var ListSubj = await (from cl in _db.Classes
+                                      join g in _db.Grades on cl.GradeId equals g.Id
+                                      join subjG in _db.Subject_Grades on g.Id equals subjG.GradeId
+                                      join subj in _db.Subjects on subjG.SubjectId equals subj.Id
+                                      where cl.Id == IdClass
+                                      select new
+                                      {
+                                          Subj = subj.Id,
+                                      }).ToListAsync();
+
+                foreach (var item in ListSubj)
+                {
+                    var ListPointType = await (from ptSubj in _db.PointType_Subjects
+                                               join subj in _db.Subjects on ptSubj.SubjectId equals subj.Id
+                                               where subj.Id == item.Subj
+                                               select new
+                                               {
+                                                   PT = ptSubj.PointTypeId,
+                                                   ptSubj.Quantity
+                                               }).ToListAsync();
+
+                    foreach (var itemPT in ListPointType)
+                    {
+                        for (int i = 0; i < itemPT.Quantity; i++)
+                        {
+                            var AllScore = new Scores
+                            {
+                                Id = Guid.NewGuid(),
+                                Score = 0, // Điểm mặc định
+                                StudentId = IdStudent,
+                                SubjectId = item.Subj,
+                                PointTypeId = itemPT.PT
+                            };
+
+                            // Thêm vào DbSet
+                            await _db.Scores.AddAsync(AllScore);
+                        }
+                    }
+
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+            }
+        }
+        #endregion
 
         [HttpPut("update-user")]
         public async Task<IActionResult> Update([FromForm]UserDTO userDTO, IFormFile newImage)
@@ -623,6 +678,8 @@ namespace API.Controllers
                         await _db.Student_Classes.AddAsync(studentclass);
                         await _db.SaveChangesAsync();
                         await updateclass(id);
+
+                        MaxScor_Subj(student.Id, id);
                     }
                 }
             }
