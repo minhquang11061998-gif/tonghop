@@ -242,10 +242,11 @@ namespace API.Controllers
                             ClassId = id
                         };
                         await _db.Student_Classes.AddAsync(studentClass);
-                        await _db.SaveChangesAsync();
+                        
                         await updateclass(id);
 
-                        MaxScor_Subj(student.Id, id);
+                        await MaxScor_Subj(student.Id, studentClass.ClassId);
+                        await _db.SaveChangesAsync();
 
                     }
                     else if (role.Name == "Teacher")
@@ -311,6 +312,7 @@ namespace API.Controllers
 
                             // Thêm vào DbSet
                             await _db.Scores.AddAsync(AllScore);
+                            await _db.SaveChangesAsync();
                         }
                     }
 
