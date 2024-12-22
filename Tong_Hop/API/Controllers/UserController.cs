@@ -832,5 +832,114 @@ namespace API.Controllers
             }
         }
 
+        [HttpPost("create-user-Teacher")]
+        public async Task<IActionResult> CreateTeachre([FromForm] UserDTO user, IFormFile avatarFile)
+        {
+
+            try
+            {
+                var roleStudent = await _db.Roles.Where(x => x.Name == "Teacher").Select(x => x.Id).FirstOrDefaultAsync();
+                var userId = Guid.NewGuid();
+                string avatarPath = null;
+                if (avatarFile == null || avatarFile.Length == 0)
+                {
+                    return BadRequest("No file uploaded.");
+                }
+
+                var uploadParams = new ImageUploadParams
+                {
+                    File = new FileDescription(avatarFile.FileName, avatarFile.OpenReadStream()),
+                    Transformation = new Transformation().Width(500).Height(500).Crop("fill").Gravity("face")
+                };
+
+                var uploadResult = await _cloud.UploadAsync(uploadParams);
+
+                if (uploadResult.StatusCode == System.Net.HttpStatusCode.OK)
+                {
+                    avatarPath = uploadResult.SecureUrl.ToString();
+                }
+
+
+                // Cập nhật thời gian thay đổi cuối cùng
+                var currentDateTime = DateTime.UtcNow;
+
+                // Tạo đối tượng User mới với các giá trị mặc định
+                var data = new Users
+                {
+                    Id = userId, // Sử dụng userId vừa tạo
+                    FullName = user.FullName,
+                    Avartar = avatarPath, // Đường dẫn ảnh lưu trong thuộc tính Avatar
+                    Email = user.Email,
+                    UserName = user.UserName,
+                    PasswordHash = user.PasswordHash,
+                    DateOfBirth = user.DateOfBirth ?? DateTime.UtcNow, // Nếu không có, mặc định là hiện tại
+                    PhoneNumber = user.PhoneNumber,
+                    IsLocked = user.IsLocked,
+                    LockedEndTime = user.IsLocked ? (user.LockedEndTime ?? currentDateTime.AddDays(30)) : (DateTime?)null, // Nếu bị khóa, mặc định sau 30 ngày, nếu không thì null
+                    CreationTime = currentDateTime, // Mặc định là thời gian hiện tại
+                    LastMordificationTime = currentDateTime, // Mặc định là thời gian hiện tại
+                    Status = user.Status,
+                    RoleId = roleStudent,
+                };
+
+                // Thêm User mới vào database
+                await _db.Users.AddAsync(data);
+                await _db.SaveChangesAsync();
+
+                // Kiểm tra và tạo thông tin tương ứng cho Student hoặc Teacher
+                var role = _db.Roles.FirstOrDefault(x => x.Id == data.RoleId);
+                if (role != null)
+                {
+                    if (role.Name == "Student")
+                    {
+                        // Thêm học sinh
+                        var student = new Students
+                        {
+                            Id = Guid.NewGuid(),
+                            Code = RandomCode(8),
+                            UserId = data.Id
+                        };
+                        await _db.Students.AddAsync(student);
+                        await _db.SaveChangesAsync();
+
+                        //// Thêm vào Student_Classes
+                        //var studentClass = new Student_Class
+                        //{
+                        //    Id = Guid.NewGuid(),
+                        //    JoinTime = DateTime.Now,
+                        //    Status = 1,
+                        //    StudentId = student.Id,
+                        //    //ClassId = id
+                        //};
+                        //await _db.Student_Classes.AddAsync(studentClass);
+
+                        //await updateclass(id);
+
+                        //await MaxScor_Subj(student.Id, studentClass.ClassId);
+                        await _db.SaveChangesAsync();
+
+                    }
+                    else if (role.Name == "Teacher")
+                    {
+                        var teacher = new Teachers
+                        {
+                            Id = Guid.NewGuid(),
+                            Code = RandomCode(8),
+                            UserId = data.Id
+                        };
+                        await _db.Teachers.AddAsync(teacher);
+                        await _db.SaveChangesAsync();
+                    }
+
+                }
+
+                return Ok("Them thanh cong");
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.ToString());
+            }
+        }
+
     }
 }

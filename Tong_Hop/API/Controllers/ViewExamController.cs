@@ -276,7 +276,7 @@ namespace API.Controllers
                     StudentId = IdStudent
                 };
 
-                _db.Scores.Add(data);
+                _db.Scores.Update(data);
                 _db.SaveChanges();
 
                 return Ok(data);
