@@ -161,12 +161,14 @@ namespace API.Controllers
             }
         }
 
-
+      
         [HttpPost("create-user")]
         public async Task<IActionResult> Create([FromForm] UserDTO user, IFormFile avatarFile,Guid id)
         {
+        
             try
             {
+                var roleStudent = await _db.Roles.Where(x => x.Name == "Student").Select(x => x.Id).FirstOrDefaultAsync();
                 var userId = Guid.NewGuid();
                 string avatarPath=null;
                 if (avatarFile == null || avatarFile.Length == 0)
@@ -207,7 +209,7 @@ namespace API.Controllers
                     CreationTime = currentDateTime, // Mặc định là thời gian hiện tại
                     LastMordificationTime = currentDateTime, // Mặc định là thời gian hiện tại
                     Status = user.Status,
-                    RoleId = user.RoleId,
+                    RoleId = roleStudent,
                 };
 
                 // Thêm User mới vào database
@@ -536,6 +538,7 @@ namespace API.Controllers
         [HttpPost("import-excel")]
         public async Task<IActionResult> ImportUsersFromExcel(IFormFile file , Guid id)
         {
+            var roleStudent = await _db.Roles.Where(x => x.Name == "Student").Select(x => x.Id).FirstOrDefaultAsync();
             if (file == null || file.Length == 0)
             {
                 return BadRequest("File không hợp lệ.");
@@ -596,7 +599,7 @@ namespace API.Controllers
                             LockedEndTime = DateTime.Now,
                             CreationTime = DateTime.Now,
                             Status = 1,
-                            RoleId = Guid.Parse("26948ba2-17c8-4b73-bd5b-08cca2db0f92")
+                            RoleId = roleStudent
                         };
                         await _db.Users.AddAsync(user);
                         await _db.SaveChangesAsync();

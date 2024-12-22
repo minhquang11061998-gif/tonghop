@@ -95,95 +95,203 @@ namespace API.Controllers
         [HttpPost("create-subject")]
         public async Task<IActionResult> Create(SubjectDTO dto)
         {
-            try
-            {
-                // Bước 1: Tạo Subject mới
-                var subj = new Subjects
-                {
-                    Id = Guid.NewGuid(),
-                    Name = dto.Name,
-                    Code = RandomCode(8),
-                    CreationTime = DateTime.UtcNow,
-                    Status = dto.Status,
-                };
+			try
+			{
+				// Bước 1: Tạo Subject mới
+				var subj = new Subjects
+				{
+					Id = Guid.NewGuid(),
+					Name = dto.Name,
+					Code = RandomCode(8),
+					CreationTime = DateTime.UtcNow,
+					Status = dto.Status,
+				};
 
-                // Thêm Subject vào cơ sở dữ liệu
-                await _db.Subjects.AddAsync(subj);
-                await _db.SaveChangesAsync();
+				// Thêm Subject vào cơ sở dữ liệu
+				await _db.Subjects.AddAsync(subj);
+				await _db.SaveChangesAsync();
 
-                // Bước 2: Thêm danh sách Subject_Grade dựa trên GradeIds
-                foreach (var gradeId in dto.GradeIds)
-                {
-                    var subjectGrade = new Subject_Grade
-                    {
-                        Id = Guid.NewGuid(),
-                        Status = 1,
-                        GradeId = gradeId,
-                        SubjectId = subj.Id
-                    };
+				// Bước 2: Thêm danh sách Subject_Grade dựa trên GradeIds
+				foreach (var gradeId in dto.GradeIds)
+				{
+					var subjectGrade = new Subject_Grade
+					{
+						Id = Guid.NewGuid(),
+						Status = 1,
+						GradeId = gradeId,
+						SubjectId = subj.Id
+					};
 
-                    await _db.Subject_Grades.AddAsync(subjectGrade);
-                    await _db.SaveChangesAsync();
-                }
+					await _db.Subject_Grades.AddAsync(subjectGrade);
+					await _db.SaveChangesAsync();
+				}
+				#region sửa để thêm đồng thồi toàn bộ pointTypes cho các môn
+				// Bước 3: Tự động thêm danh sách PointType_Subject dựa trên 5 PointType mặc định
+				var defaultPointTypes = _db.PointTypes.ToList(); // Lấy toàn bộ PointType từ cơ sở dữ liệu
+				foreach (var pointType in defaultPointTypes)
+				{
+					int quantity = 0;
 
-                // Bước 3: Thêm danh sách PointType_Subject dựa trên PointTypeDtos
-                foreach (var pointTypeDto in dto.PointTypeIds)
-                {
-                    var pointTypeSubject = new PointType_Subject
-                    {
-                        Id = Guid.NewGuid(),
-                        SubjectId = subj.Id,
-                        PointTypeId = pointTypeDto.IdPointType,
-                        Quantity = pointTypeDto.Quantity // Giá trị Quantity nhập từ người dùng
-                    };
+					// Xác định Quantity dựa trên PointTypeName
+					switch (pointType.Name)
+					{
+						case "Attendance":
+						case "Point_15":
+							quantity = 3;
+							break;
+						case "Point_Midterm":
+						case "Point_Final":
+							quantity = 1;
+							break;
+						case "Point_45":
+							quantity = 2;
+							break;
+					}
 
-                    await _db.PointType_Subjects.AddAsync(pointTypeSubject);
-                }
+					var pointTypeSubject = new PointType_Subject
+					{
+						Id = Guid.NewGuid(),
+						SubjectId = subj.Id,
+						PointTypeId = pointType.Id,
+						Quantity = quantity
+					};
 
-                var Tch_subj = new Teacher_Subject
-                {
-                    Id = Guid.NewGuid(),
-                    SubjectId = subj.Id,
-                    TeacherId = dto.TeacherId,
-                };
+					await _db.PointType_Subjects.AddAsync(pointTypeSubject);
+				}
+				#endregion
+				var Tch_subj = new Teacher_Subject
+				{
+					Id = Guid.NewGuid(),
+					SubjectId = subj.Id,
+					TeacherId = dto.TeacherId,
+				};
 
-                await _db.Teacher_Subjects.AddAsync(Tch_subj);
-                _db.SaveChanges();
+				await _db.Teacher_Subjects.AddAsync(Tch_subj);
+				await _db.SaveChangesAsync();
 
-                // Lưu các PointType_Subject
-                await _db.SaveChangesAsync();
+				return Ok("Thêm thành công");
+			}
+			catch (Exception ex)
+			{
+				// Log lỗi nếu cần
+				return BadRequest("Lỗi: " + ex.Message);
+			}
 
-                return Ok("Them thanh cong");
-            }
-            catch (Exception ex)
-            {
-                // Log lỗi nếu cần
-                return BadRequest("Loi: " + ex.Message);
-            }
-        }
+		}
 
-        [HttpPut("update-subject")]
+		#region đã sửa có thể update môn khối và giáo viên
+		[HttpPut("update-subject")]
         public async Task<IActionResult> Update(SubjectDTO subjectDTO)
         {
-            var data = await _db.Subjects.FirstOrDefaultAsync(x => x.Id == subjectDTO.Id);
+			try
+			{
+				// Bước 1: Tìm Subject cần cập nhật
+				var subject = await _db.Subjects.FirstOrDefaultAsync(x => x.Id == subjectDTO.Id);
+				if (subject == null)
+				{
+					return NotFound("Subject không tồn tại");
+				}
 
-            if (data != null)
-            {
-                data.Name = subjectDTO.Name;
-                data.CreationTime = DateTime.UtcNow;
-                data.Status = subjectDTO.Status;
+				// Cập nhật thông tin Subject
+				subject.Name = subjectDTO.Name ?? subject.Name;
+				subject.Status = subjectDTO.Status;
+				subject.CreationTime = DateTime.UtcNow; // Cập nhật thời gian
+				await _db.SaveChangesAsync();
 
-                _db.Subjects.Update(data);
-                await _db.SaveChangesAsync();
+				// Bước 2: Cập nhật danh sách Subject_Grade
+				var existingGrades = _db.Subject_Grades.Where(sg => sg.SubjectId == subjectDTO.Id).ToList();
+				var newGradeIds = subjectDTO.GradeIds ?? new List<Guid>();
 
+				// Xóa các Subject_Grade không còn trong danh sách
+				foreach (var grade in existingGrades)
+				{
+					if (!newGradeIds.Contains(grade.GradeId))
+					{
+						_db.Subject_Grades.Remove(grade);
+					}
+				}
 
-                return Ok("Update thanh cong");
-            }
+				// Thêm các Subject_Grade mới
+				foreach (var gradeId in newGradeIds)
+				{
+					if (!existingGrades.Any(eg => eg.GradeId == gradeId))
+					{
+						var newGrade = new Subject_Grade
+						{
+							Id = Guid.NewGuid(),
+							SubjectId = subjectDTO.Id,
+							GradeId = gradeId,
+							Status = 1
+						};
+						await _db.Subject_Grades.AddAsync(newGrade);
+					}
+				}
 
-            return BadRequest("Loi");
-        }
+				await _db.SaveChangesAsync();
+				#region còn có thế dùng chưa xóa đc
+				//// Bước 3: Cập nhật danh sách PointType_Subject
+				//var existingPointTypes = _db.PointType_Subjects.Where(pt => pt.SubjectId == subjectDTO.Id).ToList();
+				//var newPointTypeDtos = subjectDTO.PointTypeIds ?? new List<PointTypeDto>();
 
-        [HttpDelete("delete-subject")]
+				//foreach (var pointType in existingPointTypes)
+				//{
+				//	if (!newPointTypeDtos.Any(pt => pt.IdPointType == pointType.PointTypeId))
+				//	{
+				//		_db.PointType_Subjects.Remove(pointType);
+				//	}
+				//}
+
+				//foreach (var pointTypeDto in newPointTypeDtos)
+				//{
+				//	var existingPointType = existingPointTypes.FirstOrDefault(pt => pt.PointTypeId == pointTypeDto.IdPointType);
+				//	if (existingPointType != null)
+				//	{
+				//		existingPointType.Quantity = pointTypeDto.Quantity;
+				//	}
+				//	else
+				//	{
+				//		var newPointType = new PointType_Subject
+				//		{
+				//			Id = Guid.NewGuid(),
+				//			SubjectId = subjectDTO.Id,
+				//			PointTypeId = pointTypeDto.IdPointType,
+				//			Quantity = pointTypeDto.Quantity
+				//		};
+				//		await _db.PointType_Subjects.AddAsync(newPointType);
+				//	}
+				//}
+
+				//await _db.SaveChangesAsync();
+				#endregion
+				// Bước 4: Cập nhật Teacher_Subject
+				var existingTeacher = await _db.Teacher_Subjects.FirstOrDefaultAsync(ts => ts.SubjectId == subjectDTO.Id);
+				if (existingTeacher != null)
+				{
+					existingTeacher.TeacherId = subjectDTO.TeacherId;
+				}
+				else
+				{
+					var newTeacher = new Teacher_Subject
+					{
+						Id = Guid.NewGuid(),
+						SubjectId = subjectDTO.Id,
+						TeacherId = subjectDTO.TeacherId
+					};
+					await _db.Teacher_Subjects.AddAsync(newTeacher);
+				}
+
+				await _db.SaveChangesAsync();
+
+				return Ok("Cập nhật thành công");
+			}
+			catch (Exception ex)
+			{
+				return BadRequest("Lỗi: " + ex.Message);
+			}
+		}
+		#endregion
+
+		[HttpDelete("delete-subject")]
         public async Task<IActionResult> Delete(Guid Id)
         {
             var data = await _db.Subjects.FirstOrDefaultAsync(x => x.Id == Id);
