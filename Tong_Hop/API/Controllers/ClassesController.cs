@@ -333,6 +333,23 @@ namespace API.Controllers
 
         }
 
-
+        [HttpGet("ListSubjectFor")]
+        public async Task<ActionResult> GetListSubj(Guid IdClass)
+        {
+            try
+            {
+                var listSubj = await (from SubjG in _db.Subject_Grades
+                                      join g in _db.Grades on SubjG.GradeId equals g.Id
+                                      join cl in _db.Classes on g.Id equals cl.GradeId
+                                      join subj in _db.Subjects on SubjG.SubjectId equals subj.Id
+                                      where cl.Id == IdClass
+                                      select subj).ToListAsync();
+                return Ok(listSubj);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
     }
 }
