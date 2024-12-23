@@ -242,8 +242,11 @@ namespace API.Controllers
                             ClassId = id
                         };
                         await _db.Student_Classes.AddAsync(studentClass);
-                        await _db.SaveChangesAsync();
+                        
                         await updateclass(id);
+
+                        await MaxScor_Subj(student.Id, studentClass.ClassId);
+                        await _db.SaveChangesAsync();
 
                     }
                     else if (role.Name == "Teacher")
@@ -267,6 +270,60 @@ namespace API.Controllers
                 return BadRequest(ex.ToString());
             }
         }
+
+        #region thêm điểm mặc định bằng 0 cho từng môn và đầu điểm
+        private async Task MaxScor_Subj(Guid IdStudent, Guid IdClass)
+        {
+            try
+            {
+                var ListSubj = await (from cl in _db.Classes
+                                      join g in _db.Grades on cl.GradeId equals g.Id
+                                      join subjG in _db.Subject_Grades on g.Id equals subjG.GradeId
+                                      join subj in _db.Subjects on subjG.SubjectId equals subj.Id
+                                      where cl.Id == IdClass
+                                      select new
+                                      {
+                                          Subj = subj.Id,
+                                      }).ToListAsync();
+
+                foreach (var item in ListSubj)
+                {
+                    var ListPointType = await (from ptSubj in _db.PointType_Subjects
+                                               join subj in _db.Subjects on ptSubj.SubjectId equals subj.Id
+                                               where subj.Id == item.Subj
+                                               select new
+                                               {
+                                                   PT = ptSubj.PointTypeId,
+                                                   ptSubj.Quantity
+                                               }).ToListAsync();
+
+                    foreach (var itemPT in ListPointType)
+                    {
+                        for (int i = 0; i < itemPT.Quantity; i++)
+                        {
+                            var AllScore = new Scores
+                            {
+                                Id = Guid.NewGuid(),
+                                Score = 0, // Điểm mặc định
+                                StudentId = IdStudent,
+                                SubjectId = item.Subj,
+                                PointTypeId = itemPT.PT
+                            };
+
+                            // Thêm vào DbSet
+                            await _db.Scores.AddAsync(AllScore);
+                            await _db.SaveChangesAsync();
+                        }
+                    }
+
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+            }
+        }
+        #endregion
 
         [HttpPut("update-user")]
         public async Task<IActionResult> Update([FromForm]UserDTO userDTO, IFormFile? newImage)
@@ -623,6 +680,8 @@ namespace API.Controllers
                         await _db.Student_Classes.AddAsync(studentclass);
                         await _db.SaveChangesAsync();
                         await updateclass(id);
+
+                        MaxScor_Subj(student.Id, id);
                     }
                 }
             }
@@ -770,6 +829,115 @@ namespace API.Controllers
                 var contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
                 return File(stream, contentType, fileName);
+            }
+        }
+
+        [HttpPost("create-user-Teacher")]
+        public async Task<IActionResult> CreateTeachre([FromForm] UserDTO user, IFormFile avatarFile)
+        {
+
+            try
+            {
+                var roleStudent = await _db.Roles.Where(x => x.Name == "Teacher").Select(x => x.Id).FirstOrDefaultAsync();
+                var userId = Guid.NewGuid();
+                string avatarPath = null;
+                if (avatarFile == null || avatarFile.Length == 0)
+                {
+                    return BadRequest("No file uploaded.");
+                }
+
+                var uploadParams = new ImageUploadParams
+                {
+                    File = new FileDescription(avatarFile.FileName, avatarFile.OpenReadStream()),
+                    Transformation = new Transformation().Width(500).Height(500).Crop("fill").Gravity("face")
+                };
+
+                var uploadResult = await _cloud.UploadAsync(uploadParams);
+
+                if (uploadResult.StatusCode == System.Net.HttpStatusCode.OK)
+                {
+                    avatarPath = uploadResult.SecureUrl.ToString();
+                }
+
+
+                // Cập nhật thời gian thay đổi cuối cùng
+                var currentDateTime = DateTime.UtcNow;
+
+                // Tạo đối tượng User mới với các giá trị mặc định
+                var data = new Users
+                {
+                    Id = userId, // Sử dụng userId vừa tạo
+                    FullName = user.FullName,
+                    Avartar = avatarPath, // Đường dẫn ảnh lưu trong thuộc tính Avatar
+                    Email = user.Email,
+                    UserName = user.UserName,
+                    PasswordHash = user.PasswordHash,
+                    DateOfBirth = user.DateOfBirth ?? DateTime.UtcNow, // Nếu không có, mặc định là hiện tại
+                    PhoneNumber = user.PhoneNumber,
+                    IsLocked = user.IsLocked,
+                    LockedEndTime = user.IsLocked ? (user.LockedEndTime ?? currentDateTime.AddDays(30)) : (DateTime?)null, // Nếu bị khóa, mặc định sau 30 ngày, nếu không thì null
+                    CreationTime = currentDateTime, // Mặc định là thời gian hiện tại
+                    LastMordificationTime = currentDateTime, // Mặc định là thời gian hiện tại
+                    Status = user.Status,
+                    RoleId = roleStudent,
+                };
+
+                // Thêm User mới vào database
+                await _db.Users.AddAsync(data);
+                await _db.SaveChangesAsync();
+
+                // Kiểm tra và tạo thông tin tương ứng cho Student hoặc Teacher
+                var role = _db.Roles.FirstOrDefault(x => x.Id == data.RoleId);
+                if (role != null)
+                {
+                    if (role.Name == "Student")
+                    {
+                        // Thêm học sinh
+                        var student = new Students
+                        {
+                            Id = Guid.NewGuid(),
+                            Code = RandomCode(8),
+                            UserId = data.Id
+                        };
+                        await _db.Students.AddAsync(student);
+                        await _db.SaveChangesAsync();
+
+                        //// Thêm vào Student_Classes
+                        //var studentClass = new Student_Class
+                        //{
+                        //    Id = Guid.NewGuid(),
+                        //    JoinTime = DateTime.Now,
+                        //    Status = 1,
+                        //    StudentId = student.Id,
+                        //    //ClassId = id
+                        //};
+                        //await _db.Student_Classes.AddAsync(studentClass);
+
+                        //await updateclass(id);
+
+                        //await MaxScor_Subj(student.Id, studentClass.ClassId);
+                        await _db.SaveChangesAsync();
+
+                    }
+                    else if (role.Name == "Teacher")
+                    {
+                        var teacher = new Teachers
+                        {
+                            Id = Guid.NewGuid(),
+                            Code = RandomCode(8),
+                            UserId = data.Id
+                        };
+                        await _db.Teachers.AddAsync(teacher);
+                        await _db.SaveChangesAsync();
+                    }
+
+                }
+
+                return Ok("Them thanh cong");
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.ToString());
             }
         }
 
