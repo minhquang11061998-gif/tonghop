@@ -269,7 +269,7 @@ namespace API.Controllers
         }
 
         [HttpPut("update-user")]
-        public async Task<IActionResult> Update([FromForm]UserDTO userDTO, IFormFile newImage)
+        public async Task<IActionResult> Update([FromForm]UserDTO userDTO, IFormFile? newImage)
         {
             var data = await _db.Users.FirstOrDefaultAsync(x => x.Id == userDTO.Id);
 
@@ -317,7 +317,6 @@ namespace API.Controllers
                     {
                         File = new FileDescription(newImage.FileName, stream),
                         Transformation = new Transformation().Width(500).Height(500).Crop("fill").Gravity("face"),
-                       
                     };
 
                     var uploadResult = await _cloud.UploadAsync(uploadParams);
@@ -333,9 +332,9 @@ namespace API.Controllers
             }
             else
             {
-                // Nếu không có hình ảnh mới, giữ nguyên ảnh cũ
                 data.Avartar = userDTO.Avartar;
             }
+            
 
             // Cập nhật người dùng trong cơ sở dữ liệu
             _db.Users.Update(data);
@@ -391,6 +390,7 @@ namespace API.Controllers
 
             return Ok("Cập nhật thành công.");
         }
+
 
         [HttpDelete("delete-user")]
         public async Task<IActionResult> Delete(Guid id)
