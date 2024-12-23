@@ -267,19 +267,30 @@ namespace API.Controllers
             {
                 var result = await _db.Tests.FirstOrDefaultAsync(x => x.Code == CodeTest);
 
-                var data = new Scores
+                var ListScore = await (from s in _db.Scores
+                                       join pt in _db.PointTypes on s.PointTypeId equals pt.Id
+                                       join t in _db.Tests on pt.Id equals t.PointTypeId
+                                       where t.Code == CodeTest && s.PointTypeId == t.PointTypeId
+                                       && s.SubjectId == t.SubjectId && s.StudentId == IdStudent
+                                       select s).ToListAsync();
+
+                foreach (var item in ListScore)
                 {
-                    Id = Guid.NewGuid(),
-                    Score = ExamResultStorage,
-                    PointTypeId = result.PointTypeId,
-                    SubjectId = result.SubjectId,
-                    StudentId = IdStudent
-                };
+                    if (item.Score == 0)
+                    {
+                        var updateScore = new Scores
+                        {
+                            Score = ExamResultStorage
+                        };
 
-                _db.Scores.Update(data);
-                _db.SaveChanges();
+                        _db.Scores.Update(updateScore);
+                        _db.SaveChanges();
+                    }
 
-                return Ok(data);
+                    break;
+                }
+
+                return Ok("Update điểm thành công");
             }
             catch (Exception ex)
             {
