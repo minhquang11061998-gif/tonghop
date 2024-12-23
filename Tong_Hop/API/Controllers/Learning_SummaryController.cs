@@ -68,137 +68,24 @@ namespace API.Controllers
                         .Select(sc => sc.StudentId)
                         .ToListAsync();
 
-                    // Lấy danh sách học sinh trong lớp
-                    var studentsInClass = await _db.Students
-                        .Where(s => studentIdsInClass.Contains(s.Id))
-                        .Include(s => s.User) // Include thông tin User nếu cần
-                        .ToListAsync();
-
-                    // Lấy điểm số của tất cả học sinh trong lớp
-                    var scores = await _db.Scores
-                        .Where(s => studentIdsInClass.Contains(s.StudentId))
-                        .ToListAsync();
-
-                    // Tính toán điểm tổng kết cho từng học sinh
-                    var pointTypes = await _db.PointTypes.ToListAsync();
-                    var pointTypeIds = pointTypes.ToDictionary(pt => pt.Name, pt => pt.Id);
-
-                    var summaries = new List<Learning_SummaryDTO>();
-                    foreach (var student in studentsInClass)
-                    {
-                        var studentScores = scores.Where(s => s.StudentId == student.Id).ToList();
-
-                        var groupedScores = studentScores
-                            .GroupBy(s => s.SubjectId)
-                            .ToList();
-
-                        foreach (var group in groupedScores)
-                        {
-                            var subjectId = group.Key;
-                            var subjectScores = group.ToList();
-
-                            var point15 = subjectScores.Where(s => s.PointTypeId == pointTypeIds["Diem15p"]).ToList();
-                            var point45 = subjectScores.Where(s => s.PointTypeId == pointTypeIds["Diem45p"]).ToList();
-                            var midterm = subjectScores.Where(s => s.PointTypeId == pointTypeIds["DiemGiuaKy"]).ToList();
-                            var final = subjectScores.Where(s => s.PointTypeId == pointTypeIds["DiemCuoiKy"]).ToList();
-
-                            double CalculateAverage(IEnumerable<Scores> points, int quantity)
-                            {
-                                return quantity > 0 ? points.Sum(p => p.Score) / quantity : 0;
-                            }
-
-                            var averagePoint15 = CalculateAverage(point15, point15.Count);
-                            var averagePoint45 = CalculateAverage(point45, point45.Count);
-                            var averagePointMidterm = CalculateAverage(midterm, midterm.Count);
-                            var averagePointFinal = CalculateAverage(final, final.Count);
-
-                            var summary = new Learning_SummaryDTO
-                            {
-                                Id = Guid.NewGuid(),
-                                StudentId = student.Id,
-                                StudentName = student.User.FullName,
-                                SubjectId = subjectId,
-                                SubjectName = await _db.Subjects.Where(sub => sub.Id == subjectId).Select(sub => sub.Name).FirstOrDefaultAsync(),
-                                Point_15 = averagePoint15,
-                                Point_45 = averagePoint45,
-                                Point_Midterm = averagePointMidterm,
-                                Point_Final = averagePointFinal,
-                                Point_Summary = (averagePoint15 * 0.2) + (averagePoint45 * 0.3) + (averagePointMidterm * 0.2) + (averagePointFinal * 0.3),
-                                IsView = false
-                            };
-
-                            summaries.Add(summary);
-                        }
-                    }
-
-                    // Kiểm tra học sinh đã có bảng tổng kết cho môn và kỳ này chưa
-                    var existingSummaries = await _db.Learning_Summaries
-                        .Where(ls => ls.SemesterID == currentSemesterId && studentIdsInClass.Contains(ls.StudentId))
-                        .Select(ls => ls.StudentId)
-                        .ToListAsync();
-
-                    // Lọc ra những học sinh chưa có bảng tổng kết
-                    var newSummaries = summaries.Where(s => !existingSummaries.Contains(s.StudentId)).ToList();
-
-                    if (newSummaries.Any())
-                    {
-                        // Lưu tổng kết vào bảng Learning_Summaries với SemesterId
-                        var learningSummaryEntities = newSummaries.Select(s => new Learning_Summary
-                        {
-                            Id = s.Id,
-                            StudentId = s.StudentId,
-                            SubjectId = s.SubjectId,
-                            SemesterID = currentSemesterId, // Lưu kỳ học vào bảng tổng kết
-                            Point_15 = s.Point_15,
-                            Point_45 = s.Point_45,
-                            Point_Midterm = s.Point_Midterm,
-                            Point_Final = s.Point_Final,
-                            Point_Summary = s.Point_Summary,
-                            IsView = s.IsView
-                        }).ToList();
-
-                        _db.Learning_Summaries.AddRange(learningSummaryEntities);
-                        await _db.SaveChangesAsync();
-                    }
-
-                    return Ok(newSummaries);
-                }
-                else
-                {
-                    // Nếu giáo viên không phải là giáo viên chủ nhiệm, lấy môn học mà giáo viên dạy
-
-                    var subjectIds = await (from tc in _db.Classes
-                                            join ts in _db.Teacher_Subjects on tc.TeacherId equals ts.TeacherId
-                                            where tc.Id == classId && tc.TeacherId == teacherId
-                                            select ts.SubjectId)
-                                             .ToListAsync();
-
-                    if (subjectIds.Count == 0)
-                    {
-                        return BadRequest(new { message = "Teacher does not teach any subject in this class." });
-                    }
-
-                    // Lấy danh sách học sinh trong lớp
-                    var studentIdsInClass = await _db.Student_Classes
-                        .Where(sc => sc.ClassId == classId)
-                        .Select(sc => sc.StudentId)
-                        .ToListAsync();
-
                     var studentsInClass = await _db.Students
                         .Where(s => studentIdsInClass.Contains(s.Id))
                         .Include(s => s.User)
                         .ToListAsync();
 
-                    // Lấy điểm số của học sinh trong lớp cho môn giáo viên dạy
                     var scores = await _db.Scores
-                        .Where(s => studentIdsInClass.Contains(s.StudentId) && subjectIds.Contains(s.SubjectId))
+                        .Where(s => studentIdsInClass.Contains(s.StudentId))
                         .ToListAsync();
 
-                    // Tính toán điểm tổng kết cho từng học sinh
                     var pointTypes = await _db.PointTypes.ToListAsync();
                     var pointTypeIds = pointTypes.ToDictionary(pt => pt.Name, pt => pt.Id);
 
+                    var existingSummaries = await _db.Learning_Summaries
+                        .Where(ls => ls.SemesterID == currentSemesterId && studentIdsInClass.Contains(ls.StudentId))
+                        .ToListAsync();
+
                     var summaries = new List<Learning_SummaryDTO>();
+
                     foreach (var student in studentsInClass)
                     {
                         var studentScores = scores.Where(s => s.StudentId == student.Id).ToList();
@@ -212,53 +99,46 @@ namespace API.Controllers
                             var subjectId = group.Key;
                             var subjectScores = group.ToList();
 
-                            var point15 = subjectScores.Where(s => s.PointTypeId == pointTypeIds["Diem15p"]).ToList();
-                            var point45 = subjectScores.Where(s => s.PointTypeId == pointTypeIds["Diem45p"]).ToList();
-                            var midterm = subjectScores.Where(s => s.PointTypeId == pointTypeIds["DiemGiuaKy"]).ToList();
-                            var final = subjectScores.Where(s => s.PointTypeId == pointTypeIds["DiemCuoiKy"]).ToList();
-
-                            double CalculateAverage(IEnumerable<Scores> points, int quantity)
+                            if (!existingSummaries.Any(es => es.StudentId == student.Id && es.SubjectId == subjectId))
                             {
-                                return quantity > 0 ? points.Sum(p => p.Score) / quantity : 0;
+                                var point15 = subjectScores.Where(s => s.PointTypeId == pointTypeIds["Point_15"]).ToList();
+                                var point45 = subjectScores.Where(s => s.PointTypeId == pointTypeIds["Point_45"]).ToList();
+                                var midterm = subjectScores.Where(s => s.PointTypeId == pointTypeIds["Point_Midterm"]).ToList();
+                                var final = subjectScores.Where(s => s.PointTypeId == pointTypeIds["Point_Final"]).ToList();
+
+                                double CalculateAverage(IEnumerable<Scores> points, int quantity)
+                                {
+                                    return quantity > 0 ? points.Sum(p => p.Score) / quantity : 0;
+                                }
+
+                                var averagePoint15 = CalculateAverage(point15, point15.Count);
+                                var averagePoint45 = CalculateAverage(point45, point45.Count);
+                                var averagePointMidterm = CalculateAverage(midterm, midterm.Count);
+                                var averagePointFinal = CalculateAverage(final, final.Count);
+
+                                var summary = new Learning_SummaryDTO
+                                {
+                                    Id = Guid.NewGuid(),
+                                    StudentId = student.Id,
+                                    StudentName = student.User.FullName,
+                                    SubjectId = subjectId,
+                                    SubjectName = await _db.Subjects.Where(sub => sub.Id == subjectId).Select(sub => sub.Name).FirstOrDefaultAsync(),
+                                    Point_15 = averagePoint15,
+                                    Point_45 = averagePoint45,
+                                    Point_Midterm = averagePointMidterm,
+                                    Point_Final = averagePointFinal,
+                                    Point_Summary = (averagePoint15 * 0.2) + (averagePoint45 * 0.3) + (averagePointMidterm * 0.2) + (averagePointFinal * 0.3),
+                                    IsView = false
+                                };
+
+                                summaries.Add(summary);
                             }
-
-                            var averagePoint15 = CalculateAverage(point15, point15.Count);
-                            var averagePoint45 = CalculateAverage(point45, point45.Count);
-                            var averagePointMidterm = CalculateAverage(midterm, midterm.Count);
-                            var averagePointFinal = CalculateAverage(final, final.Count);
-
-                            var summary = new Learning_SummaryDTO
-                            {
-                                Id = Guid.NewGuid(),
-                                StudentId = student.Id,
-                                StudentName = student.User.FullName,
-                                SubjectId = subjectId,
-                                SubjectName = await _db.Subjects.Where(sub => sub.Id == subjectId).Select(sub => sub.Name).FirstOrDefaultAsync(),
-                                Point_15 = averagePoint15,
-                                Point_45 = averagePoint45,
-                                Point_Midterm = averagePointMidterm,
-                                Point_Final = averagePointFinal,
-                                Point_Summary = (averagePoint15 * 0.2) + (averagePoint45 * 0.3) + (averagePointMidterm * 0.2) + (averagePointFinal * 0.3),
-                                IsView = false
-                            };
-
-                            summaries.Add(summary);
                         }
                     }
 
-                    // Kiểm tra học sinh đã có bảng tổng kết cho môn và kỳ này chưa
-                    var existingSummaries = await _db.Learning_Summaries
-                        .Where(ls => ls.SemesterID == currentSemesterId && studentIdsInClass.Contains(ls.StudentId))
-                        .Select(ls => ls.StudentId)
-                        .ToListAsync();
-
-                    // Lọc ra những học sinh chưa có bảng tổng kết
-                    var newSummaries = summaries.Where(s => !existingSummaries.Contains(s.StudentId)).ToList();
-
-                    if (newSummaries.Any())
+                    if (summaries.Any())
                     {
-                        // Lưu tổng kết vào bảng Learning_Summaries với SemesterId
-                        var learningSummaryEntities = newSummaries.Select(s => new Learning_Summary
+                        var learningSummaryEntities = summaries.Select(s => new Learning_Summary
                         {
                             Id = s.Id,
                             StudentId = s.StudentId,
@@ -276,7 +156,117 @@ namespace API.Controllers
                         await _db.SaveChangesAsync();
                     }
 
-                    return Ok(newSummaries);
+                    return Ok(summaries);
+                }
+                else
+                {
+                    // Nếu giáo viên không phải là giáo viên chủ nhiệm, lấy môn học mà giáo viên dạy
+
+                    var subjectIds = await (from tc in _db.Classes
+                                            join ts in _db.Teacher_Subjects on tc.TeacherId equals ts.TeacherId
+                                            where tc.Id == classId && tc.TeacherId == teacherId
+                                            select ts.SubjectId)
+                                            .ToListAsync();
+
+                    if (!subjectIds.Any())
+                    {
+                        return BadRequest(new { message = "Teacher does not teach any subject in this class." });
+                    }
+
+                    var studentIdsInClass = await _db.Student_Classes
+                        .Where(sc => sc.ClassId == classId)
+                        .Select(sc => sc.StudentId)
+                        .ToListAsync();
+
+                    var studentsInClass = await _db.Students
+                        .Where(s => studentIdsInClass.Contains(s.Id))
+                        .Include(s => s.User)
+                        .ToListAsync();
+
+                    var scores = await _db.Scores
+                        .Where(s => studentIdsInClass.Contains(s.StudentId) && subjectIds.Contains(s.SubjectId))
+                        .ToListAsync();
+
+                    var pointTypes = await _db.PointTypes.ToListAsync();
+                    var pointTypeIds = pointTypes.ToDictionary(pt => pt.Name, pt => pt.Id);
+
+                    var existingSummaries = await _db.Learning_Summaries
+                        .Where(ls => ls.SemesterID == currentSemesterId && studentIdsInClass.Contains(ls.StudentId))
+                        .ToListAsync();
+
+                    var summaries = new List<Learning_SummaryDTO>();
+
+                    foreach (var student in studentsInClass)
+                    {
+                        var studentScores = scores.Where(s => s.StudentId == student.Id).ToList();
+
+                        var groupedScores = studentScores
+                            .GroupBy(s => s.SubjectId)
+                            .ToList();
+
+                        foreach (var group in groupedScores)
+                        {
+                            var subjectId = group.Key;
+                            var subjectScores = group.ToList();
+
+                            if (!existingSummaries.Any(es => es.StudentId == student.Id && es.SubjectId == subjectId))
+                            {
+                                var point15 = subjectScores.Where(s => s.PointTypeId == pointTypeIds["Point_15"]).ToList();
+                                var point45 = subjectScores.Where(s => s.PointTypeId == pointTypeIds["Point_45"]).ToList();
+                                var midterm = subjectScores.Where(s => s.PointTypeId == pointTypeIds["Point_Midterm"]).ToList();
+                                var final = subjectScores.Where(s => s.PointTypeId == pointTypeIds["Point_Final"]).ToList();
+
+                                double CalculateAverage(IEnumerable<Scores> points, int quantity)
+                                {
+                                    return quantity > 0 ? points.Sum(p => p.Score) / quantity : 0;
+                                }
+
+                                var averagePoint15 = CalculateAverage(point15, point15.Count);
+                                var averagePoint45 = CalculateAverage(point45, point45.Count);
+                                var averagePointMidterm = CalculateAverage(midterm, midterm.Count);
+                                var averagePointFinal = CalculateAverage(final, final.Count);
+
+                                var summary = new Learning_SummaryDTO
+                                {
+                                    Id = Guid.NewGuid(),
+                                    StudentId = student.Id,
+                                    StudentName = student.User.FullName,
+                                    SubjectId = subjectId,
+                                    SubjectName = await _db.Subjects.Where(sub => sub.Id == subjectId).Select(sub => sub.Name).FirstOrDefaultAsync(),
+                                    Point_15 = averagePoint15,
+                                    Point_45 = averagePoint45,
+                                    Point_Midterm = averagePointMidterm,
+                                    Point_Final = averagePointFinal,
+                                    Point_Summary = (averagePoint15 * 0.2) + (averagePoint45 * 0.3) + (averagePointMidterm * 0.2) + (averagePointFinal * 0.3),
+                                    IsView = false
+                                };
+
+                                summaries.Add(summary);
+                            }
+                        }
+                    }
+
+                    if (summaries.Any())
+                    {
+                        var learningSummaryEntities = summaries.Select(s => new Learning_Summary
+                        {
+                            Id = s.Id,
+                            StudentId = s.StudentId,
+                            SubjectId = s.SubjectId,
+                            SemesterID = currentSemesterId,
+                            Point_15 = s.Point_15,
+                            Point_45 = s.Point_45,
+                            Point_Midterm = s.Point_Midterm,
+                            Point_Final = s.Point_Final,
+                            Point_Summary = s.Point_Summary,
+                            IsView = s.IsView
+                        }).ToList();
+
+                        _db.Learning_Summaries.AddRange(learningSummaryEntities);
+                        await _db.SaveChangesAsync();
+                    }
+
+                    return Ok(summaries);
                 }
             }
             catch (Exception ex)
@@ -284,6 +274,7 @@ namespace API.Controllers
                 return StatusCode(500, new { message = ex.Message });
             }
         }
+
 
         [HttpGet("GetLearningSummaries")]
         public async Task<IActionResult> GetLearningSummaries(Guid classId, Guid teacherId)
