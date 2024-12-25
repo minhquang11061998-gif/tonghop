@@ -325,7 +325,6 @@ namespace API.Controllers
                 {
                     Id = Guid.NewGuid(),
                     Score = ExamResultStorage,
-                    Note = "",
                     CreationTime = DateTime.Now,
                     ExamRoomStudentId = examroomstudent.Id
                 };

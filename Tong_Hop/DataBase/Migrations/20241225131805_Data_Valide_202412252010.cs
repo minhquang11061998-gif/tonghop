@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace DataBase.Migrations
 {
     /// <inheritdoc />
-    public partial class database : Migration
+    public partial class DataValide202412252010 : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -16,7 +16,7 @@ namespace DataBase.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Name = table.Column<int>(type: "int", nullable: false),
+                    Name = table.Column<int>(type: "int", maxLength: 30, nullable: false),
                     Status = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
@@ -71,7 +71,7 @@ namespace DataBase.Migrations
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Name = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
-                    Code = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: false),
+                    Code = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Status = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
@@ -84,7 +84,7 @@ namespace DataBase.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: false),
                     StartTime = table.Column<DateTime>(type: "datetime2", nullable: false),
                     EndTime = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
@@ -99,7 +99,7 @@ namespace DataBase.Migrations
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Name = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    Code = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: false),
+                    Code = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     CreationTime = table.Column<DateTime>(type: "datetime2", nullable: false),
                     Status = table.Column<int>(type: "int", nullable: false)
                 },
@@ -239,6 +239,7 @@ namespace DataBase.Migrations
                     CreationTime = table.Column<DateTime>(type: "datetime2", nullable: false),
                     Status = table.Column<int>(type: "int", nullable: false),
                     MaxStudent = table.Column<int>(type: "int", nullable: false),
+                    ClassId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     SubjectId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     PointTypeId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
                 },
@@ -264,7 +265,7 @@ namespace DataBase.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Code = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: false),
+                    Code = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
                 },
                 constraints: table =>
@@ -283,7 +284,7 @@ namespace DataBase.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Code = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: false),
+                    Code = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
                 },
                 constraints: table =>
@@ -302,7 +303,7 @@ namespace DataBase.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Code = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: false),
+                    Code = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Status = table.Column<int>(type: "int", nullable: false),
                     TestId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     TestsId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
@@ -423,7 +424,7 @@ namespace DataBase.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Code = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: false),
+                    Code = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Name = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
                     Status = table.Column<int>(type: "int", nullable: false),
                     MaxStudent = table.Column<int>(type: "int", nullable: false),
@@ -694,7 +695,6 @@ namespace DataBase.Migrations
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Score = table.Column<double>(type: "float", nullable: false),
-                    Note = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     CreationTime = table.Column<DateTime>(type: "datetime2", nullable: false),
                     ExamRoomStudentId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     ExamRoomStudentId0 = table.Column<Guid>(name: "Exam_Room_StudentId", type: "uniqueidentifier", nullable: true)
