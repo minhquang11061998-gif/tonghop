@@ -141,21 +141,32 @@ namespace API.Controllers
                     return BadRequest("Khong tim thay khoi");
                 }
 
-                string ClassesName = $"{grade.Name}{classDTO.Name}";
+                string input = classDTO.Name;
 
-                var data = new Classes
+                string result = ValidateAndTransformString(input);
+
+                if (result != null)
                 {
-                    Id = Guid.NewGuid(),
-                    Code = RamdomCode(8),
-                    Name = ClassesName,
-                    MaxStudent = classDTO.MaxStudent,
-                    Status = classDTO.Status,
-                    TeacherId = classDTO.TeacherId,
-                    GradeId = classDTO.GradeId,
-                };
+                    string ClassesName = $"{grade.Name}{classDTO.Name}";
 
-                await _db.Classes.AddAsync(data);
-                await _db.SaveChangesAsync();
+                    var data = new Classes
+                    {
+                        Id = Guid.NewGuid(),
+                        Code = RamdomCode(8),
+                        Name = ClassesName,
+                        MaxStudent = classDTO.MaxStudent,
+                        Status = classDTO.Status,
+                        TeacherId = classDTO.TeacherId,
+                        GradeId = classDTO.GradeId,
+                    };
+
+                    await _db.Classes.AddAsync(data);
+                    await _db.SaveChangesAsync();
+                }
+                else
+                {
+                    Console.WriteLine("Chuỗi không hợp lệ. Vui lòng chỉ nhập chữ cái.");
+                }
 
                 return Ok("Them thanh cong");
 
@@ -164,6 +175,21 @@ namespace API.Controllers
             {
                 return BadRequest("Loi");
             }
+        }
+
+        static string ValidateAndTransformString(string input)
+        {
+            if (input.Length != 1)
+            {
+                return "Tên lớp không hợp lệ(ko đc để trống, chỉ nhập 1 ký tự)";
+            }
+
+            if (!char.IsLetter(input[0]))
+            {
+                return "Tến lớp chỉ nhận chữ";
+            }
+            
+            return input.ToUpper();
         }
 
         [HttpDelete("delete-class")]
