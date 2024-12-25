@@ -84,7 +84,6 @@ namespace API.Controllers
 									 {
 										 Id = examHistory.Id,
 										 Score = examHistory.Score,
-										 Note = examHistory.Note,
 										 CreationTime = examHistory.CreationTime,
 										 StudentCode = student != null ? student.Code : "N/A",
 										 StudentName = student != null ? student.User.FullName : "N/A",
@@ -230,7 +229,6 @@ namespace API.Controllers
 									 {
 										 Id = examHistory.Id,
 										 Score = examHistory.Score,
-										 Note = examHistory.Note,
 										 CreationTime = examHistory.CreationTime,
 										 StudentCode = student != null ? student.Code : "N/A",
 										 StudentName = student != null ? student.User.FullName : "N/A",

@@ -20,6 +20,8 @@ namespace DataBase.Models
         public int Status { get; set; }
         public int MaxStudent { get; set; }
         [ForeignKey("Id")]
+        public Guid ClassId { get; set; }
+        [ForeignKey("Id")]
         public Guid SubjectId { get; set; }
         [ForeignKey("Id")]
         public Guid PointTypeId { get; set; }

@@ -16,8 +16,6 @@ namespace DataBase.Models
 
         [StringLength(100, ErrorMessage = "Name ko quá 100 ký tự")]
         public string Name { get; set; }
-
-        [StringLength(30, ErrorMessage = "Code ko quá 30 ký tự")]
         public string Code { get; set; }
         public DateTime CreationTime { get; set; }
         public int Status { get; set; }

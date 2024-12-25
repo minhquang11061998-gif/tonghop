@@ -68,6 +68,7 @@ namespace API.Controllers
             return Ok(dto);
         }
 
+        #region ko dùng
         [HttpPost("create-exam-room")]
         public async Task<ActionResult> Create(Exam_RoomDTO dto)
         {
@@ -95,6 +96,7 @@ namespace API.Controllers
                 return BadRequest("Loi");
             }
         }
+        #endregion
 
         [HttpPut("update-exam-room")]
         public async Task<ActionResult> Update(Exam_RoomDTO dto)
