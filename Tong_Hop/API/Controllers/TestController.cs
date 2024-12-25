@@ -38,6 +38,7 @@ namespace API.Controllers
                 Minute = x.Minute,
                 Maxstudent = x.MaxStudent,
                 Status = x.Status,
+                ClassId = x.ClassId,
                 SubjectId = x.SubjectId, 
                 PointTypeId = x.PointTypeId,
             }).ToList();
@@ -94,6 +95,8 @@ namespace API.Controllers
                     Code = t.Code.ToString(),
                     SubjectName = t.Subject.Name,
                     Status = t.Status,
+                    
+                    ClassId = t.ClassId,
                     SubjectId = t.SubjectId,
                     Minute = t.Minute,
                 })
@@ -121,6 +124,7 @@ namespace API.Controllers
                 Minute = data.Minute,
                 Maxstudent = data.MaxStudent,
                 Status = data.Status,
+                ClassId = data.ClassId,
                 SubjectId = data.SubjectId,
                 PointTypeId = data.PointTypeId,
             };
@@ -221,6 +225,7 @@ namespace API.Controllers
 						Status = testDTO.Status,
 						SubjectId = testDTO.SubjectId,
 						PointTypeId = testDTO.PointTypeId,
+                        ClassId = testDTO.ClassId,
 						MaxStudent = maxStudents,
 					};
 
