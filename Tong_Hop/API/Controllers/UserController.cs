@@ -112,7 +112,72 @@ namespace API.Controllers
                 return BadRequest("Loi");
             }
         }
+        [HttpGet("get-user-teacher")]
+        public async Task<ActionResult<UserDTOTEACHER>> Get()
+        {
+            var listTeachers = await (from x in _db.Users
+                                      join c in _db.Roles on x.RoleId equals c.Id
+                                      where c.Name == "Teacher"
+                                      select new
+                                      {
+                                          x.Id,
+                                          x.Avartar,
+                                          x.UserName,
+                                          x.PasswordHash,
+                                          x.Email,
+                                          x.DateOfBirth,
+                                          x.PhoneNumber,
+                                         x.FullName,
+                                          x.Status
+                                      }).ToListAsync();
+            return Ok(listTeachers);
+        }
+        [HttpGet("get-by-id-user-teacher")]
+        public async Task<ActionResult<UserDTOTEACHER>> GetByIdteacher(Guid id)
+        {
+            try
+            {
+                // Lấy thông tin user dựa trên Id
+                var data = await _db.Users.FirstOrDefaultAsync(x => x.Id == id);
+                if (data == null)
+                {
+                    return NotFound("Không tìm thấy người dùng.");
+                }
 
+                // Truy vấn lớp học liên kết với User
+                var idclass = await (from a in _db.Classes
+                                     join b in _db.Student_Classes on a.Id equals b.ClassId
+                                     join c in _db.Students on b.StudentId equals c.Id
+                                     where c.UserId == id
+                                     select a.Id).FirstOrDefaultAsync();
+
+                // Tạo DTO để trả về
+                var userDTO = new UserDTOTEACHER
+                {
+                    Id = data.Id,
+                    FullName = data.FullName,
+                    Avartar = data.Avartar,
+                    Email = data.Email,
+                    UserName = data.UserName,
+                    PasswordHash = data.PasswordHash,
+                    DateOfBirth = data.DateOfBirth,
+                    PhoneNumber = data.PhoneNumber,
+                    IsLocked = data.IsLocked,
+                    LockedEndTime = data.LockedEndTime,
+                    CreationTime = data.CreationTime,
+                    LastMordificationTime = data.LastMordificationTime,
+                    Status = data.Status,
+                    RoleId = data.RoleId,
+                };
+
+                return Ok(userDTO);
+            }
+            catch (Exception ex)
+            {
+                // Log lỗi chi tiết hơn (nếu cần)
+                return BadRequest($"Đã xảy ra lỗi: {ex.Message}");
+            }
+        }
         [HttpGet("get-by-id-user")]
         public async Task<ActionResult<UserDTO>> GetById(Guid id)
         {
@@ -324,6 +389,79 @@ namespace API.Controllers
             }
         }
         #endregion
+        [HttpPut("update-user-teacher")]
+        public async Task<IActionResult> Update([FromForm] UserDTOTEACHER userDTO, IFormFile? newImage)
+        {
+            var data = await _db.Users.FirstOrDefaultAsync(x => x.Id == userDTO.Id);
+
+            if (data == null)
+            {
+                return NotFound("Không tìm thấy người dùng.");
+            }
+
+            // Cập nhật thông tin người dùng
+            data.FullName = userDTO.FullName;
+            data.Email = userDTO.Email;
+            data.UserName = userDTO.UserName;
+            data.PasswordHash = userDTO.PasswordHash;
+            data.DateOfBirth = userDTO.DateOfBirth;
+            data.PhoneNumber = userDTO.PhoneNumber;
+            data.IsLocked = userDTO.IsLocked;
+            data.LockedEndTime = userDTO.LockedEndTime;
+            data.CreationTime = userDTO.CreationTime;
+            data.LastMordificationTime = DateTime.UtcNow;
+            data.Status = userDTO.Status;
+            data.RoleId = userDTO.RoleId;
+
+            // Nếu có hình ảnh mới, tải lên Cloudinary và cập nhật đường dẫn
+            if (newImage != null && newImage.Length > 0)
+            {
+                if (!string.IsNullOrEmpty(data.Avartar))
+                {
+                    var publicId = Path.GetFileNameWithoutExtension(data.Avartar); // Lấy public ID từ URL
+                    var deleteParams = new DeletionParams(publicId); // Tạo tham số xóa ảnh
+                    var deletionResult = await _cloud.DestroyAsync(deleteParams); // Xóa ảnh cũ trên Cloudinary
+
+                    if (deletionResult.StatusCode != HttpStatusCode.OK)
+                    {
+                        return BadRequest("Không thể xóa ảnh cũ trên Cloudinary.");
+                    }
+                }
+
+                // Tải ảnh lên Cloudinary
+                using (var stream = new MemoryStream())
+                {
+                    await newImage.CopyToAsync(stream);
+                    stream.Position = 0; // Đặt lại vị trí stream về đầu để tải lên Cloudinary
+
+                    var uploadParams = new ImageUploadParams
+                    {
+                        File = new FileDescription(newImage.FileName, stream),
+                        Transformation = new Transformation().Width(500).Height(500).Crop("fill").Gravity("face"),
+                    };
+
+                    var uploadResult = await _cloud.UploadAsync(uploadParams);
+
+                    if (uploadResult.StatusCode != HttpStatusCode.OK)
+                    {
+                        return BadRequest("Cập nhật ảnh thất bại trên Cloudinary.");
+                    }
+
+                    // Cập nhật đường dẫn hình ảnh trong cơ sở dữ liệu
+                    data.Avartar = uploadResult.SecureUrl.ToString(); // Lưu đường dẫn hình ảnh mới
+                }
+            }
+            else
+            {
+                data.Avartar = userDTO.Avartar;
+            }
+
+
+            // Cập nhật người dùng trong cơ sở dữ liệu
+            _db.Users.Update(data);
+            await _db.SaveChangesAsync();
+            return Ok("Cập nhật thành công.");
+        }
 
         [HttpPut("update-user")]
         public async Task<IActionResult> Update([FromForm]UserDTO userDTO, IFormFile? newImage)
@@ -566,6 +704,7 @@ namespace API.Controllers
                          new Claim("Idteacher",teacherId.Id.ToString()),
                          new Claim("email",data.Email.ToString()),
                          new Claim("numberPhone",data.PhoneNumber.ToString()),
+                         new Claim("avatar",data.Avartar.ToString()),
                          
                          new Claim("CodeTeacher", teacherId.Code.ToString())
                             
@@ -833,7 +972,7 @@ namespace API.Controllers
         }
 
         [HttpPost("create-user-Teacher")]
-        public async Task<IActionResult> CreateTeachre([FromForm] UserDTO user, IFormFile avatarFile)
+        public async Task<IActionResult> CreateTeachre([FromForm] UserDTOTEACHER user, IFormFile avatarTeacher)
         {
 
             try
@@ -841,14 +980,14 @@ namespace API.Controllers
                 var roleStudent = await _db.Roles.Where(x => x.Name == "Teacher").Select(x => x.Id).FirstOrDefaultAsync();
                 var userId = Guid.NewGuid();
                 string avatarPath = null;
-                if (avatarFile == null || avatarFile.Length == 0)
+                if (avatarTeacher == null || avatarTeacher.Length == 0)
                 {
                     return BadRequest("No file uploaded.");
                 }
 
                 var uploadParams = new ImageUploadParams
                 {
-                    File = new FileDescription(avatarFile.FileName, avatarFile.OpenReadStream()),
+                    File = new FileDescription(avatarTeacher.FileName, avatarTeacher.OpenReadStream()),
                     Transformation = new Transformation().Width(500).Height(500).Crop("fill").Gravity("face")
                 };
 
@@ -890,36 +1029,8 @@ namespace API.Controllers
                 var role = _db.Roles.FirstOrDefault(x => x.Id == data.RoleId);
                 if (role != null)
                 {
-                    if (role.Name == "Student")
-                    {
-                        // Thêm học sinh
-                        var student = new Students
-                        {
-                            Id = Guid.NewGuid(),
-                            Code = RandomCode(8),
-                            UserId = data.Id
-                        };
-                        await _db.Students.AddAsync(student);
-                        await _db.SaveChangesAsync();
-
-                        //// Thêm vào Student_Classes
-                        //var studentClass = new Student_Class
-                        //{
-                        //    Id = Guid.NewGuid(),
-                        //    JoinTime = DateTime.Now,
-                        //    Status = 1,
-                        //    StudentId = student.Id,
-                        //    //ClassId = id
-                        //};
-                        //await _db.Student_Classes.AddAsync(studentClass);
-
-                        //await updateclass(id);
-
-                        //await MaxScor_Subj(student.Id, studentClass.ClassId);
-                        await _db.SaveChangesAsync();
-
-                    }
-                    else if (role.Name == "Teacher")
+                    
+                    if (role.Name == "Teacher")
                     {
                         var teacher = new Teachers
                         {
