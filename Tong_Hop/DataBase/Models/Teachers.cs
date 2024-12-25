@@ -13,8 +13,6 @@ namespace DataBase.Models
     {
         [Key]
         public Guid Id { get; set; }
-
-        [StringLength(30, ErrorMessage = "Code không được quá 30 ký tự")]
         public string Code { get; set; }
         [ForeignKey("Id")]
         public Guid UserId { get; set; }

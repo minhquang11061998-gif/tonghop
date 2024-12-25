@@ -12,10 +12,8 @@ namespace DataBase.Models
         [Key]
         public Guid Id { get; set; }
 
-        [StringLength(50, ErrorMessage = "Name ko quá 30 ký tự")]
+        [StringLength(50, ErrorMessage = "Name ko quá 50 ký tự")]
         public string Name { get; set; }
-
-        [StringLength(30, ErrorMessage = "Code ko quá 30 ký tự")]
         public string Code { get; set; }
         public int Status { get; set; }
         public virtual ICollection<Exam_Room> Exam_Room { get; set; }

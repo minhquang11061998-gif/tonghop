@@ -17,7 +17,7 @@ namespace DataBase.DTOs
         public int Maxstudent { get; set; }
         public Guid SubjectId { get; set; }
         public Guid PointTypeId { get; set; }
-        public Guid ClassCode { get; set; }
+        public Guid ClassId { get; set; }
         public Guid ExamRoomId { get; set; }
     }
 }
