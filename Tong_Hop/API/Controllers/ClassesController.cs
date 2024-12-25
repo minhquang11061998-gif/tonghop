@@ -207,6 +207,8 @@ namespace API.Controllers
 
             return BadRequest("Khong co lop nay");
         }
+
+        #region hiện ko dùng cái này
         [HttpPut("update-class-and-testcodes")]
         public async Task<IActionResult> UpdateClassAndTestCodes(ClassesDTO classDTO)
         {
@@ -300,6 +302,7 @@ namespace API.Controllers
                 return BadRequest($"Lỗi khi cập nhật: {ex.Message}");
             }
         }
+        #endregion
 
         [HttpGet("search-class")]
         public async Task<ActionResult<IEnumerable<ClassesDTO>>> SearchClass(string keyword)

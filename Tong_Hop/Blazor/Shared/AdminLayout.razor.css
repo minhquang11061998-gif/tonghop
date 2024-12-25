@@ -8,16 +8,6 @@
     font-size: 15px;
 }
 
-/* Cố định navbar ở phía trên */
-.fixed-navbar {
-    position: fixed;
-    top: 0;
-    width: calc(100% - 250px); /* Điều chỉnh chiều rộng dựa vào sidebar */
-    margin-left: 250px; /* Đẩy nội dung sang phải của sidebar */
-    background-color: #f8f9fa;
-    z-index: 1031;
-    box-shadow: 0px 2px 5px rgba(0,0,0,0.1);
-}
 
 /* Cố định sidebar bên trái */
 
@@ -26,49 +16,34 @@
 article {
     margin-top: 60px; /* Thêm khoảng cách để tránh đè lên navbar */
 }
-
-/* Cho phép phần nội dung body cuộn */
-.body-container {
-    height: calc(100vh - 60px); /* Điều chỉnh chiều cao dựa vào navbar cố định */
-    overflow-y: auto; /* Bật cuộn dọc */
-    padding-right: 15px; /* Thêm khoảng cách để tránh đè lên thanh cuộn */
-    padding-bottom: 60px;
-}
-.main-background {
-    background-image: url('../wwwroot/img/Thiết kế chưa có tên (2).png');
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-}
-.title-bar {
-    height: 40px;
-    -webkit-app-region: drag; /* Kéo cửa sổ */
-}
-
-.taskbar {
-    height: 60px;
-    display: flex;
-    align-items: center;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.body-container {
-    background-color: #f3f3f3;
-    border: 1px solid rgba(0, 0, 0, 0.1);
-    border-radius: 8px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-}
-
-.content {
-    padding: 16px;
-    background: #ffffff;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-.body-container {
+main {
     background-image: url('/img/Untitled-1.png');
-    background-size: cover; /* Đảm bảo ảnh nền bao phủ toàn bộ */
-    background-position: center; /* Căn giữa hình nền */
-    background-repeat: no-repeat; /* Không lặp lại */
-    height: 100vh; /* Chiều cao toàn màn hình */
 }
+
+/* Mặc định menu con ẩn */
+#manageClassMenu {
+    display: none;
+}
+
+/* Hiển thị menu khi checkbox được chọn */
+#toggleMenu:checked + a + #manageClassMenu {
+    display: block;
+}
+
+/* Mũi tên mặc định là mũi tên xuống */
+#toggleMenu:not(:checked) + a .bi-chevron-down {
+    display: inline-block;
+}
+
+/* Mũi tên khi menu được mở */
+#toggleMenu:checked + a .bi-chevron-down {
+    display: none;
+}
+
+#toggleMenu:checked + a .bi-chevron-up {
+    display: inline-block;
+}
+
+
+
+
