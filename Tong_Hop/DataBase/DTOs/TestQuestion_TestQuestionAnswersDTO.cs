@@ -30,6 +30,7 @@ namespace Data.DTOs
         public int? NumberOfTestCode { get; set; }
         public Guid idquestion { get; set; }
         public int Status { get; set; }
+        public Guid ClassId { get; set; }
         public Guid SubjectId { get; set; }
         public string nameclass { get; set; }
         public string SubjectName { get; set; }

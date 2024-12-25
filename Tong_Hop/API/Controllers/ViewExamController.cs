@@ -53,7 +53,7 @@ namespace API.Controllers
             // Lấy ngẫu nhiên một TestCode dựa trên TestId
             var tc = (from e in _db.TestCodes
                       join f in _db.Tests on e.TestId equals f.Id
-                      where f.Code == CodeTest
+                      where f.Code == CodeTest && e.Status == 1
                       select e).ToList();
 
             if (tc.Count == 0)
@@ -86,7 +86,19 @@ namespace API.Controllers
                     }).ToList()
             };
 
+            await KeyTestCode(result.TestCodeId);
+
             return Ok(result);
+        }
+
+        private async Task KeyTestCode(Guid IdTesstCode)
+        {
+            var id = await _db.TestCodes.FirstOrDefaultAsync(s => s.Id == IdTesstCode);
+
+            id.Status = 0;
+
+            _db.TestCodes.Update(id);
+            _db.SaveChanges();
         }
 
         [HttpGet("GetExamDuration")]
@@ -267,19 +279,30 @@ namespace API.Controllers
             {
                 var result = await _db.Tests.FirstOrDefaultAsync(x => x.Code == CodeTest);
 
-                var data = new Scores
+                var ListScore = await (from s in _db.Scores
+                                       join pt in _db.PointTypes on s.PointTypeId equals pt.Id
+                                       join t in _db.Tests on pt.Id equals t.PointTypeId
+                                       where t.Code == CodeTest && s.PointTypeId == t.PointTypeId
+                                       && s.SubjectId == t.SubjectId && s.StudentId == IdStudent
+                                       select s).ToListAsync();
+
+                foreach (var item in ListScore)
                 {
-                    Id = Guid.NewGuid(),
-                    Score = ExamResultStorage,
-                    PointTypeId = result.PointTypeId,
-                    SubjectId = result.SubjectId,
-                    StudentId = IdStudent
-                };
+                    if (item.Score == 0)
+                    {
+                        var updateScore = new Scores
+                        {
+                            Score = ExamResultStorage
+                        };
 
-                _db.Scores.Update(data);
-                _db.SaveChanges();
+                        _db.Scores.Update(updateScore);
+                        _db.SaveChanges();
+                    }
 
-                return Ok(data);
+                    break;
+                }
+
+                return Ok("Update điểm thành công");
             }
             catch (Exception ex)
             {
@@ -314,7 +337,6 @@ namespace API.Controllers
                 {
                     Id = Guid.NewGuid(),
                     Score = ExamResultStorage,
-                    Note = "",
                     CreationTime = DateTime.Now,
                     ExamRoomStudentId = examroomstudent.Id
                 };

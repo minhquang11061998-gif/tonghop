@@ -73,7 +73,7 @@ namespace API.Controllers
                 };
 
                 await _db.Exams.AddAsync(data);
-               await _db.SaveChangesAsync();
+                await _db.SaveChangesAsync();
 
                 var ExamRoom = new Exam_Room
                 {
