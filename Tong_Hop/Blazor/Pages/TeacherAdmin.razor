@@ -73,7 +73,7 @@
                                 <input type="checkbox"
                                        checked="@(SelectedOrder == order.Id)"
                                        @onchange="() => SelectOrder(order.Id)"
-                                       title="Chọn đơn hàng này" />
+                                       title="Chọn tài khoản này" />
                             </td>
                             <td>
                                 <img src="@order.Avartar" alt="Avatar"
@@ -85,7 +85,7 @@
                             <td>@order.DateOfBirth?.ToString("d")</td>
                             <td>@order.PhoneNumber</td>
                             <td>@order.UserName</td>
-                            <td>********</td>
+                            <td>@order.PasswordHash</td>
                             <td>
                                 <span class="badge @(order.Status == 1 ? "bg-success" : "bg-secondary")">
                                     @(order.Status == 1 ? "Hoạt động" : "Tạm dừng")

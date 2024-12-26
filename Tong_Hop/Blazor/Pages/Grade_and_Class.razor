@@ -2,6 +2,8 @@
 @layout AdminLayout
 @inject IJSRuntime jsruntime
 @inject HttpClient client
+@using System.Net.Http.Json
+@using System.IdentityModel.Tokens.Jwt
 @using DataBase.Models
 @using Microsoft.AspNetCore.Components.Web
 <PageTitle>Tree Grid</PageTitle>
@@ -12,14 +14,11 @@
             <button class="btn btn-primary btn-sm" @onclick="ShowCreateForm">
                 <i class="bi bi-plus-circle"></i> Tạo mới
             </button>
-            <button class="btn btn-warning btn-sm">
-                <i class="bi bi-pencil-square"></i> Chỉnh sửa
+            <button class="btn btn-warning btn-sm" @onclick="loadidGrade">
+                <i class="bi bi-pencil-square" ></i> Chỉnh sửa
             </button>
-            <button class="btn btn-danger btn-sm">
+            <button class="btn btn-danger btn-sm" @onclick="deletegrade">
                 <i class="bi bi-trash"></i> Xóa
-            </button>
-            <button class="btn btn-success btn-sm" @onclick="ExportToExcel">
-                <i class="bi bi-file-earmark-excel"></i> Thêm file Excel
             </button>
         </div>
         <div class="ms-auto" style="width: 250px;">
@@ -31,66 +30,167 @@
             </div>
         </div>
     </div>
-
-    @if (isCreating)
-    {
-        <!-- Form to add new Grade -->
-        <div class="mb-3">
-            <input type="text" class="form-control" placeholder="Tên khối" @bind="newGradeName" />
-            <button class="btn btn-primary mt-2" @onclick="CreateGrade">Lưu</button>
-            <button class="btn btn-secondary mt-2" @onclick="CancelCreate">Hủy</button>
-        </div>
-    }
-    else
-    {
-        <!-- Table displaying Grades -->
-        <table class="table table-striped">
-            <thead class="table-primary">
+    <table class="table table-striped">
+        <thead class="table-primary">
+            <tr>
+                <th style="width: 90px;">
+                    <input type="checkbox" title="Chọn tất cả" />
+                </th>
+                <th scope="col">Tên khối</th>
+                <th style="width: 150px;">Trạng thái</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (isCreating)
+            {
                 <tr>
-                    <th style="width: 90px;">
-                        <input type="checkbox" title="Chọn tất cả" />
-                    </th>
-                    <th scope="col">Tên khối</th>
-                    <th style="width: 150px;">Trạng thái</th>
+                    <td>
+                        @if (gradescreate.Name != 0 && !string.IsNullOrWhiteSpace(gradescreate.Name.ToString()))
+                        {
+                            <button class="btn btn-primary btn-sm" @onclick="CreateGrade">
+                                <i class="bi bi-save"></i> Lưu
+                            </button>
+                        }
+                        else
+                        {
+                            <button class="btn btn-secondary" @onclick="CancelCreate">Hủy</button>
+                        }
+                    </td>
+                    <td>
+                        <input type="number" class="form-control"
+                        placeholder="Nhập tên khối mới"
+                        @bind="gradescreate.Name"
+                        @bind:event="oninput" />
+
+                    </td>
+                    <td>
+                        <select class="form-select" @bind=gradescreate.Status>
+                            <option value="1">Hoạt động</option>
+                            <option value="0">Tạm dừng</option>
+                        </select>
+                    </td>
                 </tr>
-            </thead>
-            <tbody>
-                @foreach (var item in FilteredOrders)
+
+            }
+
+            <!-- Hàng danh sách dữ liệu -->
+            @if (FilteredOrders != null && FilteredOrders.Any())
+            {
+                @foreach (var item in FilteredOrders.OrderBy(c => c.Name))
                 {
                     <tr>
-                        <td><input type="checkbox" name="name" value="" /></td>
-                        <td>
-                            <span class="text-primary" style="cursor: pointer;" @onclick="() => ToggleTree(item.Id)">
-                                Khối @item.Name
-                            </span>
-                        </td>
-                        <td>
-                            <span class="badge @(item.Status == 1 ? "bg-success" : "bg-secondary")">
-                                @(item.Status == 1 ? "Hoạt động" : "Tạm dừng")
-                            </span>
-                        </td>
+
+                        @if (TaskIdToEdit == item.Id)  
+                        {
+                            <td>
+                                @if (gradescreate.Name != 0 && !string.IsNullOrWhiteSpace(gradescreate.Name.ToString()))
+                                {
+                                    <button class="btn btn-primary btn-sm" @onclick="CreateGrade">
+                                        <i class="bi bi-save"></i> Lưu
+                                    </button>
+                                }
+                                else
+                                {
+                                    <button class="btn btn-secondary" @onclick="CancelCreate" >Hủy</button>
+                                }
+                            </td>
+                            <td>
+                                <input type="number" class="form-control"
+                                placeholder="Nhập tên khối mới"
+                                @bind="gradescreate.Name"
+                                @bind:event="oninput" />  <!-- Thao tác chỉnh sửa tên -->
+                            </td>
+                            <td>
+                                <select class="form-select" @bind="gradescreate.Status">  <!-- Thao tác chỉnh sửa trạng thái -->
+                                    <option value="1">Hoạt động</option>
+                                    <option value="0">Tạm dừng</option>
+                                </select>
+                            </td>
+                        }
+                        else
+                        {
+                            <td>
+                                <input type="checkbox"
+                                checked="@(selectidgrade == item.Id)"
+                                @onchange="() => selectid(item.Id)"
+                                title="Chọn tài khoản này" />
+                            </td>
+                            <td>
+                                <span class="text-primary" style="cursor: pointer;" @onclick="() => ToggleTree(item.Id)">
+                                    Khối @item.Name
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge @(item.Status == 1 ? "bg-success" : "bg-secondary")">
+                                    @(item.Status == 1 ? "Hoạt động" : "Tạm dừng")
+                                </span>
+                            </td>
+
+                        }
+
                     </tr>
+
                     @if (ExpandedTasks.Contains(item.Id))
                     {
+                        // Kiểm tra xem có lớp nào không
                         if (classes != null && classes.Any(c => c.GradeId == item.Id))
                         {
-                            @foreach (var classItem in classes.Where(c => c.GradeId == item.Id).OrderBy(c => c.Name))
+                            if (iscreatclass)
                             {
                                 <tr>
-                                    <td></td>
-                                    <td style="padding-left: 20px;" class="text-primary">
-                                        <div class="d-flex justify-content-between">
-                                            <div>
-                                                └ @classItem.Name
-                                            </div>
-                                            <div>
-                                                <button class="btn btn-primary btn-sm me-1">Edit</button>
-                                                <button class="btn btn-danger btn-sm">Delete</button>
-                                            </div>
-                                        </div>
+                                    <td>
+                                        @if (!string.IsNullOrWhiteSpace(classcreateandupdate.Name))
+                                        {
+                                            <button class="btn btn-primary btn-sm" @onclick="createclass">
+                                                <i class="bi bi-save"></i> Lưu
+                                            </button>
+                                        }
+                                        else
+                                        {
+                                            <button class="btn btn-secondary" @onclick="CancelCreate">Hủy</button>
+                                        }
+                                    </td>
+                                    <td>
+                                        <input type="text" class="form-control"
+                                        @bind="classcreateandupdate.Name"
+                                        @oninput="OnInputChangeds"
+                                        placeholder="Nhập tên lớp" />
                                     </td>
                                     <td></td>
                                 </tr>
+                            }
+
+                            @foreach (var classItem in classes.Where(c => c.GradeId == item.Id).OrderBy(c => c.Name))
+                            {
+                                if (EditClass == classItem.Id)
+                                {
+                                    <tr>
+                                        <td></td>
+                                        <td>
+                                            <input type="text" class="form-control"
+                                            @bind="classcreateandupdate.Name"
+                                            @bind:event="oninput" name="name" />
+                                        </td>
+                                        <td></td>
+                                    </tr>
+                                }
+                                else
+                                {
+                                    <tr>
+                                        <td style="padding-left: 70px;">
+                                            <input type="checkbox"
+                                            checked="@(selectidclass == classItem.Id)"
+                                            @onchange="() => selectidclas(classItem.Id)"
+                                            title="Chọn tài khoản này" />
+                                        </td>
+                                        <td style="padding-left: 20px;" class="text-primary">
+                                            <div class="d-flex justify-content-between">
+                                                <div> └ @classItem.Name </div>
+                                            </div>
+                                        </td>
+                                        <td></td>
+                                    </tr>
+                                }
                             }
                         }
                         else
@@ -98,36 +198,191 @@
                             <tr>
                                 <td colspan="3" class="text-center text-danger">Không có lớp nào.</td>
                             </tr>
+                            @if (iscreatclass)
+                            {
+
+                                <tr>
+                                    <td>
+                                        @if (!string.IsNullOrWhiteSpace(classcreateandupdate.Name))
+                                        {
+                                            <button class="btn btn-primary btn-sm" @onclick="createclass">
+                                                <i class="bi bi-save"></i> Lưu
+                                            </button>
+                                        }
+                                        else
+                                        {
+                                            <button class="btn btn-secondary" @onclick="CancelCreate">Hủy</button>
+                                        }
+                                    </td>
+                                    <td>
+                                        <input type="text" class="form-control"
+                                        @bind="classcreateandupdate.Name"
+                                        @oninput="OnInputChangeds"
+                                        placeholder="Nhập tên lớp" />
+                                    </td>
+                                    <td></td>
+                                </tr>
+
+                            }
                         }
                     }
+
+
                 }
-            </tbody>
-        </table>
-    }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="3" class="text-center text-danger">Không có dữ liệu.</td>
+                </tr>
+            }
+        </tbody>
+    </table>
 </div>
 
 @code {
     private bool isCreating = false;
+    private bool iscreatclass = false;
     private Guid newGradeName = Guid.Empty;
+    private Grades gradescreate = new Grades();
+    private Guid selectidgrade;
+    private Guid selectidclass;
+    private Guid? TaskIdToEdit = null;
+    private Guid? EditClass = null;
+    private string teacherid;
+    private Classes classcreateandupdate = new Classes();
+    private async Task tokent()
+    {
+        var token = await jsruntime.InvokeAsync<string>("localStorage.getItem", "YourSuperSecretKeyHere");
+        if (string.IsNullOrEmpty(token))
+        {
+            throw new Exception("Token không tồn tại hoặc không hợp lệ.");
+        }
+        var handler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
+        var jsontoken = handler.ReadToken(token) as System.IdentityModel.Tokens.Jwt.JwtSecurityToken;
+        teacherid = jsontoken?.Claims.FirstOrDefault(c => c.Type == "Idteacher")?.Value;
+    }
+
+    private void OnInputChanged(string? value)
+    {
+        if (int.TryParse(value, out var parsedValue))
+        {
+            gradescreate.Name = parsedValue;
+            classcreateandupdate.Name = value;
+            StateHasChanged();              
+        }
+    } 
+    private void OnInputChangeds(ChangeEventArgs e)
+    {
+        // Lấy giá trị người dùng nhập vào
+        var inputValue = e.Value?.ToString();
+
+        // Cập nhật giá trị của `classcreateandupdate.Name`
+        classcreateandupdate.Name = inputValue;
+
+        // Gọi lại StateHasChanged để cập nhật giao diện
+        StateHasChanged();
+    }
+
+
+    private void selectid(Guid id){
+        selectidgrade = selectidgrade == id ? Guid.Empty :id ;
+    }
+    private void selectidclas(Guid id){
+        selectidclass = selectidclass == id ? Guid.Empty : id;
+    }
+
     private void ShowCreateForm()
     {
-        isCreating = true;
+        if (ExpandedTasks != null && ExpandedTasks.Any()) 
+        {
+            iscreatclass = true; 
+            isCreating = false;
+        }else{
+            isCreating = true;
+        }
+
     }
 
     private void CancelCreate()
     {
         isCreating = false;
+        TaskIdToEdit = null;
+        selectidgrade = Guid.Empty;
     }
 
+    private async Task loadidGrade(){
+        if(selectidgrade!=Guid.Empty){
+            gradescreate = await client.GetFromJsonAsync<Grades>($"https://localhost:7046/api/Grade/get-by-id?Id={selectidgrade}");
+            TaskIdToEdit = selectidgrade;
+        }
+    }
+    private async Task createclass(){
+        classcreateandupdate.TeacherId = Guid.Parse(teacherid);
+        classcreateandupdate.GradeId = idgrade;
+        var respon = await client.PostAsJsonAsync("https://localhost:7046/api/Classes/create-class", classcreateandupdate);
+        if (respon.IsSuccessStatusCode)
+        {
+            iscreatclass = false;
+            await GetAllClass();
+
+        }
+        else { await jsruntime.InvokeVoidAsync("alert", "Thêm Lớp thất bại"); }
+    }
     private async Task CreateGrade()
     {
-        if (newGradeName!=Guid.Empty)
+        if(selectidgrade==Guid.Empty){
+            var response = await client.PostAsJsonAsync("https://localhost:7046/api/Grade/create-grade", gradescreate);
+            if (response.IsSuccessStatusCode)
+            {
+                isCreating = false;
+                await GetAllGrade();
+            }
+            else
+            {
+                await jsruntime.InvokeVoidAsync("alert", "Thêm khối thất bại!");
+            }
+        }
+
+        else{
+            gradescreate.Id = selectidgrade;
+            var respom = await client.PutAsJsonAsync("https://localhost:7046/api/Grade/update-grade", gradescreate);
+            if (respom.IsSuccessStatusCode) { isCreating = false; TaskIdToEdit = null;selectidgrade = Guid.Empty; ; await GetAllGrade(); }
+            else{ await jsruntime.InvokeVoidAsync("alert", "Sửa Khối thất bại"); }
+        }
+    }
+
+    private async Task deletegrade()
+    {
+        if (selectidgrade != Guid.Empty) // Kiểm tra nếu selectidgrade không phải là Guid.Empty
         {
-            // Call API to create new grade
-            var newGrade = new Grades { Id = newGradeName, Status = 1 }; // Assuming 1 is 'active'
-            grades.Add(newGrade); // Add locally (can update after successful API call)
-            newGradeName = Guid.Empty; // Clear input field
-            isCreating = false; // Close the form
+            var response = await client.DeleteAsync($"https://localhost:7046/api/Grade/delete-grade?Id={selectidgrade}");
+            if (response.IsSuccessStatusCode)
+            {
+                await GetAllGrade();
+                await jsruntime.InvokeVoidAsync("alert", "Xóa khối thành công.");
+            }
+            else
+            {
+                await jsruntime.InvokeVoidAsync("alert", "Xóa khối thất bại.");
+            }
+        }
+        else if (selectidclass != Guid.Empty) // Kiểm tra nếu selectidclass không phải là Guid.Empty
+        {
+            var response = await client.DeleteAsync($"https://localhost:7046/api/Classes/delete-class?Id={selectidclass}");
+            if (response.IsSuccessStatusCode)
+            {
+                await GetAllClass();
+                await jsruntime.InvokeVoidAsync("alert", "Xóa lớp thành công.");
+            }
+            else
+            {
+                await jsruntime.InvokeVoidAsync("alert", "Xóa lớp thất bại.");
+            }
+        }
+        else
+        {
+            await jsruntime.InvokeVoidAsync("alert", "Không có khối hoặc lớp được chọn để xóa.");
         }
     }
 
@@ -137,7 +392,10 @@
      ? grades 
      : grades.Where(o => o.Name.ToString().Contains(SearchText)) 
               .ToList();
-
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await tokent();
+    }
     protected override async Task OnInitializedAsync()
     {
         await GetAllGrade();
@@ -149,57 +407,19 @@
     private async Task GetAllGrade(){
         grades = await client.GetFromJsonAsync<List<Grades>>("https://localhost:7046/api/Grade/get-grade");
     }
-    private List<Guid> ExpandedTasks = new List<Guid>(); // Lưu trữ các task đã mở
-    private bool SortAscending = true;
+    private List<Guid> ExpandedTasks = new List<Guid>();
     private string SearchText { get; set; }
-
-    
-    private Guid? TaskIdToEdit = null;
-
-    @inject IJSRuntime JS
 
     private async Task ShowModal()
     {
-        await JS.InvokeVoidAsync("ShowModal");
+        await jsruntime.InvokeVoidAsync("ShowModal");
     }
 
     private async Task HideModal()
     {
-        await JS.InvokeVoidAsync("HideModal");
+        await jsruntime.InvokeVoidAsync("HideModal");
     }
-
-
-    private void SaveTask()
-    {
-        if (TaskIdToEdit.HasValue)
-        {
-            // Update existing task
-            
-        }
-        else
-        {
-            // Add new task
-            
-        }
-
-        HideModal();
-    }
-
-    private void EditTask()
-    {
-       
-    }
-
-    private void DeleteTask(Guid taskId)
-    {
-       
-    }
-
-    // private List<TreeData> GetChildren(Guid parentId)
-    // {
-    //     return classes.Where(t => t.GradeId == parentId).ToList();
-    // }
-
+    private Guid idgrade;
     private void ToggleTree(Guid id)
     {
         if (ExpandedTasks.Contains(id))
@@ -208,17 +428,11 @@
         }
         else
         {
-            ExpandedTasks.Add(id); 
+            ExpandedTasks.Add(id);
+            idgrade = id;
         }
     }
-
-    private void ExportToExcel()
-    {
-        // Code to export data to Excel
-    }
-
-    
-
+   
  
 }
 <script>
