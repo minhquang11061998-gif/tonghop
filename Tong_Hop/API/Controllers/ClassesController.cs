@@ -1,6 +1,10 @@
-﻿using DataBase.Data;
+﻿using CloudinaryDotNet;
+using CloudinaryDotNet.Actions;
+using DataBase.Data;
 using DataBase.DTOs;
 using DataBase.Models;
+using Emgu.CV;
+using Emgu.CV.Features2D;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -12,9 +16,11 @@ namespace API.Controllers
     public class ClassesController : ControllerBase
     {
         private readonly AppDbContext _db;
-        public ClassesController(AppDbContext db)
+        private readonly Cloudinary _cloud;
+        public ClassesController(AppDbContext db ,Cloudinary cloud)
         {
             _db = db;
+            _cloud = cloud;
         }
 
         private string RamdomCode(int length)
@@ -48,7 +54,12 @@ namespace API.Controllers
 
             return new string(code);
         }
-
+        [HttpGet("get-all")]
+        public IActionResult get()
+        {
+           var data= _db.Classes.ToList();
+            return Ok(data);
+        }
         [HttpGet("get-all-class")]
         public async Task<ActionResult<List<ClassesDTO>>> GetAll()
         {
@@ -195,18 +206,72 @@ namespace API.Controllers
         [HttpDelete("delete-class")]
         public async Task<IActionResult> Delete(Guid Id)
         {
-            var data = await _db.Classes.FirstOrDefaultAsync(x => x.Id == Id);
-
-            if (data != null)
+            using var transaction = await _db.Database.BeginTransactionAsync();
+            try
             {
-                _db.Classes.Remove(data);
+                // Kiểm tra xem lớp có tồn tại hay không
+                var classToDelete = await _db.Classes.FirstOrDefaultAsync(c => c.Id == Id);
+                if (classToDelete == null)
+                {
+                    return NotFound("Không tìm thấy lớp.");
+                }
+
+                // Lấy danh sách liên quan nếu có
+                var studentClasses = await _db.Student_Classes.Where(sc => sc.ClassId == Id).ToListAsync();
+                var studentIds = studentClasses.Select(sc => sc.StudentId).ToList();
+
+                var students = await _db.Students.Where(s => studentIds.Contains(s.Id)).ToListAsync();
+                var userIds = students.Select(s => s.UserId).ToList();
+
+                var users = await _db.Users.Where(u => userIds.Contains(u.Id)).ToListAsync();
+
+                // Xóa các bảng liên quan nếu có dữ liệu
+                if (studentClasses.Any())
+                {
+                    _db.Student_Classes.RemoveRange(studentClasses);
+                }
+
+                if (students.Any())
+                {
+                    _db.Students.RemoveRange(students);
+                }
+
+                // Xóa các users và xử lý ảnh từ cloud
+                if (users.Any())
+                {
+                    foreach (var user in users)
+                    {
+                        _db.Users.Remove(user);
+
+                        // Xử lý xóa ảnh từ Cloud Storage nếu có avatar
+                        if (!string.IsNullOrEmpty(user.Avartar))
+                        {
+                            var publicId = user.Avartar.Split('/').Last().Split('.').First();
+                            var deletionParams = new DeletionParams(publicId);
+
+                            // Giả sử _cloud là đối tượng dịch vụ cloud của bạn
+                            var deletionResult = await _cloud.DestroyAsync(deletionParams);
+                        }
+                    }
+                }
+
+                // Xóa lớp
+                _db.Classes.Remove(classToDelete);
+
+                // Lưu thay đổi
                 await _db.SaveChangesAsync();
+                await transaction.CommitAsync();
 
-                return Ok("Da xoa");
+                return Ok("Đã xóa thành công.");
             }
-
-            return BadRequest("Khong co lop nay");
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                return BadRequest($"Xóa thất bại: {ex.Message}");
+            }
         }
+
+
 
         #region hiện ko dùng cái này
         [HttpPut("update-class-and-testcodes")]

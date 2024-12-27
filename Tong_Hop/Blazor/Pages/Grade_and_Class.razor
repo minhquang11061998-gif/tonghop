@@ -135,7 +135,7 @@
                         // Kiểm tra xem có lớp nào không
                         if (classes != null && classes.Any(c => c.GradeId == item.Id))
                         {
-                            if (iscreatclass)
+                            if (iscreatclass && idgrade==item.Id)
                             {
                                 <tr>
                                     <td>
@@ -308,6 +308,7 @@
     {
         isCreating = false;
         TaskIdToEdit = null;
+        iscreatclass = false;
         selectidgrade = Guid.Empty;
     }
 
@@ -324,6 +325,7 @@
         if (respon.IsSuccessStatusCode)
         {
             iscreatclass = false;
+            idgrade = Guid.Empty;
             await GetAllClass();
 
         }
@@ -402,7 +404,7 @@
         await GetAllClass();
     }
     private async Task GetAllClass(){
-        classes = await client.GetFromJsonAsync<List<Classes>>("https://localhost:7046/api/Classes/get-all-class");
+        classes = await client.GetFromJsonAsync<List<Classes>>("https://localhost:7046/api/Classes/get-all");
     }
     private async Task GetAllGrade(){
         grades = await client.GetFromJsonAsync<List<Grades>>("https://localhost:7046/api/Grade/get-grade");
@@ -430,6 +432,7 @@
         {
             ExpandedTasks.Add(id);
             idgrade = id;
+            
         }
     }
    
