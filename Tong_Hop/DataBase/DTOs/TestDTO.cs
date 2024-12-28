@@ -16,8 +16,11 @@ namespace DataBase.DTOs
         public int Status { get; set; }
         public int Maxstudent { get; set; }
         public Guid SubjectId { get; set; }
+        public string SubjectName { get; set; }
         public Guid PointTypeId { get; set; }
+        public string PointTypeName { get; set; }
         public Guid ClassId { get; set; }
+        public string ClassName { get; set; }
         public Guid ExamRoomId { get; set; }
     }
 }

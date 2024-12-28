@@ -96,7 +96,7 @@
                 chartData = await httpClient.GetFromJsonAsync<List<ChartDTO>>(url);
                 if (chartData != null && chartData.Any())
                 {
-                    var gradeNames = new[] { 1, 2, 3, 4 };
+                    var gradeNames = new[] { 6,7,8,9 };
                     var studentCounts = gradeNames.Select(name => chartData.FirstOrDefault(d => d.GradeName == name)?.TotalStudents ?? 0).ToArray();
                     var classCounts = gradeNames.Select(name => chartData.FirstOrDefault(d => d.GradeName == name)?.TotalClasses ?? 0).ToArray();
                     var teacherCounts = gradeNames.Select(name => chartData.FirstOrDefault(d => d.GradeName == name)?.TotalTeachers ?? 0).ToArray();

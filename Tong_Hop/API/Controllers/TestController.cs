@@ -22,11 +22,19 @@ namespace API.Controllers
         [HttpGet("get-all-test")]
         public async Task<ActionResult<List<TestDTO>>> GetAll()
         {
-            var data = await _db.Tests.ToListAsync();
+            var data = await _db.Tests
+                .Include(t => t.testQuestions)
+                .Include(t => t.testCodes)
+                .Include(t => t.Subject)
+                .ThenInclude(s => s.Subject_Grade)
+                .ThenInclude(sg => sg.Grade)
+                .ThenInclude(g => g.Class)
+                .Include(t => t.PointType)
+                .ToListAsync();
 
-            if (data == null)
+            if (data == null || !data.Any())
             {
-                return NotFound("Danh sach trong");
+                return NotFound("Danh sách trống");
             }
 
             var testdto = data.Select(x => new TestDTO
@@ -39,12 +47,18 @@ namespace API.Controllers
                 Maxstudent = x.MaxStudent,
                 Status = x.Status,
                 ClassId = x.ClassId,
-                SubjectId = x.SubjectId, 
+                SubjectId = x.SubjectId,
                 PointTypeId = x.PointTypeId,
+                SubjectName = x.Subject?.Name, // Lấy tên Subject
+                ClassName = x.Subject.Subject_Grade
+                        .SelectMany(sg => sg.Grade.Class.Select(c => c.Name))
+                        .FirstOrDefault(), // Lấy tên Class
+                PointTypeName = x.PointType?.Name // Lấy tên PointType
             }).ToList();
 
             return Ok(testdto);
         }
+
 
         [HttpGet("{testId}/questions")]
         public async Task<IActionResult> GetQuestions(Guid testId, [FromQuery] int level)

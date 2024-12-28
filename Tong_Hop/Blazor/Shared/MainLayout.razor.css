@@ -134,6 +134,50 @@ main {
     }
 }
 
+/* General Footer Styles */
+footer {
+    background-color: #f8f9fa; /* Màu nền sáng */
+    color: #000000 !important; /* Văn bản màu đen với !important để đảm bảo không bị ghi đè */
+    font-family: 'Arial', sans-serif;
+}
+
+    /* Ensure All Paragraph Text Is Black */
+    footer p {
+        color: #000000 !important; /* Văn bản đoạn văn thành màu đen */
+        margin: 0.5rem 0;
+    }
+
+    /* Ensure All Links Are Black */
+    footer a {
+        color: #000000 !important; /* Đổi màu liên kết thành đen */
+        text-decoration: none;
+        transition: color 0.3s ease;
+    }
+
+        footer a:hover {
+            text-decoration: underline;
+            color: #0056b3; /* Màu xanh dương khi hover */
+        }
+
+    /* Ensure Icons Match Style */
+    footer i {
+        color: #000000 !important; /* Màu đen cho icon */
+        font-size: 1.5rem;
+        transition: color 0.3s;
+    }
+
+        footer i:hover {
+            color: #0056b3; /* Màu xanh dương khi hover */
+        }
+
+    /* Adjust Logo Size */
+    footer .w-50 {
+        max-width: 250px; /* Tăng kích thước logo */
+        height: auto;
+        margin: 0 auto;
+    }
+
+
 
 @media (max-width: 430.932px) {
     .nav-link {

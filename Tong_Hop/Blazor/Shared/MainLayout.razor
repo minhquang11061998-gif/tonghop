@@ -178,7 +178,7 @@
                             <ValidationSummary />
                             <div class="mb-3">
                                 <label for="username" class="form-label">Tên tài khoản hoặc Email</label>
-                                <InputText id="username" @bind-value="loginModel.Username" class="form-control" required />
+                                <InputText id="username" @bind-Value="loginModel.Username" class="form-control" required />
                             </div>
                             <div class="mb-3">
                                 <label for="password" class="form-label">Mật khẩu</label>
@@ -205,28 +205,22 @@
     }
 </main>
 
-<footer class="container-fluid mt-auto">
-    <div class="row bg-dark-subtle py-3">
-        <div class="col-4">
-            <img class="w-50 h-100" style="margin-left:100px" src="img/Rectangle89.png" alt="Alternate Text" />
+<footer class="container-fluid mt-auto bg-dark-subtle text-light">
+    <div class="row py-4 text-center">
+        <!-- Logo -->
+        <div class="col-12 col-md-4 mb-3 mb-md-0">
+            <img class="w-50" src="img/Rectangle89.png" alt="Logo" />
         </div>
-        <div class="col-4 py-2">
-            <div class="row">
-                <p>Địa chỉ:</p>
-            </div>
-            <div class="row">
-                <p>Số điện thoại:</p>
-            </div>
-            <div class="row">
-                <p>Email:</p>
-            </div>
-            <div class="row">
-                <p>Website:</p>
-            </div>
+
+        <!-- Contact Information -->
+        <div class="col-12 col-md-4">
+            <p class="mb-1"><strong>Địa chỉ:</strong> Phường Cam Phú, Thành Phố Cam Ranh, Tỉnh Khánh Hòa</p>
+            <p class="mb-1"><strong>Số điện thoại:</strong> 583862626</p>
+            <p class="mb-1"><strong>Email:</strong> <a href="mailto:c1cphu.cr@khanhhoa.edu.vn" class="text-light text-decoration-none">c1cphu.cr@khanhhoa.edu.vn</a></p>
+            <p class="mb-0"><strong>Website:</strong> <a href="#" class="text-light text-decoration-none">www.khanhhoa.edu.vn</a></p>
         </div>
     </div>
 </footer>
-
 @code {
     private List<NotificationDTO> data = new List<NotificationDTO>();
     private int unreadCount = 0;

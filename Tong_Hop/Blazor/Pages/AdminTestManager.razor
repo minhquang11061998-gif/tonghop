@@ -6,135 +6,152 @@
 @inject IHttpClientFactory clientFactory;
 @inject NavigationManager NavigationManager
 @inject IJSRuntime Jsruntime
-<div>
-    <div class="row">
-        <div class="border d-flex">
-            <div class="col-2">
-                <div class="border shadow-sm" style="background-color:cornflowerblue">
-                    <h5 class="text-white d-flex justify-content-center align-items-center">Thư mục</h5>
-                </div>
-                <div class="border min-vh-100">
-                    @if (testList != null & testList.Any())
-                    {
-                        @foreach (var item in testList)
-                        {
-                            <div>
-                                <span class="target" value="@item.Id" type="button" @onclick="() => ToggleTest(item.Id)">
-                                    <i class="bi bi-folder-fill text-warning p-1"></i> @item.Name
-                                </span>
-                                <div id="contextMenu" class="context-menu">
-                                    <div class="context-menu-item" @onclick="ShowCreateTestModal">Thêm mới</div>
-                                    <div class="context-menu-item" @onclick="()=>Deletetest(item.Id)">Xóa</div>
-                                    <div class="context-menu-item" onclick="alert('Mục 3 được chọn!')">Đổi tên</div>
-                                </div>
-                                @if (selectedTestId == item.Id)
-                                {
-                                    <ul>
-                                        <li class="nav-link">
-                                            <span class="target" type="button" @onclick="() => LoadQuestions(item.Id, 1)" @oncontextmenu="(e)=>rightclick(item.Id,1)">
-                                                <i class="bi bi-folder-fill text-warning"></i> Câu hỏi dễ
-                                            </span>
-                                            <div id="contextMenu" class="context-menu">
-                                                <div class="context-menu-item" @onclick="OpenModal">Thêm câu hỏi</div>
-                                                <div class="context-menu-item" >Xóa</div>
-                                                <div class="context-menu-item" onclick="alert('Mục 3 được chọn!')">Đổi tên</div>
-                                            </div>
-                                        </li>
-                                        <li class="nav-link">
-                                            <span class="target" type="button" @onclick="() => LoadQuestions(item.Id, 2)" @oncontextmenu="(e)=>rightclick(item.Id,2)">
-                                                <i class="bi bi-folder-fill text-warning"></i> Câu hỏi trung bình
-                                            </span>
-                                            <div id="contextMenu" class="context-menu">
-                                                <div class="context-menu-item" @onclick="OpenModal">Thêm câu hỏi</div>
-                                                <div class="context-menu-item">Xóa</div>
-                                                <div class="context-menu-item" onclick="alert('Mục 3 được chọn!')">Đổi tên</div>
-                                            </div>
-                                        </li>
-                                        <li class="nav-link">
-                                            <span class="target" type="button" @onclick="() => LoadQuestions(item.Id, 3)" @oncontextmenu="(e)=>rightclick(item.Id,3)">
-                                                <i class="bi bi-folder-fill text-warning"></i> Câu hỏi Khó
-                                            </span>
-                                            <div id="contextMenu" class="context-menu">
-                                                <div class="context-menu-item" @onclick="OpenModal">Thêm câu hỏi</div>
-                                                <div class="context-menu-item">Xóa</div>
-                                                <div class="context-menu-item" onclick="alert('Mục 3 được chọn!')">Đổi tên</div>
-                                            </div>
-                                        </li>
-                                        <li class="nav-link">
-                                            <span class="target" type="button" @onclick="() => LoadQuestions(item.Id, 4)" @oncontextmenu="(e)=>rightclick(item.Id,4)">
-                                                <i class="bi bi-folder-fill text-warning"></i> Câu hỏi nâng cao
-                                            </span>
-                                            <div id="contextMenu" class="context-menu">
-                                                <div class="context-menu-item" @onclick="OpenModal">Thêm câu hỏi</div>
-                                                <div class="context-menu-item">Xóa</div>
-                                                <div class="context-menu-item" onclick="alert('Mục 3 được chọn!')">Đổi tên</div>
-                                            </div>
-                                        </li>
 
-                                    </ul>
-                                }
-                            </div>
-                        }
-                    }
-                    else
-                    {
-                        <span class="target" type="button" @onclick="ShowCreateTestModal">
-                            <i class="bi bi-folder-fill text-warning p-1"></i>
-                        </span>
-                    }
-                </div>
+<div class="container-fluid mt-3">
+    <div class="d-flex  shadow-sm">
+        <div class="d-flex flex-wrap gap-2">
+            <button class="btn btn-primary btn-sm" @onclick="ShowCreateTestModal" disabled="@(SelectedTest != Guid.Empty)">
+                <i class="bi bi-plus-circle"></i> Tạo mới
+            </button>
+            <button class="btn btn-danger btn-sm" @onclick="Deletetest" disabled="@(SelectedTest == Guid.Empty)">
+                <i class="bi bi-trash"></i> Xóa
+            </button>
+            <button class="btn btn-success btn-sm" @onclick="ShowQuestionDetailModal">
+                <i class="bi bi-file-earmark-excel"></i> Nhập file Excel
+            </button>
+            <button class="btn btn-success btn-sm" @onclick="DownloadExcelTemplate">
+                <i class="bi bi-file-earmark-excel"></i> Tải file mẫu Excel
+            </button>
+        </div>
+
+       @*  <div class="ms-auto" style="width: 250px;">
+            <div class="input-group">
+                <input type="text" placeholder="Tìm kiếm..." class="form-control border" @bind="SearchText" />
+                <span class="input-group-text bg-light border">
+                    <i class="bi bi-search text-muted"></i>
+                </span>
             </div>
-            <div class="col-10">
-                <div class="border shadow-sm d-flex justify-content-between" style="background-color:cornflowerblue">
-                    <div class="p-1 align-items-center">
-                        <h5 class="text-white" style="font-size:15px">Thông tin chi tiết</h5>
-                    </div>
-                    <div class="p-1" style="font-size:15px">
-                        <span type="button" class="text-white" @onclick="ShowQuestionDetailModal"><i class="bi bi-file-earmark-excel fw-bold text-white"></i>Nhập file Excel</span>
-                        <span type="button" class="text-white" @onclick="DownloadExcelTemplate"><i class="bi bi-arrow-bar-down fw-bold text-white"></i>Tải file mẫu Excel</span>
-                    </div>
+        </div> *@
+    </div>
 
+    <!-- Table -->
+    <div class="table-responsive border rounded shadow-sm" style="background-color: #ffffff;">
+        <table class="table table-hover  table-sm align-middle text-center">
+            <caption class="text-end">
+                <div class="d-flex  justify-content-end mt-3">
+                    <button class="btn btn-secondary btn-sm" @onclick="PreviousPage" disabled="@(!CanGoPrevious)">
+                        <i class="bi bi-arrow-left"></i> Trước
+                    </button>
+                    <span>Trang @CurrentPage / @TotalPages</span>
+                    <button class="btn btn-secondary btn-sm" @onclick="NextPage" disabled="@(!CanGoNext)">
+                        <i class="bi bi-arrow-right"></i> Sau
+                    </button>
                 </div>
-                <div class="border min-vh-100">
-                    <table class="table">
-                        <thead class="table-primary">
+            </caption>
+            <thead class="table-primary border" style="height:45px">
+                <tr>
+                    <th style="width: 50px;">
+                        <input type="checkbox" @onchange="ToggleSelectAll" title="Chọn tất cả" />
+                    </th>
+                    <th style="width: 150px;">Tên đề thi</th>
+                    <th style="width: 150px;">Mã đề thi</th>
+                    <th style="width: 100px;">Thời gian (phút)</th>
+                    <th style="width: 150px;">Môn học</th>
+                    <th style="width: 150px;">Lớp</th>
+                    <th style="width: 120px;">Điểm</th>
+                    <th style="width: 150px;">Hành động</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (FilteredTests.Any())
+                {
+                    @foreach (var test in FilteredTests)
+                    {
+                        <tr class="@(SelectedTest == test.Id ? "table-primary" : "")"
+                            style="cursor: pointer;"
+                            @onclick="() => SelectTest(test.Id)">
+                            <td>
+                                <input type="checkbox"
+                                       checked="@(SelectedTest == test.Id)"
+                                       @onchange="() => SelectTest(test.Id)"
+                                       title="Chọn đề thi này" />
+                            </td>
+                            <td>@test.Name</td>
+                            <td>@test.Code</td>
+                            <td>@test.Minute</td>
+                            <td>@test.SubjectName</td>
+                            <td>@test.ClassName</td>
+                            <td>@test.PointTypeName</td>
+                            <td>
+                                <button class="btn btn-info btn-sm" @onclick="OpenModal">
+                                    <i class="bi bi-eye"></i> Tạo câu hỏi
+                                </button>
+                                <button class="btn btn-info btn-sm" @onclick="() => ShowTestDetailsModal(test.Id)">
+                                    <i class="bi bi-eye"></i> Xem chi tiết
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="8" class="text-muted text-center">Không tìm thấy đề thi.</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal Page for Test Questions -->
+<div class="modal fade @(isTestQuestionsModalVisible ? "show" : "")" tabindex="-1" style="display:@(isTestQuestionsModalVisible ? "block" : "none")">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Danh sách câu hỏi</h5>
+                <button type="button" class="btn-close" @onclick="HideTestDetailsModal"></button>
+            </div>
+            <div class="modal-body">
+                @if (testQuestionDTOs.Any())
+                {
+                    <table class="table table-sm">
+                        <thead>
                             <tr>
                                 <th scope="col" style="width: 50px;">STT</th>
                                 <th scope="col" style="width: 300px;">Nội dung</th>
+                                <th scope="col" style="width: 150px;">Loại câu hỏi</th>
                                 <th scope="col" style="width: 100px;">Thao tác</th>
                             </tr>
                         </thead>
-                        @if (selectedQuestions != null && selectedQuestions.Any())
-                        {
-                            <tbody>
-                                @foreach (var question in selectedQuestions)
-                                {
-                                    <tr>
-                                        <td>@(selectedQuestions.IndexOf(question) + 1)</td>
-                                        <td>@question.QuestionName</td>
-                                        <td>
-                                            <span type="button" class="text-warning" @onclick="()=>ShowQuestionDetailModalss(question.TestId)"><i class="bi bi-pencil"></i></span>
-                                            <span type="button" class="text-danger" @onclick="()=>deletequestion(question.TestId,question.Level)"><i class="bi bi-trash3"></i></span>
-                                        </td>
-                                    </tr>
-                                }
-                            </tbody>
-                        }
-
-                        else
-                        {
-                            <tbody>
+                        <tbody>
+                            @foreach (var question in testQuestionDTOs)
+                            {
                                 <tr>
-                                    <td colspan="3" class="text-center">Chưa có câu hỏi nào được hiển thị.</td>
+                                    <td>@(testQuestionDTOs.IndexOf(question) + 1)</td>
+                                    <td>@question.QuestionName</td>
+                                    <td>@question.Type</td>
+                                    <td>
+                                        <span type="button" class="text-warning" @onclick="() => ShowQuestionDetailModalss(question.Id)"><i class="bi bi-pencil"></i></span>
+                                        <span type="button" class="text-danger" @onclick="() => deletequestion(question.Id, question.Level)"><i class="bi bi-trash3"></i></span>
+                                    </td>
                                 </tr>
-                            </tbody>
-                        }
+                            }
+                        </tbody>
                     </table>
-                </div>
+                }
+                else
+                {
+                    <p class="text-muted">Không có câu hỏi nào trong đề thi này.</p>
+                }
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" @onclick="HideTestDetailsModal">Đóng</button>
             </div>
         </div>
     </div>
 </div>
+
 <div class="container-fluid row p-3">
     <div class="modal fade @(isCreateTestModalVisible  ? "show" : "")" tabindex="-1" style="display:@(isCreateTestModalVisible  ? "block" : "none")">
         <div class="modal-dialog modal-lg">
@@ -235,7 +252,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">Tạo câu hỏi mới</h5>
-                <button type="button" class="btn-close" ></button>
+                <button type="button" class="btn-close" @onclick="closemodal" ></button>
             </div>
             <div class="modal-body">
                 <label>Loại câu hỏi:</label>
@@ -284,10 +301,59 @@
     private void closemodal(){
         showcreatequestion = false;
     }
+    private void PreviousPage()
+    {
+        if (CanGoPrevious)
+        {
+            CurrentPage--;
+        }
+    }
+
+    private void NextPage()
+    {
+        if (CanGoNext)
+        {
+            CurrentPage++;
+        }
+    }
+    private void SelectTest(Guid orderId)
+    {
+        SelectedTest = SelectedTest == orderId ? Guid.Empty : orderId;
+    }
+    private void ToggleSelectAll(ChangeEventArgs e)
+    {
+        var isChecked = (bool)e.Value;
+        SelectedTest = isChecked ? testList.FirstOrDefault()?.Id ?? Guid.Empty : Guid.Empty;
+    }
+    private bool isTestQuestionsModalVisible = false;
+    private TestDTO? SelectedTestDetails;
+    private async Task ShowTestDetailsModal(Guid testId)
+    {
+        isTestQuestionsModalVisible = true;
+        await question(testId);
+        StateHasChanged(); // Refresh UI
+    }
+    private void HideTestDetailsModal()
+    {
+        isTestQuestionsModalVisible = false;
+        SelectedTestDetails = null;
+        testQuestionDTOs.Clear();
+        StateHasChanged(); // Refresh UI
+    }
+
+    private bool isQuestionModalVisible = false;
+    private bool CanGoPrevious => CurrentPage > 1;
+    private bool CanGoNext => CurrentPage < TotalPages;
+    private Guid SelectedTest { get; set; } = Guid.Empty;
     private bool showcreatequestion = false;
     private List<listdetailquestion> testQuestionss = new List<listdetailquestion>();
     private TestQuestion_TestQuestionAnswersDTO testQuestions = new TestQuestion_TestQuestionAnswersDTO();
     private List<TestDTO> testList = new List<TestDTO>();
+    private List<TestDTO> FilteredTests => testList
+       .Where(o => string.IsNullOrEmpty(SearchText) || o.Name.Contains(SearchText, StringComparison.OrdinalIgnoreCase))
+       .Skip((CurrentPage - 1) * ItemsPerPage)
+       .Take(ItemsPerPage)
+       .ToList();
     private TestQuestionDTO testQuestio = new TestQuestionDTO();
     private GetListTestQueryDTO queryDTO = new GetListTestQueryDTO();
     private List<TestQuestionDTO> testQuestionDTOs = new List<TestQuestionDTO>();
@@ -297,6 +363,10 @@
     private TestDTO testDTO = new TestDTO();
     private IBrowserFile selectedFile;
     private string username;
+    private string SearchText { get; set; }
+    private int CurrentPage { get; set; } = 1;
+    private int ItemsPerPage { get; set; } = 5; // Số mục trên mỗi trang
+    private int TotalPages => (int)Math.Ceiling((double)FilteredTests.Count() / ItemsPerPage);
     protected override async Task OnInitializedAsync()
     {
         try
@@ -491,6 +561,7 @@
     {
 
         testQuestionss = await client.GetFromJsonAsync<List<listdetailquestion>>($"https://localhost:7046/api/TestQuestion/get-question-details/{id}");
+        StateHasChanged(); // Refresh UI
     }
 
     private async Task CheckForDuplicates()
@@ -582,10 +653,10 @@
             selectedTestId = testId;
         }
     }
-    private async Task Deletetest(Guid id)
+    private async Task Deletetest()
     {
         var httpClient = clientFactory.CreateClient("Delete");
-        var url = $"https://localhost:7046/api/Test/delete-test?id={id}";
+        var url = $"https://localhost:7046/api/Test/delete-test?id={SelectedTest}";
         var res = await httpClient.DeleteAsync(url);
         StateHasChanged();
         NavigationManager.NavigateTo(NavigationManager.Uri, forceLoad: true);
@@ -648,7 +719,6 @@
             Answers = new List<string> { "" },
             CorrectAnswers = new List<string>()
         };
-
     private string Message;
 
     // Thay đổi loại câu hỏi
@@ -761,23 +831,5 @@
 }
 
 <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
-<script>
-    $(document).on('contextmenu', '.target', function (e) {
-        e.preventDefault();
-        $('.context-menu').hide();
-        $(this).siblings('.context-menu').css({
-            display: 'block',
-            left: e.pageX,
-            top: e.pageY
-        });
-    });
-    $(document).on('click', function () {
-        $('.context-menu').hide();
-    });
-    function downloadFile(fileName, base64String) {
-        const link = document.createElement('a');
-        link.href = 'data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,' + base64String;
-        link.download = fileName;
-        link.click();
-    }
-</script>
+
+       
