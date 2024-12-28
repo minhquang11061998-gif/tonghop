@@ -25,10 +25,10 @@ namespace DataBase.Models
 
         [StringLength(50, ErrorMessage = "UserName không được quá 50 ký tự")]
         [RegularExpression(@"\S+", ErrorMessage = "UserName chua it nhat 1 ki tu ko phai dau cach")]
-        public string UserName { get; set; }
+        public string? UserName { get; set; }
 
         [StringLength(256, ErrorMessage = "Pass không được quá 256 ký tự")]
-        public string PasswordHash { get; set; }
+        public string? PasswordHash { get; set; }
         public DateTime? DateOfBirth { get; set; }
 
         [StringLength(12, ErrorMessage = "Tên không được quá 12 ký tự")]

@@ -54,59 +54,79 @@ namespace API.Controllers
 
             return new string(code);
         }
+        [HttpGet("Get-Grade-Class")]
+        public IActionResult GetClassesByGrade(Guid gradeId)
+        {
+            var classes = _db.Classes
+                             .Where(c => c.GradeId == gradeId) // Lọc các lớp theo khối
+                             .Select(c => new { c.Id, c.Name }) // Lấy Id và tên lớp
+                             .ToList();
+            return Ok(classes);
+        }
+
         [HttpGet("get-all")]
         public IActionResult get()
         {
            var data= _db.Classes.ToList();
-            return Ok(data);
-        }
-        [HttpGet("get-all-class")]
-        public async Task<ActionResult<List<ClassesDTO>>> GetAll()
-        {
-            try
+            var classdto = data.Select(x => new ClassStandardDTO
             {
-                var data = await (from c in _db.Classes
-                                  join t in _db.Teachers on c.TeacherId equals t.Id
-                                  join u in _db.Users on t.UserId equals u.Id
-                                  where c.TeacherId == t.Id // Ràng buộc TeacherId khớp
-                                  select new
-                                  {
-                                      c.Id,
-                                      c.Code,
-                                      c.Name,
-                                      c.MaxStudent,
-                                      c.Status,
-                                      c.TeacherId,
-                                      c.GradeId,
-                                      TeacherName = u.FullName // Lấy tên giáo viên từ bảng Users
-                                  }).ToListAsync();
-
-                if (!data.Any())
-                {
-                    return BadRequest("Danh sách trống");
-                }
-
-                var classdto = data.Select(x => new ClassesDTO
-                {
-                    Id = x.Id,
-                    Code = x.Code,
-                    Name = x.Name,
-                    MaxStudent = x.MaxStudent,
-                    Status = x.Status,
-                    TeacherId = x.TeacherId,
-                    GradeId = x.GradeId,
-                    TeacherName = x.TeacherName
-                }).ToList();
-
-                return Ok(classdto);
-            }
-            catch (Exception ex)
-            {
-                // Ghi log lỗi để kiểm tra
-                Console.WriteLine($"Error: {ex.Message}");
-                return BadRequest("Lỗi");
-            }
+                Id = x.Id,
+                Name = x.Name,
+                Code = x.Code,
+                Status = x.Status,
+                MaxStudent = x.MaxStudent,
+                TeacherId = x.TeacherId,
+                GradeId = x.GradeId,
+            });
+            return Ok(classdto);
         }
+        //[HttpGet("get-all-class")]
+        //public async Task<ActionResult<List<ClassesDTO>>> GetAll()
+        //{
+        //    try
+        //    {
+        //        var data = await (from c in _db.Classes
+        //                          join t in _db.Teachers on c.TeacherId equals t.Id
+        //                          join u in _db.Users on t.UserId equals u.Id
+        //                          where c.TeacherId == t.Id // Ràng buộc TeacherId khớp
+        //                          select new
+        //                          {
+        //                              c.Id,
+        //                              c.Code,
+        //                              c.Name,
+        //                              c.MaxStudent,
+        //                              c.Status,
+        //                              c.TeacherId,
+        //                              c.GradeId,
+        //                              TeacherName = u.FullName // Lấy tên giáo viên từ bảng Users
+        //                          }).ToListAsync();
+
+        //        if (!data.Any())
+        //        {
+        //            return BadRequest("Danh sách trống");
+        //        }
+
+        //        var classdto = data.Select(x => new ClassesDTO
+        //        {
+        //            Id = x.Id,
+        //            Code = x.Code,
+        //            Name = x.Name,
+        //            MaxStudent = x.MaxStudent,
+        //            Status = x.Status,
+        //            TeacherId = x.TeacherId,
+        //            GradeId = x.GradeId,
+        //            TeacherName = x.TeacherName
+        //        }).ToList();
+
+        //        return Ok(classdto);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        // Ghi log lỗi để kiểm tra
+        //        Console.WriteLine($"Error: {ex.Message}");
+        //        return BadRequest("Lỗi");
+        //    }
+        //}
 
         [HttpGet("get-by-id-class")]
         public async Task<ActionResult<ClassesDTO>> GetById(Guid Id)
@@ -202,7 +222,29 @@ namespace API.Controllers
             
             return input.ToUpper();
         }
+        [HttpPut("update-class")]
+        public async Task<IActionResult> updateclass(ClassStandardDTO classs)
+        {
+            try
+            {
+                var update = _db.Classes.FirstOrDefault(x => x.Id == classs.Id);
+                update.Id = classs.Id;
+                update.Name = classs.Name;
+                update.Status = classs.Status;
+                classs.MaxStudent = classs.MaxStudent;
+                update.TeacherId = classs.TeacherId;
+                update.GradeId = classs.GradeId;
 
+                _db.Classes.Update(update);
+                await _db.SaveChangesAsync();
+                return Ok("update thành công");
+            }catch(Exception)
+            {
+                return BadRequest("update thất bại");
+            }
+           
+            
+        }
         [HttpDelete("delete-class")]
         public async Task<IActionResult> Delete(Guid Id)
         {

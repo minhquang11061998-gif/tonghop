@@ -165,7 +165,18 @@
                                 if (EditClass == classItem.Id)
                                 {
                                     <tr>
-                                        <td></td>
+                                        <td>
+                                            @if (!string.IsNullOrWhiteSpace(classcreateandupdate.Name))
+                                            {
+                                                <button class="btn btn-primary btn-sm" @onclick="createclass">
+                                                    <i class="bi bi-save"></i> Lưu
+                                                </button>
+                                            }
+                                            else
+                                            {
+                                                <button class="btn btn-secondary" @onclick="CancelCreate">Hủy</button>
+                                            }
+                                        </td>
                                         <td>
                                             <input type="text" class="form-control"
                                             @bind="classcreateandupdate.Name"
@@ -310,26 +321,48 @@
         TaskIdToEdit = null;
         iscreatclass = false;
         selectidgrade = Guid.Empty;
+        iscreatclass = false;
+        EditClass = null;
+        selectidclass = Guid.Empty;
     }
 
     private async Task loadidGrade(){
         if(selectidgrade!=Guid.Empty){
             gradescreate = await client.GetFromJsonAsync<Grades>($"https://localhost:7046/api/Grade/get-by-id?Id={selectidgrade}");
             TaskIdToEdit = selectidgrade;
+        }else if(selectidclass!=Guid.Empty){
+            classcreateandupdate = await client.GetFromJsonAsync<Classes>($"https://localhost:7046/api/Classes/get-by-id-class?Id={selectidclass}");
+            EditClass = selectidclass;
+        }else{
+            await jsruntime.InvokeVoidAsync("alert", "Bạn chưa chọn khối hoặc lớp để chỉnh sửa");
         }
     }
     private async Task createclass(){
-        classcreateandupdate.TeacherId = Guid.Parse(teacherid);
-        classcreateandupdate.GradeId = idgrade;
-        var respon = await client.PostAsJsonAsync("https://localhost:7046/api/Classes/create-class", classcreateandupdate);
-        if (respon.IsSuccessStatusCode)
-        {
-            iscreatclass = false;
-            idgrade = Guid.Empty;
-            await GetAllClass();
+        if(selectidclass==Guid.Empty){
+            classcreateandupdate.TeacherId = Guid.Parse(teacherid);
+            classcreateandupdate.GradeId = idgrade;
+            var respon = await client.PostAsJsonAsync("https://localhost:7046/api/Classes/create-class", classcreateandupdate);
+            if (respon.IsSuccessStatusCode)
+            {
+                iscreatclass = false;
+                idgrade = Guid.Empty;
+                await GetAllClass();
 
+            }
+            else { await jsruntime.InvokeVoidAsync("alert", "Thêm Lớp thất bại"); }
+        }else{
+            classcreateandupdate.Id = selectidclass;
+            var respon = await client.PutAsJsonAsync("https://localhost:7046/api/Classes/update-class", classcreateandupdate);
+            if(respon.IsSuccessStatusCode){
+                iscreatclass = false;
+                EditClass = null;
+                selectidclass = Guid.Empty;
+                await GetAllClass();
+            }else{
+                await jsruntime.InvokeVoidAsync("alert", "Sửa lớp thất bại");
+            }
         }
-        else { await jsruntime.InvokeVoidAsync("alert", "Thêm Lớp thất bại"); }
+        
     }
     private async Task CreateGrade()
     {
@@ -450,3 +483,11 @@
     }
 
 </script>
+<style>
+    .table thead th {
+        border-top: none; /* Bỏ viền trên */
+        border-bottom: none; /* Bỏ viền dưới */
+        /* Giảm độ đậm của chữ */
+    }
+
+</style>

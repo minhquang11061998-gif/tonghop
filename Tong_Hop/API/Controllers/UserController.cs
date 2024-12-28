@@ -265,8 +265,8 @@ namespace API.Controllers
                     FullName = user.FullName,
                     Avartar = avatarPath, // Đường dẫn ảnh lưu trong thuộc tính Avatar
                     Email = user.Email,
-                    UserName = user.UserName,
-                    PasswordHash = user.PasswordHash,
+                    UserName = "example",
+                    PasswordHash = "hashedPasswordValue",
                     DateOfBirth = user.DateOfBirth ?? DateTime.UtcNow, // Nếu không có, mặc định là hiện tại
                     PhoneNumber = user.PhoneNumber,
                     IsLocked = user.IsLocked,
@@ -310,7 +310,7 @@ namespace API.Controllers
                         
                         await updateclass(id);
 
-                        await MaxScor_Subj(student.Id, studentClass.ClassId);
+                        //await MaxScor_Subj(student.Id, studentClass.ClassId);
                         await _db.SaveChangesAsync();
 
                     }
