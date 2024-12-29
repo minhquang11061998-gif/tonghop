@@ -38,6 +38,7 @@ namespace API.Controllers
                 Minute = x.Minute,
                 Maxstudent = x.MaxStudent,
                 Status = x.Status,
+                ClassId = x.ClassId,
                 SubjectId = x.SubjectId, 
                 PointTypeId = x.PointTypeId,
             }).ToList();
@@ -94,6 +95,8 @@ namespace API.Controllers
                     Code = t.Code.ToString(),
                     SubjectName = t.Subject.Name,
                     Status = t.Status,
+                    
+                    ClassId = t.ClassId,
                     SubjectId = t.SubjectId,
                     Minute = t.Minute,
                 })
@@ -121,6 +124,7 @@ namespace API.Controllers
                 Minute = data.Minute,
                 Maxstudent = data.MaxStudent,
                 Status = data.Status,
+                ClassId = data.ClassId,
                 SubjectId = data.SubjectId,
                 PointTypeId = data.PointTypeId,
             };
@@ -179,12 +183,12 @@ namespace API.Controllers
             try
             {
                 // Kiểm tra nếu classCode có tồn tại
-                if (testDTO.ClassCode==null)
+                if (testDTO.ClassId == null)
                 {
                     return NotFound("ClassCode không được để trống.");
                 }
 
-                int maxStudents = GetMaxStudent(testDTO.ClassCode);
+                int maxStudents = GetMaxStudent(testDTO.ClassId);
                 if (maxStudents == null)
                 {
                     return BadRequest("Không tìm thấy số lượng sinh viên tối đa cho lớp học.");
@@ -199,7 +203,7 @@ namespace API.Controllers
 									   join cl in _db.Classes on g.Id equals cl.GradeId
 									   where t.SubjectId == testDTO.SubjectId
 											 && t.PointTypeId == testDTO.PointTypeId
-											 && cl.Id == testDTO.ClassCode
+											 && cl.Id == testDTO.ClassId
 									   select t.Id).CountAsync();
 
 				var maxQuantity = await (from pts in _db.PointType_Subjects
@@ -221,6 +225,7 @@ namespace API.Controllers
 						Status = testDTO.Status,
 						SubjectId = testDTO.SubjectId,
 						PointTypeId = testDTO.PointTypeId,
+                        ClassId = testDTO.ClassId,
 						MaxStudent = maxStudents,
 					};
 

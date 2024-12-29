@@ -349,7 +349,7 @@ namespace API.Controllers
 
 
         [HttpPost("Login-exam")]
-        public IActionResult GetLogin(Login_Exam_DTO login)
+        public async Task<IActionResult> GetLogin(Login_Exam_DTO login)
         {
             // Lấy token từ tiêu đề Authorization
             var token = HttpContext.Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
@@ -380,48 +380,65 @@ namespace API.Controllers
 
                 if (code != null && student != null)
                 {
-                    var examRoomTestCodeId = (from exam in _db.Exam_Room_TestCodes
-                                              join test in _db.Tests
-                                              on exam.TestId equals test.Id
-                                              where test.Code == login.codelogin
-                                              select exam.Id).FirstOrDefault();
-                    if (examRoomTestCodeId != Guid.Empty)
+                    var listStudentClass = (from t in _db.Tests
+                                                  join c in _db.Classes on t.ClassId equals c.Id
+                                                  join sc in _db.Student_Classes on c.Id equals sc.ClassId
+                                                  where t.Code == login.codelogin
+                                                  select new
+                                                  {
+                                                      sc.StudentId
+                                                  }).ToList();
+
+                    foreach (var item in listStudentClass)
                     {
+                        if (item.StudentId.ToString() == studentIdFromToken)
+                        {
+                            var examRoomTestCodeId = (from exam in _db.Exam_Room_TestCodes
+                                                      join test in _db.Tests
+                                                      on exam.TestId equals test.Id
+                                                      where test.Code == login.codelogin
+                                                      select exam.Id).FirstOrDefault();
 
-                        var newExamRoomStudent = new Exam_Room_Student_DTO
-                        {
-                            Id = Guid.NewGuid(),
-                            ChenkTime = DateTime.Now,
-                            Status = 1,
-                            ExamRoomTestCodeId = examRoomTestCodeId,
-                            StudentId = Guid.Parse(studentIdFromToken)
-                        };
-                        var data = (from a in _db.Tests
-                                    join b in _db.Exam_Room_TestCodes on a.Id equals b.TestId
-                                    join c in _db.Exam_Room_Students on b.Id equals c.ExamRoomTestCodeId
-                                    where a.Code == login.codelogin
-                                    select new
-                                    {
-                                        IdStudent = c.StudentId,
-                                    }).ToList();
-                        if (data.Any(x => x.IdStudent == newExamRoomStudent.StudentId))
-                        {
-                            return BadRequest("Bạn đã là bài thi rồi");
-                        }
-                        else 
-                        {
-                            var examRoomStudentEntity = new Exam_Room_Student
+                            if (examRoomTestCodeId != Guid.Empty)
                             {
-                                Id = newExamRoomStudent.Id,
-                                ChenkTime = newExamRoomStudent.ChenkTime,
-                                Status = newExamRoomStudent.Status,
-                                ExamRoomTestCodeId = newExamRoomStudent.ExamRoomTestCodeId,
-                                StudentId = newExamRoomStudent.StudentId
-                            };
+                                var data = (from a in _db.Tests
+                                            join b in _db.Exam_Room_TestCodes on a.Id equals b.TestId
+                                            join c in _db.Exam_Room_Students on b.Id equals c.ExamRoomTestCodeId
+                                            where a.Code == login.codelogin
+                                            select new
+                                            {
+                                                IdStudent = c.StudentId,
+                                                IdERTC = b.Id
+                                            }).ToList();
 
-                            _db.Exam_Room_Students.Add(examRoomStudentEntity);
-                            _db.SaveChanges();
-                            return Ok("thành công ");
+                                foreach (var item_data in data)
+                                {
+                                    if (item_data.IdStudent.ToString() == studentIdFromToken)
+                                    {
+                                        return BadRequest("Bạn đã là bài thi rồi");
+                                    }
+                                    else
+                                    {
+                                        var examRoomStudentEntity = new Exam_Room_Student
+                                        {
+                                            Id = Guid.NewGuid(),
+                                            ChenkTime = DateTime.Now,
+                                            Status = 1,
+                                            ExamRoomTestCodeId = item_data.IdERTC,
+                                            StudentId = item_data.IdStudent
+                                        };
+
+                                        _db.Exam_Room_Students.Add(examRoomStudentEntity);
+                                        _db.SaveChanges();
+                                        return Ok("thành công ");
+                                    }
+                                }
+                                
+                            }
+                        }
+                        else
+                        {
+                            return BadRequest("Ko phải học sinh lớp tham ra thi");
                         }
                     }
                 }

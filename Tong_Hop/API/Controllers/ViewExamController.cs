@@ -53,7 +53,7 @@ namespace API.Controllers
             // Lấy ngẫu nhiên một TestCode dựa trên TestId
             var tc = (from e in _db.TestCodes
                       join f in _db.Tests on e.TestId equals f.Id
-                      where f.Code == CodeTest
+                      where f.Code == CodeTest && e.Status == 1
                       select e).ToList();
 
             if (tc.Count == 0)
@@ -86,7 +86,19 @@ namespace API.Controllers
                     }).ToList()
             };
 
+            await KeyTestCode(result.TestCodeId);
+
             return Ok(result);
+        }
+
+        private async Task KeyTestCode(Guid IdTesstCode)
+        {
+            var id = await _db.TestCodes.FirstOrDefaultAsync(s => s.Id == IdTesstCode);
+
+            id.Status = 0;
+
+            _db.TestCodes.Update(id);
+            _db.SaveChanges();
         }
 
         [HttpGet("GetExamDuration")]
@@ -325,7 +337,6 @@ namespace API.Controllers
                 {
                     Id = Guid.NewGuid(),
                     Score = ExamResultStorage,
-                    Note = "",
                     CreationTime = DateTime.Now,
                     ExamRoomStudentId = examroomstudent.Id
                 };
