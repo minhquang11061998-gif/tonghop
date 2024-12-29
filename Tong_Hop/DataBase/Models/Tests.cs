@@ -13,6 +13,7 @@ namespace DataBase.Models
     {
         [Key]
         public Guid Id { get; set; }
+        [StringLength(30, ErrorMessage = "Tên bài kiểm tả không quá 30 ký tự")]
         public string Name { get; set; }
         public int Code { get; set; }
         public int? Minute { get; set; }
@@ -26,6 +27,7 @@ namespace DataBase.Models
         [ForeignKey("Id")]
         public Guid PointTypeId { get; set; }
         public virtual Subjects? Subject { get; set; }
+        public virtual Classes? Classes { get; set; }
         public virtual PointTypes? PointType { get; set; }
         public virtual ICollection<TestQuestions>? testQuestions { get; set; }
         public virtual ICollection<TestCodes>? testCodes { get; set; }

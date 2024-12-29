@@ -192,42 +192,39 @@ namespace API.Controllers
 					return NotFound("Subject không tồn tại");
 				}
 
-				// Cập nhật thông tin Subject
-				subject.Name = subjectDTO.Name ?? subject.Name;
-				subject.Status = subjectDTO.Status;
 				subject.CreationTime = DateTime.UtcNow; // Cập nhật thời gian
 				await _db.SaveChangesAsync();
 
-				// Bước 2: Cập nhật danh sách Subject_Grade
-				var existingGrades = _db.Subject_Grades.Where(sg => sg.SubjectId == subjectDTO.Id).ToList();
-				var newGradeIds = subjectDTO.GradeIds ?? new List<Guid>();
+				//// Bước 2: Cập nhật danh sách Subject_Grade
+				//var existingGrades = _db.Subject_Grades.Where(sg => sg.SubjectId == subjectDTO.Id).ToList();
+				//var newGradeIds = subjectDTO.GradeIds ?? new List<Guid>();
 
-				// Xóa các Subject_Grade không còn trong danh sách
-				foreach (var grade in existingGrades)
-				{
-					if (!newGradeIds.Contains(grade.GradeId))
-					{
-						_db.Subject_Grades.Remove(grade);
-					}
-				}
+				//// Xóa các Subject_Grade không còn trong danh sách
+				//foreach (var grade in existingGrades)
+				//{
+				//	if (!newGradeIds.Contains(grade.GradeId))
+				//	{
+				//		_db.Subject_Grades.Remove(grade);
+				//	}
+				//}
 
-				// Thêm các Subject_Grade mới
-				foreach (var gradeId in newGradeIds)
-				{
-					if (!existingGrades.Any(eg => eg.GradeId == gradeId))
-					{
-						var newGrade = new Subject_Grade
-						{
-							Id = Guid.NewGuid(),
-							SubjectId = subjectDTO.Id,
-							GradeId = gradeId,
-							Status = 1
-						};
-						await _db.Subject_Grades.AddAsync(newGrade);
-					}
-				}
+				//// Thêm các Subject_Grade mới
+				//foreach (var gradeId in newGradeIds)
+				//{
+				//	if (!existingGrades.Any(eg => eg.GradeId == gradeId))
+				//	{
+				//		var newGrade = new Subject_Grade
+				//		{
+				//			Id = Guid.NewGuid(),
+				//			SubjectId = subjectDTO.Id,
+				//			GradeId = gradeId,
+				//			Status = 1
+				//		};
+				//		await _db.Subject_Grades.AddAsync(newGrade);
+				//	}
+				//}
 
-				await _db.SaveChangesAsync();
+				//await _db.SaveChangesAsync();
 				#region còn có thế dùng chưa xóa đc
 				//// Bước 3: Cập nhật danh sách PointType_Subject
 				//var existingPointTypes = _db.PointType_Subjects.Where(pt => pt.SubjectId == subjectDTO.Id).ToList();

@@ -12,7 +12,6 @@ namespace DataBase.Models
     {
         [Key]
         public Guid Id { get; set; }
-
         [MaxLength]
         public string Answer { get; set; }
         [ForeignKey("Id")]

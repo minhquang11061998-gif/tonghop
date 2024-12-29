@@ -13,9 +13,6 @@ namespace DataBase.Models
         [Key]
         public Guid Id { get; set; }
         public double Score { get; set; }
-
-        [MaxLength]
-        //public string? Note { get; set; }
         public DateTime CreationTime { get; set; }
         [ForeignKey("Id")]
         public Guid ExamRoomStudentId { get; set; }
