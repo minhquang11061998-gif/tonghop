@@ -11,5 +11,6 @@ namespace DataBase.DTOs
         public Guid Id { get; set; }
         public int Name { get; set; }
         public int Status { get; set; }
+       
     }
 }

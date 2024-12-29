@@ -34,6 +34,7 @@ namespace API.Controllers
                     Id = x.Id,
                     Name = x.Name,
                     Status = x.Status,
+                    
                 }).ToList();
 
                 return Ok(gradto);
