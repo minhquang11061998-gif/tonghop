@@ -13,6 +13,7 @@ namespace DataBase.Models
     {
         [Key]
         public Guid Id { get; set; }
+        [StringLength(30, ErrorMessage = "Tên loại đầu điểm không quá 30 ký tự")]
         public string Name { get; set; }
         public virtual ICollection<Tests>? tests { get; set; }
         public virtual ICollection<Learning_Summary>? Learning_Summaries { get; set; }
