@@ -17,8 +17,11 @@
             <button class="btn btn-danger btn-sm" @onclick="DeleteOrder" disabled="@(SelectedOrder == Guid.Empty)">
                 <i class="bi bi-trash"></i> Xóa
             </button>
-            <button class="btn btn-success btn-sm" @onclick="ExportToExcel">
+            <button class="btn btn-success btn-sm" @onclick="showexcel">
                 <i class="bi bi-file-earmark-excel"></i> Thêm file Excel
+            </button>
+            <button class="btn btn-success btn-sm" @onclick="dowloadexcel">
+                <i class="bi bi-file-earmark-excel"></i> Tải file mẫu Excel
             </button>
         </div>
 
@@ -67,25 +70,25 @@
                     @foreach (var order in FilteredOrders)
                     {
                         <tr class="@(SelectedOrder == order.Id ? "table-primary" : "")"
-                            style="cursor: pointer;"
-                            @onclick="() => SelectOrder(order.Id)">
+                        style="cursor: pointer;"
+                        @onclick="() => SelectOrder(order.Id)">
                             <td>
                                 <input type="checkbox"
-                                       checked="@(SelectedOrder == order.Id)"
-                                       @onchange="() => SelectOrder(order.Id)"
-                                       title="Chọn đơn hàng này" />
+                                checked="@(SelectedOrder == order.Id)"
+                                @onchange="() => SelectOrder(order.Id)"
+                                title="Chọn tài khoản này" />
                             </td>
                             <td>
                                 <img src="@order.Avartar" alt="Avatar"
-                                     class="img-thumbnail rounded-circle"
-                                     style="width: 40px; height: 40px;" />
+                                class="img-thumbnail rounded-circle"
+                                style="width: 40px; height: 40px;" />
                             </td>
                             <td>@order.FullName</td>
                             <td>@order.Email</td>
                             <td>@order.DateOfBirth?.ToString("d")</td>
                             <td>@order.PhoneNumber</td>
                             <td>@order.UserName</td>
-                            <td>********</td>
+                            <td>@order.PasswordHash</td>
                             <td>
                                 <span class="badge @(order.Status == 1 ? "bg-success" : "bg-secondary")">
                                     @(order.Status == 1 ? "Hoạt động" : "Tạm dừng")
@@ -105,7 +108,7 @@
         </table>
     </div>
 
-    
+
 
 </div>
 
@@ -187,8 +190,37 @@
     </div>
 
 }
-
+<div class="modal fade @(isExcelModalVisible ? "show" : "")" tabindex="-1" style="display:@(isExcelModalVisible ? "block" : "none"); background-color: rgba(0,0,0,0.5);">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <!-- Tiêu đề -->
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title @* @(selectedClassId=Guid.Empty)? *@">Nhập dữ liệu học sinh</h5>
+                <button type="button" class="btn-close" aria-label="Close" @onclick="CloseModal"></button>
+            </div>
+            <!-- Nội dung -->
+            <div class="modal-body">
+                <div class="mb-3">
+                    <div class="mb-3 text-center">
+                        <!-- Nhãn tải lên tệp -->
+                        <label for="fileInput" class="btn btn-outline-primary" style="cursor: pointer;">
+                            <i class="bi bi-upload"></i> Chọn file Excel
+                        </label>
+                        <!-- Input file -->
+                        <InputFile OnChange="HandleFileSelected" id="fileInput" class="form-control d-none" oninput="fileNameDisplay.value = fileInput.value" />
+                        <!-- Hiển thị tên file -->
+                        <input type="text" id="fileNameDisplay" class="form-control mt-2 text-muted text-center" placeholder="File chưa được chọn" readonly />
+                    </div>
+                </div>
+                <div class="text-center">
+                    <button type="button" class="btn btn-primary me-2" @onclick="UploadFile">Lưu</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 @code {
+    private bool isExcelModalVisible = false;
     private List<UserDTOTEACHER> userDTOs = new List<UserDTOTEACHER>();
     private List<UserDTOTEACHER> FilteredOrders => userDTOs
        .Where(o => string.IsNullOrEmpty(SearchText) || o.FullName.Contains(SearchText, StringComparison.OrdinalIgnoreCase))
@@ -224,6 +256,72 @@
         if (CanGoNext)
         {
             CurrentPage++;
+        }
+    }
+    private void showexcel()
+    {
+        isExcelModalVisible = true;
+    }
+    private async Task dowloadexcel()
+    {
+        var respon = await client.GetAsync("https://localhost:7046/api/User/export-sample");
+        if (respon.IsSuccessStatusCode)
+        {
+            var content = await respon.Content.ReadAsByteArrayAsync();
+            var base64String = Convert.ToBase64String(content);
+            await jsruntime.InvokeVoidAsync("downloadFile", $"Template_Sample_{DateTime.Now:yyyyMMddHHmmss}.xlsx", base64String);
+        }
+    }
+    private IBrowserFile selectedFile;
+    private async Task HandleFileSelected(InputFileChangeEventArgs e)
+    {
+        var file = e.GetMultipleFiles(1); // Lấy tệp đầu tiên
+        if (file.Count > 0)
+        {
+            selectedFile = file[0]; // Chọn tệp đầu tiên
+        }
+    }
+    private async Task UploadFile()
+    {
+        if (selectedFile != null)
+        {
+            var stream = selectedFile.OpenReadStream(100 * 1024 * 1024); // Giới hạn 100MB
+            var content = new MultipartFormDataContent();
+
+            using (var memoryStream = new MemoryStream())
+            {
+                await stream.CopyToAsync(memoryStream);
+                var fileBytes = memoryStream.ToArray();
+                content.Add(new ByteArrayContent(fileBytes), "file", selectedFile.Name);
+            }
+
+
+            var response = await client.PostAsync($"https://localhost:7046/api/User/import-excel-teacher", content);
+            if (response.IsSuccessStatusCode)
+            {
+                await jsruntime.InvokeVoidAsync("alert", "Tải file thành công");
+                await getuser();
+            }
+            else
+            {
+                await jsruntime.InvokeVoidAsync("Swal.fire", new
+                {
+                    title = "Thất bại!",
+                    text = "Đã xảy ra lỗi khi tải lên",
+                    icon = "error",
+                    confirmButtonText = "OK"
+                });
+            }
+        }
+        else
+        {
+            await jsruntime.InvokeVoidAsync("Swal.fire", new
+            {
+                title = "Thất bại!",
+                text = "Vui lòng chọn một file",
+                icon = "error",
+                confirmButtonText = "OK"
+            });
         }
     }
     private async Task getuser()
@@ -381,6 +479,7 @@
 
     private void CloseModal()
     {
+        isExcelModalVisible = false;
         ShowModal = false;
         EditingOrder = new UserDTOTEACHER();
     }
