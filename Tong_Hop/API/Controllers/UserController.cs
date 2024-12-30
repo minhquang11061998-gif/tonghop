@@ -214,7 +214,7 @@ namespace API.Controllers
                     LastMordificationTime = data.LastMordificationTime,
                     Status = data.Status,
                     RoleId = data.RoleId,
-                    idclass = idclass // Gắn giá trị idclass vào DTO
+                    idclass = idclass 
                 };
 
                 return Ok(userDTO);
@@ -265,8 +265,8 @@ namespace API.Controllers
                     FullName = user.FullName,
                     Avartar = avatarPath, // Đường dẫn ảnh lưu trong thuộc tính Avatar
                     Email = user.Email,
-                    UserName = user.UserName,
-                    PasswordHash = user.PasswordHash,
+                    UserName = "example",
+                    PasswordHash = "hashedPasswordValue",
                     DateOfBirth = user.DateOfBirth ?? DateTime.UtcNow, // Nếu không có, mặc định là hiện tại
                     PhoneNumber = user.PhoneNumber,
                     IsLocked = user.IsLocked,
@@ -307,13 +307,14 @@ namespace API.Controllers
                             ClassId = id
                         };
                         await _db.Student_Classes.AddAsync(studentClass);
-                        
-                        await updateclass(id);
-
-                        await MaxScor_Subj(student.Id, studentClass.ClassId);
                         await _db.SaveChangesAsync();
+                        await updateclass(id);
+                        await _db.SaveChangesAsync();
+                        await MaxScor_Subj(student.Id, studentClass.ClassId);
+                        
 
                     }
+
                     else if (role.Name == "Teacher")
                     {
                         var teacher = new Teachers
@@ -335,7 +336,60 @@ namespace API.Controllers
                 return BadRequest(ex.ToString());
             }
         }
+        [HttpGet("test")]
+        public async Task getdata(Guid IdStudent, Guid IdClass)
+        {
+            try
+            {
+                var ListSubj = await (from cl in _db.Classes
+                                      join g in _db.Grades on cl.GradeId equals g.Id
+                                      join subjG in _db.Subject_Grades on g.Id equals subjG.GradeId
+                                      join subj in _db.Subjects on subjG.SubjectId equals subj.Id
+                                      where cl.Id == IdClass
+                                      select new
+                                      {
+                                          Subj = subj.Id,
+                                      }).ToListAsync();
+               
+                foreach (var item in ListSubj)
+                {
+                    var ListPointType = await (from ptSubj in _db.PointType_Subjects
+                                               join subj in _db.Subjects on ptSubj.SubjectId equals subj.Id
+                                               where subj.Id == item.Subj
+                                               select new
+                                               {
+                                                   PT = ptSubj.PointTypeId,
+                                                   ptSubj.Quantity
+                                               }).ToListAsync();
 
+                    foreach (var itemPT in ListPointType)
+                    {
+                        for (int i = 0; i < itemPT.Quantity; i++)
+                        {
+                            var AllScore = new Scores
+                            {
+                                Id = Guid.NewGuid(),
+                                Score = 0, // Điểm mặc định
+                                StudentId = IdStudent,
+                                SubjectId = item.Subj,
+                                PointTypeId = itemPT.PT
+                            };
+
+                            await _db.Scores.AddAsync(AllScore);
+                            await _db.SaveChangesAsync();
+                        }
+
+                    }
+                   
+                }
+              
+            }
+            
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+            }
+        }
         #region thêm điểm mặc định bằng 0 cho từng môn và đầu điểm
         private async Task MaxScor_Subj(Guid IdStudent, Guid IdClass)
         {
@@ -375,7 +429,6 @@ namespace API.Controllers
                                 PointTypeId = itemPT.PT
                             };
 
-                            // Thêm vào DbSet
                             await _db.Scores.AddAsync(AllScore);
                             await _db.SaveChangesAsync();
                         }
@@ -730,6 +783,89 @@ namespace API.Controllers
         {
 
             return Ok(new { message = "Logout successful" });
+        }
+        [HttpPost("import-excel-teacher")]
+        public async Task<IActionResult> ImportTeacherFromExcel(IFormFile file)
+        {
+            var roleStudent = await _db.Roles.Where(x => x.Name == "Teacher").Select(x => x.Id).FirstOrDefaultAsync();
+            if (file == null || file.Length == 0)
+            {
+                return BadRequest("File không hợp lệ.");
+            }
+
+            var users = new List<UserDTO>();
+
+            using (var stream = new MemoryStream())
+            {
+                await file.CopyToAsync(stream);
+                using (var package = new ExcelPackage(stream))
+                {
+                    var worksheet = package.Workbook.Worksheets.FirstOrDefault();
+                    if (worksheet == null)
+                    {
+                        return BadRequest("File Excel không chứa dữ liệu.");
+                    }
+                    for (int row = 2; row <= worksheet.Dimension.Rows; row++)
+                    {
+                        // Tạo ID user trước
+                        var userId = Guid.NewGuid();
+                        string imagePath = null;
+
+                        var pictures = worksheet.Drawings
+                            .Where(d => d.From.Row + 1 == row && d.From.Column + 1 == 3)
+                            .ToList();
+
+                        if (pictures.Count > 0 && pictures.FirstOrDefault() is ExcelPicture excelPicture)
+                        {
+                            using (var imageStream = new MemoryStream(excelPicture.Image.ImageBytes))
+                            {
+                                var uploadimg = new ImageUploadParams
+                                {
+                                    File = new FileDescription(userId.ToString(), imageStream),
+                                    Transformation = new Transformation().Width(500).Height(500).Crop("fill").Gravity("face")
+                                };
+                                var uploadResult = await _cloud.UploadAsync(uploadimg);
+                                if (uploadResult.StatusCode == System.Net.HttpStatusCode.OK)
+                                {
+                                    imagePath = uploadResult.SecureUrl.ToString();
+                                }
+                            }
+
+
+                        }
+
+                        var user = new Users
+                        {
+                            Id = userId,
+                            FullName = worksheet.Cells[row, 2]?.Value?.ToString(),
+                            Avartar = imagePath,
+                            Email = worksheet.Cells[row, 4]?.Value?.ToString(),
+                            UserName = worksheet.Cells[row, 5]?.Value?.ToString(),
+                            PasswordHash = worksheet.Cells[row, 6]?.Value?.ToString(),
+                            DateOfBirth = DateTime.ParseExact(worksheet.Cells[row, 7]?.Value?.ToString(), "dd/MM/yyyy", CultureInfo.InvariantCulture),
+                            PhoneNumber = worksheet.Cells[row, 8]?.Value?.ToString(),
+                            IsLocked = true,
+                            LockedEndTime = DateTime.Now,
+                            CreationTime = DateTime.Now,
+                            Status = 1,
+                            RoleId = roleStudent
+                        };
+                        await _db.Users.AddAsync(user);
+                        await _db.SaveChangesAsync();
+
+                        var teacher = new Teachers
+                        {
+                            Id = Guid.NewGuid(),
+                            Code = RandomCode(8),
+                            UserId = user.Id,
+                        };
+                        await _db.Teachers.AddAsync(teacher);
+                        await _db.SaveChangesAsync();
+                       
+                    }
+                }
+            }
+            return Ok(new { Message = "Thêm dữ liệu thành công." });
         }
         [HttpPost("import-excel")]
         public async Task<IActionResult> ImportUsersFromExcel(IFormFile file , Guid id)
