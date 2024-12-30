@@ -24,14 +24,14 @@
             </button>
         </div>
 
-       @*  <div class="ms-auto" style="width: 250px;">
+        <div class="ms-auto" style="width: 250px;">
             <div class="input-group">
                 <input type="text" placeholder="Tìm kiếm..." class="form-control border" @bind="SearchText" />
                 <span class="input-group-text bg-light border">
                     <i class="bi bi-search text-muted"></i>
                 </span>
             </div>
-        </div> *@
+        </div>
     </div>
 
     <!-- Table -->
@@ -83,9 +83,10 @@
                             <td>@test.ClassName</td>
                             <td>@test.PointTypeName</td>
                             <td>
-                                <button class="btn btn-info btn-sm" @onclick="OpenModal">
+                                <button class="btn btn-info btn-sm" @onclick="OpenModal" disabled="@(SelectedTest == Guid.Empty)">
                                     <i class="bi bi-eye"></i> Tạo câu hỏi
                                 </button>
+
                                 <button class="btn btn-info btn-sm" @onclick="() => ShowTestDetailsModal(test.Id)">
                                     <i class="bi bi-eye"></i> Xem chi tiết
                                 </button>
@@ -105,36 +106,62 @@
 </div>
 
 <!-- Modal Page for Test Questions -->
-<div class="modal fade @(isTestQuestionsModalVisible ? "show" : "")" tabindex="-1" style="display:@(isTestQuestionsModalVisible ? "block" : "none")">
-    <div class="modal-dialog modal-lg">
+<div class="modal fade @(isTestQuestionsModalVisible ? "show" : "")" tabindex="-1" style="display:@(isTestQuestionsModalVisible ? "block" : "none"); overflow-y:auto;">
+    <div class="modal-dialog modal-xl">
+        <!-- Tăng kích thước modal thành extra-large -->
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">Danh sách câu hỏi</h5>
                 <button type="button" class="btn-close" @onclick="HideTestDetailsModal"></button>
             </div>
-            <div class="modal-body">
+            <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
+                <!-- Đặt chiều cao tối đa và cuộn nội dung -->
                 @if (testQuestionDTOs.Any())
                 {
-                    <table class="table table-sm">
-                        <thead>
+                    <div class="mb-3 d-flex align-items-center">
+                        <label for="filterType" class="me-2">Lọc theo loại câu hỏi:</label>
+                        <select id="filterType" @onchange="OnTypeChanged" class="form-select w-auto">
+                            <option value="">Tất cả</option>
+                            <option value="1">Trắc nhiệm 1 Đáp án</option>
+                            <option value="2">Trắc nhiệm nhiều đáp án</option>
+                            <option value="3">Đúng/Sai</option>
+                            <option value="4">Điền vào chỗ trống</option>
+                        </select>
+                    </div>
+
+                    <table class="table table-bordered table-hover">
+                        <thead class="table-light">
                             <tr>
                                 <th scope="col" style="width: 50px;">STT</th>
-                                <th scope="col" style="width: 300px;">Nội dung</th>
-                                <th scope="col" style="width: 150px;">Loại câu hỏi</th>
+                                <th scope="col">Nội dung</th>
+                                <th scope="col">Đáp án</th>
+                                <th scope="col">Đáp án đúng</th>
                                 <th scope="col" style="width: 100px;">Thao tác</th>
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach (var question in testQuestionDTOs)
+                            @if (filteredQuestions.Any())
+                            {
+                                @foreach (var question in filteredQuestions)
+                                {
+                                    <tr>
+                                        <td>@(filteredQuestions.IndexOf(question) + 1)</td>
+                                        <td>@question.QuestionName</td>
+                                        <td>
+                                            @string.Join(", ", question.Answers.Select(a => a.Answer)) <!-- Hiển thị các đáp án trên cùng 1 hàng -->
+                                        </td>
+                                        <td>@question.RightAnswer</td>
+                                        <td>
+                                            <span type="button" class="text-warning" @onclick="() => UpdateQuestionModal(question.Id)"><i class="bi bi-pencil"></i></span>
+                                            <span type="button" class="text-danger" @onclick="() => deletequestion(question.Id, question.Level)"><i class="bi bi-trash3"></i></span>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                            else
                             {
                                 <tr>
-                                    <td>@(testQuestionDTOs.IndexOf(question) + 1)</td>
-                                    <td>@question.QuestionName</td>
-                                    <td>@question.Type</td>
-                                    <td>
-                                        <span type="button" class="text-warning" @onclick="() => ShowQuestionDetailModalss(question.Id)"><i class="bi bi-pencil"></i></span>
-                                        <span type="button" class="text-danger" @onclick="() => deletequestion(question.Id, question.Level)"><i class="bi bi-trash3"></i></span>
-                                    </td>
+                                    <td colspan="5" class="text-center text-muted">Không có câu hỏi nào trong đề thi này.</td>
                                 </tr>
                             }
                         </tbody>
@@ -151,6 +178,7 @@
         </div>
     </div>
 </div>
+
 
 <div class="container-fluid row p-3">
     <div class="modal fade @(isCreateTestModalVisible  ? "show" : "")" tabindex="-1" style="display:@(isCreateTestModalVisible  ? "block" : "none")">
@@ -252,7 +280,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">Tạo câu hỏi mới</h5>
-                <button type="button" class="btn-close" @onclick="closemodal" ></button>
+                <button type="button" class="btn-close" @onclick="closemodal"></button>
             </div>
             <div class="modal-body">
                 <label>Loại câu hỏi:</label>
@@ -261,10 +289,22 @@
                     <option value="2">Trắc nghiệm nhiều đáp án</option>
                     <option value="3">Đúng/Sai</option>
                 </select>
+
+                <div class="mb-3">
+                    <label for="levelSelect">Cấp độ câu hỏi:</label>
+                    <select id="levelSelect" class="form-select" @bind="testQuestion.Level">
+                        <option value="1">Cấp độ 1</option>
+                        <option value="2">Cấp độ 2</option>
+                        <option value="3">Cấp độ 3</option>
+                        <option value="4">Cấp độ 4</option>
+                    </select>
+                </div>
+
                 <div class="mb-3">
                     <label for="questionName">Tên câu hỏi:</label>
                     <input id="questionName" class="form-control" @bind="testQuestion.QuestionName" placeholder="Nhập tên câu hỏi..." />
                 </div>
+
                 @foreach (var (answer, index) in testQuestion.Answers.Select((value, i) => (value, i)))
                 {
                     <div class="mb-2">
@@ -279,11 +319,12 @@
                         }
                     </div>
                 }
+
                 <button class="btn btn-sm btn-primary" @onclick="AddAnswerField">Thêm đáp án</button>
                 <div class="text-danger">@Message</div>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-secondary" @onclick="closemodal" >Đóng</button>
+                <button class="btn btn-secondary" @onclick="closemodal">Đóng</button>
                 <button class="btn btn-primary" @onclick="CreateQuestionWithAnswers">Lưu câu hỏi</button>
             </div>
         </div>
@@ -296,6 +337,7 @@
         testQuestion.Level = lever;
     }
     private void OpenModal(){
+        testQuestion.TestId = SelectedTest; // Gán TestId vào câu hỏi
         showcreatequestion = true;
     }
     private void closemodal(){
@@ -340,7 +382,33 @@
         testQuestionDTOs.Clear();
         StateHasChanged(); // Refresh UI
     }
+    // Biến lưu loại câu hỏi được chọn để lọc
+    private int? selectedType = null;
+    private List<TestQuestionDTO> filteredQuestions
+    {
+        get
+        {
+            var filtered = !selectedType.HasValue
+                ? testQuestionDTOs
+                : testQuestionDTOs.Where(q => q.Type == selectedType.Value).ToList();
+            Console.WriteLine($"Lọc câu hỏi: {filtered.Count} câu hỏi phù hợp với loại {selectedType}");
+            return filtered;
+        }
+    }
 
+    private void OnTypeChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out int type))
+        {
+            selectedType = type; // Gán giá trị kiểu số nguyên
+        }
+        else
+        {
+            selectedType = null; // Không chọn gì thì đặt về null
+        }
+        Console.WriteLine($"Giá trị selectedType: {selectedType}");
+        StateHasChanged(); // Làm mới giao diện
+    }
     private bool isQuestionModalVisible = false;
     private bool CanGoPrevious => CurrentPage > 1;
     private bool CanGoNext => CurrentPage < TotalPages;
@@ -559,10 +627,22 @@
 
     private async Task question(Guid id)
     {
-
         testQuestionss = await client.GetFromJsonAsync<List<listdetailquestion>>($"https://localhost:7046/api/TestQuestion/get-question-details/{id}");
+        testQuestionDTOs = testQuestionss
+            .OrderBy(q => q.Type) // Sắp xếp theo Type
+            .Select(q => new TestQuestionDTO
+                {
+                    QuestionName = q.Questionname,
+                    Type = q.Type,
+                    Answers = q.answer,
+                    RightAnswer = q.RightAnswer
+                }).ToList();
+
+        Console.WriteLine($"Số câu hỏi sau khi gán: {testQuestionDTOs.Count}");
         StateHasChanged(); // Refresh UI
     }
+
+
 
     private async Task CheckForDuplicates()
     {
@@ -689,9 +769,9 @@
             isQuestionDetailModalVisibles = true;
 
         }
-        private async void ShowQuestionDetailModalss(Guid id)
+        private async void UpdateQuestionModal(Guid id)
         {
-            await detailquestion(id);
+        await updatequestion();
             isQuestionDetailModalVisibless = true;
 
         }
