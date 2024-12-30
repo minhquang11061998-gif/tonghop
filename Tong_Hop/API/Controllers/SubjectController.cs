@@ -63,11 +63,37 @@ namespace API.Controllers
             }
         }
 
+        [HttpGet("get-by-id-class_subject")]
+        public async Task<ActionResult<SubjectDTO>> GetByIdclass(Guid Id)
+        {
+            try
+            {
+                var datadsubject = await (from a in _db.Classes
+                                          join b in _db.Grades on a.GradeId equals b.Id
+                                          join c in _db.Subject_Grades on b.Id equals c.GradeId
+                                          join d in _db.Subjects on c.SubjectId equals d.Id
+                                          where a.Id == Id
+                                          select new SubjectDTO
+                                          {
+                                              Id = d.Id,
+                                              Name = d.Name,
+                                              Code = d.Code,
+                                              CreationTime = d.CreationTime,
+                                              Status = d.Status
+                                          }).ToListAsync();
+                return Ok(datadsubject);
+            }
+            catch (Exception)
+            {
+                return BadRequest("Loi");
+            }
+        }
         [HttpGet("get-by-id-subject")]
         public async Task<ActionResult<SubjectDTO>> GetById(Guid Id)
         {
             try
             {
+
                 var data = await _db.Subjects.FirstOrDefaultAsync(x => x.Id == Id);
 
                 if (data == null)
@@ -91,7 +117,6 @@ namespace API.Controllers
                 return BadRequest("Loi");
             }
         }
-
         [HttpPost("create-subject")]
         public async Task<IActionResult> Create(SubjectDTO dto)
         {

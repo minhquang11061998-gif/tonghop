@@ -80,53 +80,53 @@ namespace API.Controllers
             });
             return Ok(classdto);
         }
-        //[HttpGet("get-all-class")]
-        //public async Task<ActionResult<List<ClassesDTO>>> GetAll()
-        //{
-        //    try
-        //    {
-        //        var data = await (from c in _db.Classes
-        //                          join t in _db.Teachers on c.TeacherId equals t.Id
-        //                          join u in _db.Users on t.UserId equals u.Id
-        //                          where c.TeacherId == t.Id // Ràng buộc TeacherId khớp
-        //                          select new
-        //                          {
-        //                              c.Id,
-        //                              c.Code,
-        //                              c.Name,
-        //                              c.MaxStudent,
-        //                              c.Status,
-        //                              c.TeacherId,
-        //                              c.GradeId,
-        //                              TeacherName = u.FullName // Lấy tên giáo viên từ bảng Users
-        //                          }).ToListAsync();
+        [HttpGet("get-all-class")]
+        public async Task<ActionResult<List<ClassesDTO>>> GetAll()
+        {
+            try
+            {
+                var data = await (from c in _db.Classes
+                                  join t in _db.Teachers on c.TeacherId equals t.Id
+                                  join u in _db.Users on t.UserId equals u.Id
+                                  where c.TeacherId == t.Id // Ràng buộc TeacherId khớp
+                                  select new
+                                  {
+                                      c.Id,
+                                      c.Code,
+                                      c.Name,
+                                      c.MaxStudent,
+                                      c.Status,
+                                      c.TeacherId,
+                                      c.GradeId,
+                                      TeacherName = u.FullName // Lấy tên giáo viên từ bảng Users
+                                  }).ToListAsync();
 
-        //        if (!data.Any())
-        //        {
-        //            return BadRequest("Danh sách trống");
-        //        }
+                if (!data.Any())
+                {
+                    return BadRequest("Danh sách trống");
+                }
 
-        //        var classdto = data.Select(x => new ClassesDTO
-        //        {
-        //            Id = x.Id,
-        //            Code = x.Code,
-        //            Name = x.Name,
-        //            MaxStudent = x.MaxStudent,
-        //            Status = x.Status,
-        //            TeacherId = x.TeacherId,
-        //            GradeId = x.GradeId,
-        //            TeacherName = x.TeacherName
-        //        }).ToList();
+                var classdto = data.Select(x => new ClassesDTO
+                {
+                    Id = x.Id,
+                    Code = x.Code,
+                    Name = x.Name,
+                    MaxStudent = x.MaxStudent,
+                    Status = x.Status,
+                    TeacherId = x.TeacherId,
+                    GradeId = x.GradeId,
+                    TeacherName = x.TeacherName
+                }).ToList();
 
-        //        return Ok(classdto);
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        // Ghi log lỗi để kiểm tra
-        //        Console.WriteLine($"Error: {ex.Message}");
-        //        return BadRequest("Lỗi");
-        //    }
-        //}
+                return Ok(classdto);
+            }
+            catch (Exception ex)
+            {
+                // Ghi log lỗi để kiểm tra
+                Console.WriteLine($"Error: {ex.Message}");
+                return BadRequest("Lỗi");
+            }
+        }
 
         [HttpGet("get-by-id-class")]
         public async Task<ActionResult<ClassesDTO>> GetById(Guid Id)
