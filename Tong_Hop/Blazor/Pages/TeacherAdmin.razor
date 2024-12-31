@@ -36,19 +36,9 @@
     </div>
 
     <!-- Table -->
-    <div class="table-responsive border rounded shadow-sm" style="background-color: #ffffff;">
-        <table class="table table-hover  table-sm align-middle text-center">
-            <caption class="text-end">
-                <div class="d-flex  justify-content-end mt-3">
-                    <button class="btn btn-secondary btn-sm" @onclick="PreviousPage" disabled="@(!CanGoPrevious)">
-                        <i class="bi bi-arrow-left"></i> Trước
-                    </button>
-                    <span>Trang @CurrentPage / @TotalPages</span>
-                    <button class="btn btn-secondary btn-sm" @onclick="NextPage" disabled="@(!CanGoNext)">
-                        <i class="bi bi-arrow-right"></i> Sau
-                    </button>
-                </div>
-            </caption>
+    <div class="table-responsive border rounded shadow-sm" style="background-color: #ffffff;max-height: 800px; border: 1px solid #ddd; border-radius: 5px;">
+        <table class="table table-hover  table-sm align-middle text-center" style="">
+           
             <thead class="table-primary border" style="height:45px">
                 <tr>
                     <th style="width: 50px;">
@@ -64,7 +54,7 @@
                     <th style="width: 120px;">Trạng thái</th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody >
                 @if (FilteredOrders.Any())
                 {
                     @foreach (var order in FilteredOrders)
@@ -224,8 +214,6 @@
     private List<UserDTOTEACHER> userDTOs = new List<UserDTOTEACHER>();
     private List<UserDTOTEACHER> FilteredOrders => userDTOs
        .Where(o => string.IsNullOrEmpty(SearchText) || o.FullName.Contains(SearchText, StringComparison.OrdinalIgnoreCase))
-       .Skip((CurrentPage - 1) * ItemsPerPage)
-       .Take(ItemsPerPage)
        .ToList();
 
     private bool CanGoPrevious => CurrentPage > 1;

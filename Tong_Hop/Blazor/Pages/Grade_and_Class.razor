@@ -13,17 +13,7 @@
 
 <div class="container-fluid mt-3">
     <div class="mb-3 d-flex">
-        <div class="d-flex flex-wrap gap-2">
-            <button class="btn btn-primary btn-sm" @onclick="()=>ShowCreateForm(ModalType.Add)">
-                <i class="bi bi-plus-circle"></i> Tạo mới
-            </button>
-            <button class="btn btn-warning btn-sm" @onclick="loadidGrade">
-                <i class="bi bi-pencil-square" ></i> Chỉnh sửa
-            </button>
-            <button class="btn btn-danger btn-sm" @onclick="deletegrade">
-                <i class="bi bi-trash"></i> Xóa
-            </button> 
-        </div>
+
         <div class="ms-auto" style="width: 250px;">
             <div class="input-group">
                 <input type="text" placeholder="Tìm kiếm..." class="form-control border" @bind="seachestudent" />
@@ -37,9 +27,10 @@
         <thead class="table-primary">
             <tr>
                 <th style="width: 90px;">
-                    <input type="checkbox" title="Chọn tất cả" />
+
                 </th>
                 <th scope="col">Tên khối</th>
+                <th></th>
                 <th style="width: 150px;">Trạng thái</th>
             </tr>
         </thead>
@@ -49,13 +40,20 @@
                 @foreach (var item in FilteredOrders.OrderBy(c => c.Name))
                 {
                     <tr>
-                        <td></td>
                         <td>
-                            <span class="text-primary" style="cursor: pointer;" @onclick="() => ToggleTree(item.Id)">
+
+                            <span type="button" class="text-warning d-flex justify-content-end" @onclick="()=>showupdateclass(ModalTypeClass.Add,idgrade=item.Id)" title="Thêm mới lớp">
+                                <i class="bi bi-folder-plus me-2 fs-4"></i> 
+                            </span>
+
+                        </td>
+                        <td>
+                            <span class="text-primary fw-bold" style="cursor: pointer;" @onclick="() => ToggleTree(item.Id)">
                                 Khối @item.Name
                             </span>
                         </td>
-                        <td>
+                        <td></td>
+                        <td class="text-center">
                             <span class="badge @(item.Status == 1 ? "bg-success" : "bg-secondary")">
                                 @(item.Status == 1 ? "Hoạt động" : "Tạm dừng")
                             </span>
@@ -66,132 +64,68 @@
                     {
                         if (classes != null && classes.Any(c => c.GradeId == item.Id))
                         {
-                            @if (iscreatclass && idgrade == item.Id)
-                            {
-                                <tr>
-                                    <td>
-                                        @if (!string.IsNullOrWhiteSpace(classcreateandupdate.Name))
-                                        {
-                                            <button class="btn btn-primary btn-sm" @onclick="createclass">
-                                                <i class="bi bi-save"></i> Lưu
-                                            </button>
-                                        }
-                                        else
-                                        {
-                                            <button class="btn btn-secondary" @onclick="CancelCreate">Hủy</button>
-                                        }
-                                    </td>
-                                    <td>
-                                        <input type="text" class="form-control"
-                                        @bind="classcreateandupdate.Name"
-                                        @oninput="OnInputChangeds"
-                                        placeholder="Nhập tên lớp" />
-                                    </td>
-                                    <td>
-                                        <select class="form-select" @bind="classcreateandupdate.TeacherId">
-                                            <option value="0">chọn giáo viên</option>
-                                            @foreach (var teacher in teacherDTOs)
-                                            {
-                                                <option value="@teacher.Id">@teacher.Name</option>
-                                            }
-                                        </select>
-                                    </td>
-                                </tr>
-                            }
 
                             @foreach (var classItem in classes.Where(c => c.GradeId == item.Id).OrderBy(c => c.Name))
                             {
-                                if (EditClass == classItem.Id)
-                                {
-                                    <tr>
-                                        <td>
-                                            @if (!string.IsNullOrWhiteSpace(classcreateandupdate.Name))
-                                            {
-                                                <button class="btn btn-primary btn-sm" @onclick="createclass">
-                                                    <i class="bi bi-save"></i> Lưu
-                                                </button>
-                                            }
-                                            else
-                                            {
-                                                <button class="btn btn-secondary" @onclick="CancelCreate">Hủy</button>
-                                            }
-                                        </td>
-                                        <td>
-                                            <input type="text" class="form-control"
-                                            @bind="classcreateandupdate.Name"
-                                            @bind:event="oninput" name="name" />
-                                        </td>
-                                        <td>
-                                            <select class="form-select" @bind:event="oninput"  @bind="classcreateandupdate.TeacherId">
-                                                <option value="">Chọn giáo viên</option>
-                                                @foreach (var teacher in teacherDTOs)
-                                                {
-                                                    <option value="@teacher.Id">@teacher.Name</option>
-                                                }
-                                            </select>
+                                <tr>
+                                    <td></td>
+                                    <td class="text-start align-middle text-primary"
+                                    @onclick="()=>ToggleTreestudent(classItem.Id)" style="cursor: pointer;">
+                                        └ @classItem.Name
+                                    </td>
+                                    <td class="text-center align-middle">
+                                        <span class="fw-semibold">Giáo viên:</span> @classItem.NameTeacher
+                                    </td>
+                                    <td class="text-center align-middle">
+                                        <button class="btn btn-sm btn-success me-2" title="Thêm mới" @onclick="()=>ShowCreateStudent(ModalType.Add)">
+                                            <i class="bi bi-plus-circle-dotted"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-primary" @onclick="()=>showupdateclass(ModalTypeClass.Edit,classItem.Id)" title="Chỉnh sửa">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                    </td>
+                                </tr>
 
-
-
-                                        </td>
-                                    </tr>
-                                }
-                                else
-                                {
-                                    <tr>
-                                        <td style="padding-left: 70px;">
-                                            <input type="checkbox"
-                                            checked="@(selectidclass == classItem.Id)"
-                                            @onchange="() => selectidclas(classItem.Id)"
-                                            title="Chọn tài khoản này" />
-                                        </td>
-                                        <td style="padding-left: 20px;" class="text-primary" @onclick="()=>ToggleTreestudent(classItem.Id)">
-                                            <div class="d-flex justify-content-between">
-                                                <div type="button">
-                                                    <span style="cursor: pointer;">
-                                                        └ @classItem.Name
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td>
-                                        </td>
-                                    </tr>
-                                }
 
                                 @if (Expandedstudent.Contains(classItem.Id))
                                 {
                                     <tr>
                                         <td colspan="6">
-                                            <div style="max-height: 300px; overflow-y: auto; margin-left: 100px; border: 1px solid #ddd; border-radius: 5px;">
+                                            <div class="table-responsive" style="max-height: 300px; border: 1px solid #ddd; border-radius: 5px;">
                                                 <table class="table table-hover table-sm">
                                                     <thead class="table-light" style="position: sticky; top: 0; z-index: 1;">
                                                         <tr>
-                                                            <th style="width: 5%; text-align: center;">STT</th>
-                                                            <th style="width: 15%; text-align: center;">Hình ảnh</th>
+                                                            <th class="text-center" style="width: 5%;">STT</th>
+                                                            <th class="text-center" style="width: 15%;">Hình ảnh</th>
                                                             <th style="width: 25%;">Tên học sinh</th>
                                                             <th style="width: 20%;">Ngày sinh</th>
                                                             <th style="width: 20%;">Số điện thoại</th>
-                                                            <th style="width: 15%; text-align: center;">Hành động</th>
+                                                            <th class="text-center" style="width: 15%;">Hành động</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody>
                                                         @foreach (var itemUser in users.Where(u => u.idclass == classItem.Id))
                                                         {
                                                             <tr>
-                                                                <td style="text-align: center; vertical-align: middle;">@(users.IndexOf(itemUser) + 1)</td>
-                                                                <td style="text-align: center; vertical-align: middle;">
-                                                                    <img src="@itemUser.picture" alt="Hình ảnh" style="width: 50px; height: 50px; border-radius: 50%; object-fit: cover;" />
+                                                                <td class="text-center align-middle">
+                                                                    @(users.IndexOf(itemUser) + 1)
                                                                 </td>
-                                                                <td style="vertical-align: middle;">
-                                                                    <span class="text-primary">@itemUser.Name</span>
+                                                                <td class="text-center align-middle">
+                                                                    <img src="@itemUser.picture"
+                                                                    alt="Hình ảnh"
+                                                                    class="rounded-circle"
+                                                                    style="width: 50px; height: 50px; object-fit: cover;" />
                                                                 </td>
-                                                                <td style="vertical-align: middle;">@itemUser.dateofbirt.ToString("dd/MM/yyyy")</td>
-                                                                <td style="vertical-align: middle;">@itemUser.PhoneNumber</td>
-                                                                <td style="text-align: center; vertical-align: middle;">
-                                                                    <button class="btn btn-outline-danger btn-sm mx-1" @onclick="() => DeleteStudent(itemUser.Id)" title="Xóa">
+                                                                <td class="align-middle text-primary">@itemUser.Name</td>
+                                                                <td class="align-middle">@itemUser.dateofbirt.ToString("dd/MM/yyyy")</td>
+                                                                <td class="align-middle">@itemUser.PhoneNumber</td>
+                                                                <td class="text-center align-middle">
+                                                                    <button class="btn btn-outline-danger btn-sm mx-1"
+                                                                    @onclick="() => DeleteStudent(itemUser.Id)" title="Xóa">
                                                                         <i class="bi bi-person-x-fill"></i>
                                                                     </button>
-                                                                    <button class="btn btn-outline-info btn-sm mx-1" @onclick="()=>showmodaal(ModalType.Detail, itemUser.Id)" title="Xem chi tiết">
+                                                                    <button class="btn btn-outline-info btn-sm mx-1"
+                                                                    @onclick="()=>showmodaal(ModalType.Detail, itemUser.Id)" title="Xem chi tiết">
                                                                         <i class="bi bi-card-list"></i>
                                                                     </button>
                                                                 </td>
@@ -203,46 +137,13 @@
                                         </td>
                                     </tr>
                                 }
-
                             }
                         }
                         else
                         {
                             <tr>
-                                <td colspan="3" class="text-center text-danger">Không có lớp nào.</td>
+                                <td colspan="4" class="text-center text-danger">Không có lớp nào.</td>
                             </tr>
-                            @if (iscreatclass)
-                            {
-                                <tr>
-                                    <td>
-                                        @if (!string.IsNullOrWhiteSpace(classcreateandupdate.Name))
-                                        {
-                                            <button class="btn btn-primary btn-sm" @onclick="createclass">
-                                                <i class="bi bi-save"></i> Lưu
-                                            </button>
-                                        }
-                                        else
-                                        {
-                                            <button class="btn btn-secondary" @onclick="CancelCreate">Hủy</button>
-                                        }
-                                    </td>
-                                    <td>
-                                        <input type="text" class="form-control"
-                                        @bind="classcreateandupdate.Name"
-                                        @oninput="OnInputChangeds"
-                                        placeholder="Nhập tên lớp" />
-                                    </td>
-                                    <td>
-                                        <select class="form-select" @bind="classcreateandupdate.TeacherId">
-                                            <option value="0">chọn giáo viên</option>
-                                            @foreach (var teacher in teacherDTOs)
-                                            {
-                                                <option value="@teacher.Id">@teacher.Name</option>
-                                            }
-                                        </select>
-                                    </td>
-                                </tr>
-                            }
                         }
                     }
                 }
@@ -250,10 +151,11 @@
             else
             {
                 <tr>
-                    <td colspan="3" class="text-center text-danger">Không có dữ liệu.</td>
+                    <td colspan="4" class="text-center text-danger">Không có dữ liệu.</td>
                 </tr>
             }
         </tbody>
+
     </table>
 </div>
 @if (ShowModal)
@@ -312,7 +214,7 @@
 
                             <div class="col-md-6">
                                 <label class="form-label">Mật Khẩu</label>
-                                <input type="password" class="form-control" placeholder="Nhập mật khẩu" @bind="user.PasswordHash"
+                                <input type="text" class="form-control" placeholder="Nhập mật khẩu" @bind="user.PasswordHash"
                                 disabled="@(CurrentModalType == ModalType.Detail)" />
                             </div>
 
@@ -408,16 +310,57 @@
         </div>
     </div>
 </div>
+<div class="modal fade @(isClassModalVisible ? "show" : "")" tabindex="-1" style="display:@(isClassModalVisible ? "block" : "none"); background-color: rgba(0,0,0,0.5);">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                @switch (CurrentModalTypeclass)
+                {
+                    case ModalTypeClass.Add:
+                        <text>Thêm Lớp mới</text>
+                        ;
+                        break;
+                    case ModalTypeClass.Edit:
+                        <text>Chỉnh Sửa lớp</text>
+                        ;
+                        break;
+                }
+                <button type="button" class="btn-close" aria-label="Close" @onclick="CloseModal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="className" class="form-label">Tên lớp</label>
+                    <input type="text" id="className" class="form-control" @bind="classcreateandupdate.Name" placeholder="Nhập tên lớp">
+                </div>
+                <div class="mb-3">
+                    <label for="teacherSelect" class="form-label">Chọn giáo viên</label>
+                    <select id="teacherSelect" class="form-select" @bind="classcreateandupdate.TeacherId">
+                        <option value="@classcreateandupdate.Id" hidden>@classcreateandupdate.NameTeacher</option>
+                        @foreach (var teacher in teacherDTOs)
+                        {
+                            <option value="@teacher.Id">@teacher.Name</option>
+                        }
+                    </select>
+                </div>
+                <div class="text-center">
+                    <button type="button" class="btn btn-primary me-2" @onclick="createclass">Lưu</button>
+                    <button type="button" class="btn btn-secondary" @onclick="CloseModal">Hủy</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 @code {
-    private bool iscreatclass = false;
+
+    private bool isClassModalVisible = false;
     private Guid newGradeName = Guid.Empty;
     private Grades gradescreate = new Grades();
     private Guid selectidclass;
     private Guid selectIdStudent;
-    private Guid? EditClass = null;
     private string seachestudent = string.Empty;
     private string? teacherid;
-    private Classes classcreateandupdate = new Classes();
+    private ClassStandardDTO classcreateandupdate = new ClassStandardDTO();
     private List<GetallStudentDT0> getallStudentDT0s = new List<GetallStudentDT0>();
     private List<GetallStudentDT0> users =>
       string.IsNullOrEmpty(seachestudent)
@@ -427,32 +370,27 @@
     private IBrowserFile avatarFile;
     private bool ShowModal { get; set; } = false;
     private ModalType CurrentModalType { get; set; } = ModalType.Add;
+    private ModalTypeClass CurrentModalTypeclass { get; set; } = ModalTypeClass.Add;
     private Users user = new Users();
     private List<TeacherDTO> teacherDTOs = new List<TeacherDTO>();
-    private void OnInputChangeds(ChangeEventArgs e)
-    {
-        var inputValue = e.Value?.ToString(); // Lấy giá trị từ input dưới dạng string
-
-        classcreateandupdate.Name = inputValue;
-
-        // Kiểm tra và chuyển đổi e.Value sang Guid nếu cần thiết
-        if (Guid.TryParse(inputValue, out Guid teacherId))
-        {
-            classcreateandupdate.TeacherId = teacherId; // Gán Guid hợp lệ
-        }
-        else
-        {
-            classcreateandupdate.TeacherId = Guid.Empty; // Xử lý nếu không thể chuyển đổi
-        }
-
-        StateHasChanged(); // Cập nhật trạng thái giao diện
-    }
-
     private bool isExcelModalVisible = false;
     private void showexcel()
     {
         ShowModal = false;
         isExcelModalVisible = true;
+
+    }
+    private async Task showupdateclass(ModalTypeClass typeClass, Guid id){
+        CurrentModalTypeclass = typeClass;
+        if(CurrentModalTypeclass==ModalTypeClass.Edit){
+            await getidclass(id);
+            idclass = id;
+            isClassModalVisible = true;
+        }else{
+            isClassModalVisible = true;
+        }
+      
+        
 
     }
     private  async Task showmodaal(ModalType modalType, Guid id)
@@ -473,32 +411,20 @@
     }
 
 
-    private void selectidclas(Guid id){
-        selectidclass = selectidclass == id ? Guid.Empty : id;
-    }
 
-    private void ShowCreateForm(ModalType modalType)
+
+    private void ShowCreateStudent(ModalType modalType)
     {
         CurrentModalType = modalType;
-        if (selectidclass!=Guid.Empty)
-        {
-            ShowModal = true; // Hiển thị modal
-        }else{
-            iscreatclass = true;
-        }
+        ShowModal = true; 
     }
 
     private void CancelCreate()
     {
-
-        iscreatclass = false;
-        iscreatclass = false;
-        EditClass = null;
         selectidclass = Guid.Empty;
     }
     private async Task TriggerFileInput()
     {
-        // Tìm và kích hoạt phần tử InputFile ẩn
         await jsruntime.InvokeVoidAsync("eval", "document.getElementById('selectfile').click()");
     }
     private const long MaxFileSize = 10 * 1024 * 1024;
@@ -532,8 +458,6 @@
             user.Avartar = $"data:{file.ContentType};base64,{Convert.ToBase64String(memoryStream.ToArray())}";
 
             Console.WriteLine("Image uploaded successfully.");
-
-            // Gọi StateHasChanged để cập nhật giao diện sau khi file đã được xử lý
             StateHasChanged();
         }
         catch (Exception ex)
@@ -565,7 +489,7 @@
     {
         if (selectedFile != null)
         {
-            var stream = selectedFile.OpenReadStream(100 * 1024 * 1024); // Giới hạn 100MB
+            var stream = selectedFile.OpenReadStream(100 * 1024 * 1024); 
             var content = new MultipartFormDataContent();
 
             using (var memoryStream = new MemoryStream())
@@ -581,7 +505,7 @@
             }
             else
             {
-                await jsruntime.InvokeVoidAsync("alert", "thiếu id lớp học");
+                await jsruntime.InvokeVoidAsync("alert", "chưa chọn lớp học");
 
             }
             var response = await client.PostAsync($"https://localhost:7046/api/User/import-excel?id={selectidclass}", content);
@@ -637,13 +561,13 @@
         }
 
         // Gửi request đến API
-        var response = await client.PostAsync($"https://localhost:7046/api/User/create-user?id={selectidclass}", content);
+        var response = await client.PostAsync($"https://localhost:7046/api/User/create-user?id={idclass}", content);
         if (response.IsSuccessStatusCode)
         {
 
             selectidclass = Guid.Empty;
             user = new Users();
-            await getallstudent(selectidclass);
+            await getallstudent(idclass);
         }
         else
         {
@@ -706,6 +630,7 @@
         ShowModal = false;
         user=new Users();
         isExcelModalVisible = false;
+        isClassModalVisible = false;
     }
     private async Task DeleteStudent(Guid id)
     {
@@ -713,14 +638,19 @@
         var response = await client.DeleteAsync($"https://localhost:7046/api/User/delete-user?id={id}");
         if (response.IsSuccessStatusCode)
         {
-            await getallstudent(selectidclass);
+
             await jsruntime.InvokeVoidAsync("alert", "Xóa thành công!");
+            await getallstudent(idclass);
         }
         else
         {
             await jsruntime.InvokeVoidAsync("alert", "Lỗi khi xóa người dùng!");
         }
 
+    }
+    private async Task getidclass(Guid id)
+    {
+        classcreateandupdate = await client.GetFromJsonAsync<ClassStandardDTO>($"https://localhost:7046/api/Classes/get-by-id-class?Id={id}");
     }
     private async Task detail(Guid id){
         user = await client.GetFromJsonAsync<Users>($"https://localhost:7046/api/User/get-by-id-user?id={id}");
@@ -733,66 +663,41 @@
         getallStudentDT0s = await client.GetFromJsonAsync<List<GetallStudentDT0>>($"https://localhost:7046/api/Student/get-all-ID-class?id={id}");
 
     }
-    private async Task loadidGrade(){
-        if(selectidclass!=Guid.Empty){
-            classcreateandupdate = await client.GetFromJsonAsync<Classes>($"https://localhost:7046/api/Classes/get-by-id-class?Id={selectidclass}");
-            EditClass = selectidclass;
-        }
-        else{
-            await jsruntime.InvokeVoidAsync("alert", "Bạn chưa chọn khối hoặc lớp để chỉnh sửa");
-
-        }
-    }
+    
     private async Task createclass(){
-        if(selectidclass==Guid.Empty){
+        if(idclass==Guid.Empty){
             classcreateandupdate.GradeId = idgrade;
             var respon = await client.PostAsJsonAsync("https://localhost:7046/api/Classes/create-class", classcreateandupdate);
             if (respon.IsSuccessStatusCode)
             {
-                iscreatclass = false;
+               
                 idgrade = Guid.Empty;
                 await GetAllClass();
 
             }
-            else { await jsruntime.InvokeVoidAsync("alert", "Thêm Lớp thất bại"); }
+            else { await jsruntime.InvokeVoidAsync("alert", $"Thêm Lớp thất bại{idclass}"); }
         }else{
-            classcreateandupdate.Id = selectidclass;
+            classcreateandupdate.Id = idclass;
             var respon = await client.PutAsJsonAsync("https://localhost:7046/api/Classes/update-class", classcreateandupdate);
-            if(respon.IsSuccessStatusCode){
-                iscreatclass = false;
-                EditClass = null;
-                selectidclass = Guid.Empty;
-                await GetAllClass();
-            }else{
-                await jsruntime.InvokeVoidAsync("alert", "Sửa lớp thất bại");
-            }
-        }
-
-    }
-    private async Task deletegrade()
-    {
-
-        if (selectidclass != Guid.Empty) // Kiểm tra nếu selectidclass không phải là Guid.Empty
-        {
-            var response = await client.DeleteAsync($"https://localhost:7046/api/Classes/delete-class?Id={selectidclass}");
-            if (response.IsSuccessStatusCode)
+            if (respon.IsSuccessStatusCode)
             {
+               
                 await GetAllClass();
-                await jsruntime.InvokeVoidAsync("alert", "Xóa lớp thành công.");
             }
             else
             {
-                await jsruntime.InvokeVoidAsync("alert", "Xóa lớp thất bại.");
+                await jsruntime.InvokeVoidAsync("alert", "Sửa lớp thất bại");
             }
-        }
-        else
-        {
-            await jsruntime.InvokeVoidAsync("alert", "Không có khối hoặc lớp được chọn để xóa.");
-        }
-    }
 
+
+        }
+
+    }
+   
+
+   
     private List<Grades> grades = new List<Grades>();
-    private List<Classes> classes = new List<Classes>();
+    private List<ClassStandardDTO> classes = new List<ClassStandardDTO>();
     private List<Grades> FilteredOrders => string.IsNullOrEmpty(SearchText)
      ? grades 
      : grades.Where(o => o.Name.ToString().Contains(SearchText)) 
@@ -807,7 +712,7 @@
         teacherDTOs = await client.GetFromJsonAsync<List<TeacherDTO>>("https://localhost:7046/api/Teacher/get-all-teacher");
     }
     private async Task GetAllClass(){
-        classes = await client.GetFromJsonAsync<List<Classes>>("https://localhost:7046/api/Classes/get-all");
+        classes = await client.GetFromJsonAsync<List<ClassStandardDTO>>("https://localhost:7046/api/Classes/get-all");
     }
     private async Task GetAllGrade(){
         grades = await client.GetFromJsonAsync<List<Grades>>("https://localhost:7046/api/Grade/get-grade");
@@ -820,6 +725,7 @@
         await jsruntime.InvokeVoidAsync("HideModal");
     }
     private Guid idgrade;
+    private Guid idclass;
     private async void ToggleTreestudent(Guid id)
     {
         if (Expandedstudent.Contains(id))
@@ -831,7 +737,7 @@
             Expandedstudent.Clear();
             Expandedstudent.Add(id);
             await getallstudent(id);
-
+            idclass = id;
         }
         StateHasChanged();
     }
@@ -839,7 +745,7 @@
     {
         if (ExpandedTasks.Contains(id))
         {
-            Expandedstudent.Clear();
+          
             ExpandedTasks.Remove(id); 
         }
         else
