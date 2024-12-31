@@ -1,10 +1,6 @@
-﻿using CloudinaryDotNet;
-using CloudinaryDotNet.Actions;
-using DataBase.Data;
+﻿using DataBase.Data;
 using DataBase.DTOs;
 using DataBase.Models;
-using Emgu.CV;
-using Emgu.CV.Features2D;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -16,11 +12,9 @@ namespace API.Controllers
     public class ClassesController : ControllerBase
     {
         private readonly AppDbContext _db;
-        private readonly Cloudinary _cloud;
-        public ClassesController(AppDbContext db ,Cloudinary cloud)
+        public ClassesController(AppDbContext db)
         {
             _db = db;
-            _cloud = cloud;
         }
 
         private string RamdomCode(int length)
@@ -54,32 +48,7 @@ namespace API.Controllers
 
             return new string(code);
         }
-        [HttpGet("Get-Grade-Class")]
-        public IActionResult GetClassesByGrade(Guid gradeId)
-        {
-            var classes = _db.Classes
-                             .Where(c => c.GradeId == gradeId) // Lọc các lớp theo khối
-                             .Select(c => new { c.Id, c.Name }) // Lấy Id và tên lớp
-                             .ToList();
-            return Ok(classes);
-        }
 
-        [HttpGet("get-all")]
-        public IActionResult get()
-        {
-           var data= _db.Classes.ToList();
-            var classdto = data.Select(x => new ClassStandardDTO
-            {
-                Id = x.Id,
-                Name = x.Name,
-                Code = x.Code,
-                Status = x.Status,
-                MaxStudent = x.MaxStudent,
-                TeacherId = x.TeacherId,
-                GradeId = x.GradeId,
-            });
-            return Ok(classdto);
-        }
         [HttpGet("get-all-class")]
         public async Task<ActionResult<List<ClassesDTO>>> GetAll()
         {
@@ -167,9 +136,18 @@ namespace API.Controllers
             {
                 var grade = await _db.Grades.FirstOrDefaultAsync(x => x.Id == classDTO.GradeId);
 
-                if (grade == null)
+                var tea = await _db.Teachers.FirstOrDefaultAsync(x => x.Id == classDTO.TeacherId);
+
+                if (grade == null || tea == null)
                 {
-                    return BadRequest("Khong tim thay khoi");
+                    return BadRequest("Lỗi");
+                }
+
+                var teaClass = await _db.Classes.FirstOrDefaultAsync(x => x.TeacherId == tea.Id);
+
+                if (teaClass != null)
+                {
+                    return NotFound("Giáo viên này đã chủ nhiệm 1 lớp rồi");
                 }
 
                 string input = classDTO.Name;
@@ -222,194 +200,72 @@ namespace API.Controllers
             
             return input.ToUpper();
         }
-        [HttpPut("update-class")]
-        public async Task<IActionResult> updateclass(ClassStandardDTO classs)
-        {
-            try
-            {
-                var update = _db.Classes.FirstOrDefault(x => x.Id == classs.Id);
-                update.Id = classs.Id;
-                update.Name = classs.Name;
-                update.Status = classs.Status;
-                classs.MaxStudent = classs.MaxStudent;
-                update.TeacherId = classs.TeacherId;
-                update.GradeId = classs.GradeId;
 
-                _db.Classes.Update(update);
-                await _db.SaveChangesAsync();
-                return Ok("update thành công");
-            }catch(Exception)
-            {
-                return BadRequest("update thất bại");
-            }
-           
-            
-        }
         [HttpDelete("delete-class")]
         public async Task<IActionResult> Delete(Guid Id)
         {
-            using var transaction = await _db.Database.BeginTransactionAsync();
-            try
+            var data = await _db.Classes.FirstOrDefaultAsync(x => x.Id == Id);
+
+            if (data != null)
             {
-                // Kiểm tra xem lớp có tồn tại hay không
-                var classToDelete = await _db.Classes.FirstOrDefaultAsync(c => c.Id == Id);
-                if (classToDelete == null)
+                var dataStuClass = await _db.Student_Classes.Where(x => x.Id == Id).ToArrayAsync();
+
+                if (dataStuClass.Any())
                 {
-                    return NotFound("Không tìm thấy lớp.");
+                    _db.Student_Classes.RemoveRange(dataStuClass);
+                    await _db.SaveChangesAsync();
                 }
 
-                // Lấy danh sách liên quan nếu có
-                var studentClasses = await _db.Student_Classes.Where(sc => sc.ClassId == Id).ToListAsync();
-                var studentIds = studentClasses.Select(sc => sc.StudentId).ToList();
+                var dataNotiClass = await _db.Notification_Classes.Where(x => x.Id == Id).ToArrayAsync();
 
-                var students = await _db.Students.Where(s => studentIds.Contains(s.Id)).ToListAsync();
-                var userIds = students.Select(s => s.UserId).ToList();
-
-                var users = await _db.Users.Where(u => userIds.Contains(u.Id)).ToListAsync();
-
-                // Xóa các bảng liên quan nếu có dữ liệu
-                if (studentClasses.Any())
+                if (!dataNotiClass.Any())
                 {
-                    _db.Student_Classes.RemoveRange(studentClasses);
+                    _db.Notification_Classes.RemoveRange(dataNotiClass);
+                    await _db.SaveChangesAsync();
                 }
 
-                if (students.Any())
-                {
-                    _db.Students.RemoveRange(students);
-                }
-
-                // Xóa các users và xử lý ảnh từ cloud
-                if (users.Any())
-                {
-                    foreach (var user in users)
-                    {
-                        _db.Users.Remove(user);
-
-                        // Xử lý xóa ảnh từ Cloud Storage nếu có avatar
-                        if (!string.IsNullOrEmpty(user.Avartar))
-                        {
-                            var publicId = user.Avartar.Split('/').Last().Split('.').First();
-                            var deletionParams = new DeletionParams(publicId);
-
-                            // Giả sử _cloud là đối tượng dịch vụ cloud của bạn
-                            var deletionResult = await _cloud.DestroyAsync(deletionParams);
-                        }
-                    }
-                }
-
-                // Xóa lớp
-                _db.Classes.Remove(classToDelete);
-
-                // Lưu thay đổi
+                _db.Classes.Remove(data);
                 await _db.SaveChangesAsync();
-                await transaction.CommitAsync();
 
-                return Ok("Đã xóa thành công.");
+                return Ok("Da xoa");
             }
-            catch (Exception ex)
-            {
-                await transaction.RollbackAsync();
-                return BadRequest($"Xóa thất bại: {ex.Message}");
-            }
+
+            return BadRequest("Khong co lop nay");
         }
 
-
-
-        #region hiện ko dùng cái này
-        [HttpPut("update-class-and-testcodes")]
-        public async Task<IActionResult> UpdateClassAndTestCodes(ClassesDTO classDTO)
+        [HttpPut("update-class")]
+        public async Task<IActionResult> UpdateClassAndTestCodes(Guid IdClass, string Name, Guid IdTeacher, Guid IdGrade)
         {
-            try
+            var data = await _db.Classes.FirstOrDefaultAsync(x => x.Id == IdClass);
+
+            var grade = await _db.Grades.FirstOrDefaultAsync(x => x.Id == IdGrade);
+
+            var tea = await _db.Teachers.FirstOrDefaultAsync(x => x.Id == IdTeacher);
+
+            if (data == null || grade == null || tea == null)
             {
-                // Kiểm tra nếu ClassCode có tồn tại
-                if (string.IsNullOrEmpty(classDTO.Code))
-                {
-                    return BadRequest("ClassCode không được để trống.");
-                }
-
-                // Lấy lớp học dựa trên ClassCode
-                var classEntity = _db.Classes.FirstOrDefault(c => c.Code == classDTO.Code);
-
-                if (classEntity == null)
-                {
-                    return NotFound("Không tìm thấy lớp học.");
-                }
-
-                // Lấy thông tin Subject_Grade dựa trên GradeId của lớp và SubjectId từ DTO
-                var subjectGrade = _db.Subject_Grades
-                    .FirstOrDefault(sg => sg.GradeId == classEntity.GradeId && sg.SubjectId == classDTO.SubjectId);
-
-                if (subjectGrade == null)
-                {
-                    return NotFound("Không tìm thấy Subject_Grade phù hợp với lớp học và môn học.");
-                }
-
-                // Cập nhật số lượng MaxStudent mới cho lớp
-                classEntity.Name = classDTO.Name;
-                classEntity.Status = classDTO.Status;
-                classEntity.TeacherId = classDTO.TeacherId;
-                classEntity.GradeId = classDTO.GradeId;
-                classEntity.MaxStudent = classDTO.MaxStudent;
-                _db.Classes.Update(classEntity);
-
-                // Lấy bài kiểm tra liên quan
-                var testEntity = _db.Tests.FirstOrDefault(t => t.SubjectId == classDTO.SubjectId);
-
-                if (testEntity == null)
-                {
-                    return NotFound("Không tìm thấy bài kiểm tra cho lớp học và môn học.");
-                }
-
-                // Cập nhật MaxStudent trong bài kiểm tra
-                testEntity.MaxStudent = classDTO.MaxStudent;
-                _db.Tests.Update(testEntity);
-
-                // Lấy tất cả TestCode của bài kiểm tra
-                var ListTestCodes = _db.TestCodes.Where(tc => tc.TestId == testEntity.Id).ToList();
-
-                // Nếu số lượng hiện tại ít hơn MaxStudent, thêm mới TestCode
-                if (ListTestCodes.Count < classDTO.MaxStudent)
-                {
-                    int missingTestCodes = classDTO.MaxStudent - ListTestCodes.Count;
-
-                    for (int i = 0; i < missingTestCodes; i++)
-                    {
-                        var newTestCode = new TestCodes
-                        {
-                            Id = Guid.NewGuid(),
-                            Code = RamdomCode_TestCode(8), // Tạo mã ngẫu nhiên
-                            Status = 1,
-                            TestId = testEntity.Id,
-                        };
-
-                        await _db.TestCodes.AddAsync(newTestCode);
-                    }
-                }
-                // Nếu số lượng hiện tại nhiều hơn MaxStudent, xóa bớt TestCode
-                else if (ListTestCodes.Count > classDTO.MaxStudent)
-                {
-                    int excessTestCodes = ListTestCodes.Count - classDTO.MaxStudent;
-
-                    var testCodesToRemove = ListTestCodes.TakeLast(excessTestCodes).ToList();
-                    _db.TestCodes.RemoveRange(testCodesToRemove);
-                }
-
-                // Lưu các thay đổi
-                await _db.SaveChangesAsync();
-
-                return Ok("Cập nhật lớp học và số lượng mã bài kiểm tra thành công.");
+                return NotFound("Lỗi");
             }
-            catch (Exception ex)
+
+            var teaClass = await _db.Classes.FirstOrDefaultAsync(x => x.TeacherId == tea.Id);
+
+            if (teaClass != null)
             {
-                if (ex.InnerException != null)
-                {
-                    return BadRequest($"Lỗi khi cập nhật: {ex.InnerException.Message}");
-                }
-
-                return BadRequest($"Lỗi khi cập nhật: {ex.Message}");
+                return NotFound("Giáo viên này đã chủ nhiệm 1 lớp rồi");
             }
+
+            string result = ValidateAndTransformString(Name);
+
+            string ClassesName = $"{grade.Name}{result}";
+
+            data.Name = ClassesName;
+            data.TeacherId = IdTeacher;
+
+            _db.Classes.Update(data);
+            await _db.SaveChangesAsync();
+
+            return Ok("Update class thành công");
         }
-        #endregion
 
         [HttpGet("search-class")]
         public async Task<ActionResult<IEnumerable<ClassesDTO>>> SearchClass(string keyword)

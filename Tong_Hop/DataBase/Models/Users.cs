@@ -14,8 +14,7 @@ namespace DataBase.Models
         [Key]
         public Guid Id { get; set; }
 
-        [StringLength(100, ErrorMessage = "Tên không được quá 100 ký tự")]
-
+        [StringLength(100, ErrorMessage = "Tên người dùng không được quá 100 ký tự")]
         public string? FullName { get; set; }
         public string? Avartar { get; set; }
 
@@ -23,15 +22,15 @@ namespace DataBase.Models
         [EmailAddress(ErrorMessage = "Email ko đúng định dạng")]
         public string? Email { get; set; }
 
-        [StringLength(50, ErrorMessage = "UserName không được quá 50 ký tự")]
-        [RegularExpression(@"\S+", ErrorMessage = "UserName chua it nhat 1 ki tu ko phai dau cach")]
-        public string? UserName { get; set; }
+        [StringLength(50, ErrorMessage = "Tên đăng nhập không được quá 50 ký tự")]
+        [RegularExpression(@"\S+", ErrorMessage = "Tên đăng nhập chứa ít nhất 1 ký tự không phải khoảng trắng")]
+        public string UserName { get; set; }
 
-        [StringLength(256, ErrorMessage = "Pass không được quá 256 ký tự")]
-        public string? PasswordHash { get; set; }
+        [StringLength(256, ErrorMessage = "Mất khẩu không được quá 256 ký tự")]
+        public string PasswordHash { get; set; }
         public DateTime? DateOfBirth { get; set; }
 
-        [StringLength(12, ErrorMessage = "Tên không được quá 12 ký tự")]
+        [StringLength(12, ErrorMessage = "Số điện thoại không được quá 12 ký tự")]
         public string? PhoneNumber { get; set; }
         public bool IsLocked { get; set; }
         public DateTime? LockedEndTime { get; set; }

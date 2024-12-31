@@ -11,7 +11,7 @@ namespace DataBase.Models
     {
         [Key]
         public Guid Id { get; set; }
-        [StringLength(30, ErrorMessage = "Name ko quá 30 ký tự")]
+        [StringLength(30, ErrorMessage = "Tên kỳ không quá 30 ký tự")]
         public string Name { get; set; }
         public DateTime StartTime { get; set; }
         public DateTime? EndTime { get; set; }
