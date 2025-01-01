@@ -129,7 +129,7 @@ namespace API.Controllers
                              SubjectName = g.Key.SubjectName,
                              PointTypeName = g.Key.PointTypeName,
                              Quantity = g.Key.Quantity,
-                             Scores = string.Join(", ", g.Select(x => x.Score))      
+                             Scores = string.Join(", ", g.Select(x => x.Score))
                          };
 
             return Ok(result.ToList());
