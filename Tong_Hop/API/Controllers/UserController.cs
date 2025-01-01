@@ -902,10 +902,10 @@ namespace API.Controllers
                             }
                         }
 
-                        // Nếu không có ảnh, gán ảnh mặc định
+                        // Nếu không có ảnh, có thể gán một ảnh mặc định
                         if (string.IsNullOrEmpty(imagePath))
                         {
-                            continue; // Đặt đường dẫn ảnh mặc định
+                            imagePath = "https://example.com/default-avatar.png"; // Đường dẫn ảnh mặc định
                         }
 
                         // Kiểm tra và xử lý dữ liệu trống hoặc không hợp lệ
@@ -954,8 +954,8 @@ namespace API.Controllers
                             RoleId = roleStudent
                         };
 
-                        // Thêm user vào cơ sở dữ liệu
-                        _db.Users.Add(user);
+                        await _db.Users.AddAsync(user);
+                        await _db.SaveChangesAsync();
 
                         var student = new Students
                         {
@@ -963,10 +963,8 @@ namespace API.Controllers
                             Code = RandomCode(8),
                             UserId = user.Id,
                         };
-
-                        // Thêm student vào cơ sở dữ liệu
-                        _db.Students.Add(student);
-
+                        await _db.Students.AddAsync(student);
+                        await _db.SaveChangesAsync();
                         var studentclass = new Student_Class
                         {
                             Id = Guid.NewGuid(),
@@ -975,21 +973,16 @@ namespace API.Controllers
                             StudentId = student.Id,
                             ClassId = id
                         };
-
-                        // Thêm student_class vào cơ sở dữ liệu
-                        _db.Student_Classes.Add(studentclass);
-
-                        // Lưu toàn bộ thay đổi sau khi tất cả các bản ghi đã được thêm
-                        await _db.SaveChangesAsync(); // Lưu tất cả dữ liệu vào DB
-
+                        await _db.Student_Classes.AddAsync(studentclass);
+                        await _db.SaveChangesAsync();
                         await updateclass(id);
+
                         MaxScor_Subj(student.Id, id);
                     }
                 }
             }
             return Ok(new { Message = "Thêm dữ liệu thành công." });
         }
-
 
 
         #region updeteClass

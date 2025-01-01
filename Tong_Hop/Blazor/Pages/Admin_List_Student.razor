@@ -236,9 +236,9 @@
     private Guid selectidclass;
     private Guid? TaskIdToEdit = null;
     private Guid? EditClass = null;
-    private string teacherid;
+    private string? teacherid;
     private Classes classcreateandupdate = new Classes();
-    private IBrowserFile avatarFile;
+    private IBrowserFile? avatarFile;
     private async Task tokent()
     {
         var token = await jsruntime.InvokeAsync<string>("localStorage.getItem", "YourSuperSecretKeyHere");
@@ -311,7 +311,7 @@
         users = await client.GetFromJsonAsync<List<GetallStudentDT0>>($"https://localhost:7046/api/Student/get-all-ID-class?id={id}");
         
     }
-    private string SearchText { get; set; }
+    private string? SearchText { get; set; }
   
 }
 
