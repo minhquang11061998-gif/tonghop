@@ -18,7 +18,7 @@ namespace API.Controllers
             _db = db;
         }
         [HttpGet("information_exam")]
-        public async Task<IActionResult> Getinfor(int code,string id)
+        public async Task<IActionResult> Getinfor(string code,string id)
         {
             var infor = (
                  from test in _db.Tests
@@ -43,7 +43,7 @@ namespace API.Controllers
         }
 
         [HttpGet("test-testcode-question-await")]
-        public async Task<IActionResult> Get(int CodeTest)
+        public async Task<IActionResult> Get(string CodeTest)
         {
             if (CodeTest == null)
             {
@@ -102,7 +102,7 @@ namespace API.Controllers
         }
 
         [HttpGet("GetExamDuration")]
-        public async Task<IActionResult> GetExamDuration(int codeTest)
+        public async Task<IActionResult> GetExamDuration(string codeTest)
         {
             var exam = await _db.Tests.FirstOrDefaultAsync(e => e.Code == codeTest);
             if (exam == null)
@@ -114,7 +114,7 @@ namespace API.Controllers
         }
 
         [HttpGet("Chọn đáp an")]
-        public async Task<ActionResult> IdExamroomstudent(int CodeTesst, Guid GuidId)
+        public async Task<ActionResult> IdExamroomstudent(string CodeTesst, Guid GuidId)
         {
             var examroomstudent = await (from a in _db.Tests
                                          join testquestion in _db.TestQuestions on a.Id equals testquestion.TestId
@@ -130,7 +130,7 @@ namespace API.Controllers
         }
 
         [HttpPost("create-hist")]
-        public async Task<ActionResult> CreateHistories(int CodeTesst, string GuidId, Guid answerId)
+        public async Task<ActionResult> CreateHistories(string CodeTesst, string GuidId, Guid answerId)
         {
             var examroomstudent = await (from a in _db.Tests
                                          join b in _db.Exam_Room_TestCodes on a.Id equals b.TestId
@@ -158,7 +158,7 @@ namespace API.Controllers
         }
 
         [HttpDelete("Delete_hist")]
-        public async Task<ActionResult> DeleteHist(int Cotesst, Guid IDQuestion, Guid IDStudent)
+        public async Task<ActionResult> DeleteHist(string Cotesst, Guid IDQuestion, Guid IDStudent)
         {
             var answerIds = await (from a in _db.Tests
                                    join b in _db.TestQuestions on a.Id equals b.TestId
@@ -195,7 +195,7 @@ namespace API.Controllers
         }
 
         [HttpGet("check-answer-history")]
-        public async Task<ActionResult<int>> CheckAnswerHistory(int codetest, Guid questionId, Guid studentId)
+        public async Task<ActionResult<int>> CheckAnswerHistory(string codetest, Guid questionId, Guid studentId)
         {
             // Tìm số lượng đáp án đã được lưu cho câu hỏi này và sinh viên này
             var answerHistoryCount = await (from a in _db.Tests
@@ -273,7 +273,7 @@ namespace API.Controllers
         }
 
         [HttpGet("Exam_results_storage")]
-        public async Task<ActionResult> ExamResultsStorage(int CodeTest, double ExamResultStorage, Guid IdStudent)
+        public async Task<ActionResult> ExamResultsStorage(string CodeTest, double ExamResultStorage, Guid IdStudent)
         {
             try
             {
@@ -320,7 +320,7 @@ namespace API.Controllers
         }
 
         [HttpGet("Exam_Histories")]
-        public async Task<ActionResult> ExamHistories(int CodeTesst, double ExamResultStorage, Guid IdStudent)
+        public async Task<ActionResult> ExamHistories(string CodeTesst, double ExamResultStorage, Guid IdStudent)
         {
             try
             {
