@@ -21,7 +21,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\..\Downloads\tonghop-main\Tong_Hop\DataBase\DataBase.csproj" />
+    <ProjectReference Include="..\DataBase\DataBase.csproj" />
   </ItemGroup>
 
 </Project>
