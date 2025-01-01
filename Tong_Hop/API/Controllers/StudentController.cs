@@ -38,8 +38,6 @@ namespace API.Controllers
             var coute = await _db.Students.CountAsync();
             return Ok(coute);
         }
-      
-
         [HttpGet("get-all-ID-class")]
         public async Task<ActionResult<List<GetallStudentDT0>>> Getidclass(Guid id)
         {
