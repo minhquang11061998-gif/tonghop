@@ -32,6 +32,26 @@ namespace API.Controllers
 
             return new string(code);
         }
+        [HttpGet("get-by-id-teach-subj")]
+        public async Task<IActionResult> Getbyidteach(Guid id)
+        {
+            var teacherSubject = await (from a in _db.Teacher_Subjects
+                                        join b in _db.Teachers on a.TeacherId equals b.Id
+                                        join c in _db.Users on b.UserId equals c.Id
+                                        where a.Id == id
+                                        select new subject_teacherDTO
+                                        {
+                                            Id = a.Id,
+                                            Name = c.FullName,
+                                            idteacher=a.TeacherId,
+                                            idsubject=a.SubjectId
+                                        }).FirstOrDefaultAsync();
+            if (teacherSubject == null)
+            {
+                return NotFound("Không tìm thấy giáo viên với ID này.");
+            }
+            return Ok(teacherSubject); 
+        }
 
         [HttpGet("get-all-subject")]
         public async Task<ActionResult<List<SubjectDTO>>> GetAll()

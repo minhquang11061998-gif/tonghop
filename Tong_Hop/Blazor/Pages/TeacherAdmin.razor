@@ -219,11 +219,11 @@
     private bool CanGoPrevious => CurrentPage > 1;
     private bool CanGoNext => CurrentPage < TotalPages;
     private UserDTOTEACHER usercreate = new UserDTOTEACHER();
-    private string SearchText { get; set; }
+    private string? SearchText { get; set; }
     private Guid SelectedOrder { get; set; } = Guid.Empty;
     private UserDTOTEACHER EditingOrder { get; set; } = new UserDTOTEACHER();
     private bool ShowModal { get; set; } = false;
-    private IBrowserFile avatarTeacher;
+    private IBrowserFile? avatarTeacher;
     private int CurrentPage { get; set; } = 1;
     private int ItemsPerPage { get; set; } = 5; // Số mục trên mỗi trang
     private int TotalPages => (int)Math.Ceiling((double)FilteredOrders.Count() / ItemsPerPage);
@@ -260,7 +260,7 @@
             await jsruntime.InvokeVoidAsync("downloadFile", $"Template_Sample_{DateTime.Now:yyyyMMddHHmmss}.xlsx", base64String);
         }
     }
-    private IBrowserFile selectedFile;
+    private IBrowserFile? selectedFile;
     private async Task HandleFileSelected(InputFileChangeEventArgs e)
     {
         var file = e.GetMultipleFiles(1); // Lấy tệp đầu tiên
