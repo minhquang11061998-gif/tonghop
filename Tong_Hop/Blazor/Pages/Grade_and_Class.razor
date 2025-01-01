@@ -368,7 +368,7 @@
           ? getallStudentDT0s
           : getallStudentDT0s.Where(seacher =>
               seacher.Name.Contains(seachestudent, StringComparison.OrdinalIgnoreCase)).ToList();
-    private IBrowserFile avatarFile;
+    private IBrowserFile? avatarFile;
     private bool ShowModal { get; set; } = false;
     private ModalType CurrentModalType { get; set; } = ModalType.Add;
     private ModalTypeClass CurrentModalTypeclass { get; set; } = ModalTypeClass.Add;
@@ -468,7 +468,7 @@
         }
     }
 
-    private IBrowserFile selectedFile;
+    private IBrowserFile? selectedFile;
     private async Task HandleFileSelected(InputFileChangeEventArgs e)
     {
         var file = e.GetMultipleFiles(1); // Lấy tệp đầu tiên
@@ -710,7 +710,7 @@
     }
     private List<Guid> ExpandedTasks = new List<Guid>();
     private List<Guid> Expandedstudent = new List<Guid>();
-    private string SearchText { get; set; }
+    private string? SearchText { get; set; }
     private async Task HideModal()
     {
         await jsruntime.InvokeVoidAsync("HideModal");
