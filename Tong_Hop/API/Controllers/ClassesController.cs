@@ -452,7 +452,12 @@ namespace API.Controllers
                                       join teacher_subject in _db.Teacher_Subjects on teacher.Id equals teacher_subject.TeacherId
                                       join subject in _db.Subjects on teacher_subject.SubjectId equals subject.Id
                                       where subject.Id == idsbj
-                                      select user).ToListAsync();
+                                      select new TeacherDTO{
+                                        Id = teacher_subject.Id,
+                                        Code = teacher.Code,
+                                        Anh= user.Avartar,
+                                        Name=user.FullName
+                }).ToListAsync();
                 return Ok(listSubj);
             }
             catch (Exception ex)
