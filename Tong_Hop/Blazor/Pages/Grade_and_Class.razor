@@ -336,7 +336,7 @@
                     <label for="teacherSelect" class="form-label">Chọn giáo viên</label>
                     <select id="teacherSelect" class="form-select" @bind="classcreateandupdate.TeacherId">
                         <option value="@classcreateandupdate.Id" hidden >@classcreateandupdate.NameTeacher</option>
-                        <div class="form-control">
+                        <div class="f">
                             @foreach (var teacher in teacherDTOs)
                             {
                             <option value="@teacher.Id">@teacher.Name</option>
