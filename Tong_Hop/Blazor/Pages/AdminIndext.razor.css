@@ -1,0 +1,246 @@
+﻿.modal-header {
+    background-color: #007bff;
+    color: white;
+    border-bottom: 1px solid #e5e5e5;
+}
+
+.modal-title {
+    font-weight: bold;
+    font-size: 1.25rem;
+}
+
+.modal-footer {
+    background-color: #f1f1f1;
+    border-top: 1px solid #e5e5e5;
+}
+
+.btn-close {
+    background-color: transparent;
+    border: none;
+    font-size: 1.25rem;
+}
+
+.form-label {
+    font-weight: bold;
+}
+
+.list-group-item {
+    font-size: 0.9rem;
+    padding: 5px 10px;
+}
+.chart-container {
+    display: flex;
+    justify-content: space-around; /* Chia đều không gian giữa các biểu đồ */
+    gap: 10px; /* Khoảng cách giữa các biểu đồ */
+    padding: 15px;
+}
+
+.chart-wrapper {
+    width: 300px; /* Điều chỉnh kích thước khung biểu đồ */
+    height: 300px;
+    padding: 10px;
+/*    border: 1px solid #ddd;*/ /* Đường viền mỏng xung quanh biểu đồ */
+    border-radius: 15px; /* Tăng độ bo tròn */
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1); /* Đổ bóng mờ lớn hơn */
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+    .chart-wrapper h3 {
+        text-align: center;
+        font-weight: bold;
+        margin-bottom: 10px;
+    }
+
+.chart-details {
+    padding: 20px;
+    background-color: #f9f9f9;
+    margin: 20px 0;
+}
+
+    .chart-details h3 {
+        font-size: 1.5rem;
+        margin-bottom: 15px;
+        color: #333;
+        font-weight: bold;
+    }
+
+.chart-group {
+    margin-bottom: 20px; /* Khoảng cách giữa các biểu đồ */
+}
+
+.chart-group-title {
+    font-weight: bold;
+    margin-bottom: 8px; /* Tạo khoảng cách giữa tiêu đề và các khối */
+    white-space: nowrap; /* Không cho tiêu đề xuống dòng */
+}
+
+.chart-group ul {
+    display: flex;
+    flex-wrap: wrap; /* Cho phép các khối xuống dòng nếu tràn màn hình */
+    gap: 10px; /* Khoảng cách giữa các khối */
+    margin: 0;
+    padding: 0;
+    list-style-type: none; /* Bỏ dấu đầu dòng */
+}
+
+.chart-group li {
+    padding: 8px 12px;
+    color: #333;
+    text-align: center;
+    min-width: 80px; /* Đảm bảo kích thước nhỏ nhất cho mỗi khối */
+    flex: 1; /* Chia đều các khối theo hàng */
+}
+
+
+.notification-title {
+    text-decoration: none;
+    color: #007bff;
+    font-weight: bold;
+    transition: color 0.3s;
+    flex: 1 1 45%; /* Cho phép phần này chiếm 45% chiều rộng của container */
+}
+
+    .notification-title:hover {
+        color: #0056b3;
+    }
+
+.notification-card {
+    transition: box-shadow 0.3s ease;
+    border: none;
+    background-color: #fff;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+    .notification-card:hover {
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+    }
+
+.modal-header, .modal-footer {
+    background-color: #f8f9fa;
+    border: none;
+}
+
+button.btn-close {
+    font-size: 1.2rem;
+}
+
+textarea.form-control, input.form-control {
+    border-radius: 5px;
+    box-shadow: none;
+}
+
+h2.text-center {
+    font-weight: bold;
+    font-size: 1.75rem;
+    color: #333;
+    margin-bottom: 30px;
+}
+
+.table-fixed {
+    max-height: 250px;
+    overflow-y: auto;
+}
+
+    .table-fixed thead {
+        background-color: #007bff;
+        color: white;
+    }
+.notification-list-container {
+    max-height: 250px; /* Chiều cao cố định để giới hạn số thông báo hiển thị */
+    overflow-y: auto; /* Kích hoạt thanh cuộn dọc khi nội dung vượt quá chiều cao */
+    padding: 10px; /* Khoảng cách nhỏ cho phần thông báo */
+    border: 1px solid #ddd; /* Đường viền để tách biệt phần thông báo */
+    background-color: #f9f9f9; /* Màu nền cho dễ đọc */
+}
+
+.notification-title {
+    text-decoration: none; /* Bỏ gạch chân mặc định */
+    color: #007bff; /* Màu mặc định của liên kết */
+    font-weight: normal;
+    cursor: pointer;
+}
+
+    .notification-title:hover {
+        color: #004080; /* Màu khi hover đậm hơn */
+        font-weight: bold; /* Tăng độ đậm khi hover */
+    }
+
+
+.notification-card {
+    transition: box-shadow 0.2s ease;
+    font-size: 0.9rem;
+}
+
+    .notification-card:hover {
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+.card-body {
+    padding: 10px; /* Giảm padding của card */
+}
+
+.mb-2 {
+    margin-bottom: 0.5rem !important; /* Giảm khoảng cách giữa các card */
+}
+
+h2.text-center {
+    margin-bottom: 15px; /* Giảm khoảng cách giữa tiêu đề và danh sách */
+    font-weight: bold;
+    font-size: 1.5rem; /* Giảm kích thước tiêu đề */
+}
+
+.shadow-sm {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.15);
+}
+
+
+    .nav-link:hover {
+        transform: scale(1.05);
+        box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.2);
+        color: white !important;
+    }
+
+.card {
+    border-radius: 10px;
+}
+
+    .card:hover {
+        opacity: 0.9;
+    }
+
+
+/* Thêm hiệu ứng fade cho modal */
+.modal.fade {
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+}
+
+.modal.show {
+    opacity: 1;
+}
+
+.modal-body {
+    background-color: white;
+    padding: 20px;
+    border-radius: 5px;
+}
+.scrollable-sidebar {
+    overflow-y: auto;
+    max-height: 100vh; /* Sidebar luôn vừa màn hình */
+}
+
+.nav-link {
+    font-size: 0.9rem; /* Thu nhỏ font nếu cần */
+}
+
+
+
+@media (min-width: 1200px) {
+    .nav-link {
+       max-height:220px;
+
+    }
+}

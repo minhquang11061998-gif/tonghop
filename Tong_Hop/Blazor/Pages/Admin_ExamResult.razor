@@ -1,0 +1,366 @@
+﻿@page "/exam-result"
+@using DataBase.DTOs
+@using global::Data.DTOs
+@inject HttpClient client
+@inject IHttpClientFactory clientFactory;
+@inject IJSRuntime jsRuntime
+@layout AdminLayout
+
+<div class="navbar">
+	<div class="navbar-container">
+		<h2 class="navbar-title">🎓 Kết quả bài thi của học sinh</h2>
+	</div>
+</div>
+
+<div class="container">
+	<!-- Khu vực tìm kiếm -->
+	<div class="search-section">
+		<div class="row">
+			<div class="col-md-4">
+				<h4 class="search-title">🔍 Tìm kiếm học sinh</h4>
+				<div class="search-container">
+					<input type="text" class="form-control search-input"
+						   @bind="searchKeyword"
+						   placeholder="Nhập tên học sinh"
+						   @oninput="OnSearchInputChange" />
+					<button class="btn btn-primary search-btn mt-2" @onclick="SearchResultStudent">
+						<i class="fas fa-search"></i> Tìm kiếm
+					</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	@if (showMessageBox)
+	{
+		<div class="message-box-overlay fade-in">
+			<div class="message-box">
+				<div class="message-header">
+					<h2>Thông báo</h2>
+					<button class="close-btn" @onclick="CloseMessageBox">&times;</button>
+				</div>
+				<div class="message-body">
+					<p>Vui lòng nhập lại dữ liệu cần tìm.</p>
+				</div>
+				<div class="message-footer">
+					<button class="btn btn-warning btn-bold" @onclick="CloseMessageBox">Đóng</button>
+				</div>
+			</div>
+		</div>
+	}
+
+	<!-- Danh sách lớp -->
+	<div class="class-list-section">
+		<h4 class="section-title">📚 Danh sách lớp học</h4>
+		<div class="row g-3">
+			@if (classList != null && classList.Count > 0)
+			{
+				@foreach (var classInfo in classList)
+				{
+					<div class="col-md-6 col-lg-4">
+						<div class="card class-card" @onclick="() => LoadExamResultsByClass(classInfo.Id)">
+							<div class="card-body">
+								<h5 class="card-title">@classInfo.Name</h5>
+								<p class="card-text">
+									<span><strong>👩‍🏫 Chủ nhiệm:</strong> @classInfo.TeacherName</span><br />
+									<span><strong>📌 Trạng thái:</strong> @classInfo.Status</span><br />
+									<span><strong>👥 Sĩ số:</strong> @classInfo.MaxStudent</span>
+								</p>
+							</div>
+						</div>
+					</div>
+				}
+			}
+			else
+			{
+				<div class="col-12 text-center">
+					<p class="no-data-text">Không có lớp nào để hiển thị.</p>
+				</div>
+			}
+		</div>
+	</div>
+</div>
+
+<!-- Modal hiển thị danh sách kết quả -->
+@if (showResultModal)
+{
+	<div class="modal fade show" tabindex="-1" role="dialog" style="display: block; background-color: rgba(0, 0, 0, 0.5);">
+		<div class="modal-dialog modal-lg" role="document">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title">Danh sách kết quả lớp: @SelectedClassName</h5>
+					<button type="button" class="close" @onclick="CloseResultModal">
+						<span aria-hidden="true">&times;</span>
+					</button>
+				</div>
+				<div class="modal-body">
+					@if (examResults != null && examResults.Count > 0)
+					{
+						<div class="table-container">
+							<table class="table table-hover">
+								<thead>
+									<tr>
+										<th>STT</th>
+										<th>Mã học sinh</th>
+										<th>Tên học sinh</th>
+										<th>Lớp</th>
+										<th>Môn</th>
+										<th>Tên bài thi</th>
+										<th>Mã bài thi</th>
+										<th>Điểm</th>
+										<th>Thời gian làm bài</th>
+										<th>Hành động</th>
+									</tr>
+								</thead>
+								<tbody>
+									@foreach (var result in examResults)
+									{
+										<tr>
+											<td>@(examResults.IndexOf(result) + 1)</td>
+											<td>@result.StudentCode</td>
+											<td>@result.StudentName</td>
+											<td>@result.ClassName</td>
+											<td>@result.SubjectName</td>
+											<td>@result.TestName</td>
+											<td>@result.TestCode</td>
+											<td>@result.Score</td>
+											<td>@result.CreationTime.ToString("MM/dd/yyyy HH:mm")</td>
+											<td>
+												<button class="btn btn-info btn-sm" @onclick="() => OpenExamReviewModalAsync(result.TestCode)">
+													<i class="fas fa-eye"></i> Xem
+												</button>
+											</td>
+										</tr>
+									}
+								</tbody>
+							</table>
+						</div>
+					}
+					else
+					{
+						<p class="no-data">Không có dữ liệu kết quả.</p>
+					}
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary" @onclick="CloseResultModal">Đóng</button>
+				</div>
+			</div>
+		</div>
+	</div>
+}
+
+
+@if (showExamReviewModal)
+{
+	<div class="modal fade show" tabindex="-1" role="dialog" style="display: block; background-color: rgba(0, 0, 0, 0.5);">
+		<div class="modal-dialog modal-lg" role="document">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title">Chi Tiết Bài Thi</h5>
+					<button type="button" class="close" @onclick="CloseExamReviewModal">
+						<span aria-hidden="true">&times;</span>
+					</button>
+				</div>
+				<div class="modal-body">
+					@if (IsLoading)
+					{
+						<p>Đang tải dữ liệu...</p>
+					}
+					else if (ExamDetail != null)
+					{
+						<div class="exam-detail-container">
+							<!-- Phần hiển thị thông tin bài thi -->
+							<div class="exam-summary">
+								<h3>Bài Thi: <span class="highlight">@TestCode</span></h3>
+								<div class="summary-grid">
+									<div class="summary-item">
+										<span class="summary-label">Tổng Số Câu Hỏi:</span>
+										<span class="summary-value">@ExamDetail.NumberOfQuestions</span>
+									</div>
+									<div class="summary-item">
+										<span class="summary-label">Số Câu Trả Lời Đúng:</span>
+										<span class="summary-value">@ExamDetail.CorrectAnswers</span>
+									</div>
+									<div class="summary-item">
+										<span class="summary-label">Tổng Điểm:</span>
+										<span class="summary-value">@ExamDetail.TotalScore</span>
+									</div>
+								</div>
+							</div>
+
+							@foreach (var question in ExamDetail.Result)
+							{
+								<div class="question-card">
+									<h5>@question.QuestionName</h5>
+									<p><strong>Đáp án đúng:</strong> @question.RightAnswer</p>
+
+									<ul>
+										@foreach (var answer in question.Answers)
+										{
+											<li style="color: @(answer.AnswerId == question.SelectedAnswer?.AnswerId ? "blue" : "black")">
+												@answer.Answer
+												@if (answer.AnswerId == question.SelectedAnswer?.AnswerId)
+												{
+													<span>(Đáp án học sinh chọn)</span>
+												}
+											</li>
+										}
+									</ul>
+
+									@if (question.IsCorrect)
+									{
+										<p class="correct">Kết quả: Đúng</p>
+									}
+									else
+									{
+										<p class="incorrect">Kết quả: Sai</p>
+									}
+								</div>
+							}
+						</div>
+					}
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary" @onclick="CloseExamReviewModal">Đóng</button>
+				</div>
+			</div>
+		</div>
+	</div>
+}
+
+
+@code {
+	private List<ClassesDTO> classList = new List<ClassesDTO>();
+	private List<ExamHistoryDTO> examResults = new List<ExamHistoryDTO>();
+	private ScoreTrueFalseDTO ExamDetail { get; set; } // DTO lưu trữ chi tiết bài thi
+	private bool IsLoading { get; set; } = true;       // Trạng thái tải dữ liệu
+	private bool showExamReviewModal = false;          // Hiển thị modal chi tiết bài thi
+	private bool showResultModal = false;          // Hiển thị modal danh sách kết quả
+	private string TestCode;                           // Mã bài thi
+	private string studentName;
+	private string studentCode;
+	private string SelectedClassName; // Tên lớp được chọn
+	private Guid SelectedClassId = Guid.Empty; // ID lớp được chọn
+	private string searchKeyword;
+	private bool showMessageBox = false;
+
+	protected override async Task OnInitializedAsync()
+	{
+		await LoadClass();
+	}
+
+	private async Task LoadClass()
+	{
+		var httpClient = clientFactory.CreateClient("DefaultClient");
+		var classUrl = "https://localhost:7046/api/Classes/get-all-class";
+		classList = await httpClient.GetFromJsonAsync<List<ClassesDTO>>(classUrl);
+	}
+
+	private async Task LoadExamResultsByClass(Guid classId)
+	{
+		try
+		{
+			SelectedClassId = classId;
+			var selectedClass = classList.FirstOrDefault(c => c.Id == classId);
+			SelectedClassName = selectedClass?.Name ?? "N/A";
+
+			var response = await client.GetFromJsonAsync<List<ExamHistoryDTO>>($"https://localhost:7046/api/ExamResult/get-result-by-class?classId={classId}");
+			if (response != null)
+			{
+				examResults = response;
+			}
+			else
+			{
+				examResults.Clear();
+			}
+
+			// Hiển thị modal
+			showResultModal = true;
+		}
+		catch (Exception ex)
+		{
+			await jsRuntime.InvokeVoidAsync("alert", $"Lỗi khi tải kết quả học sinh: {ex.Message}");
+		}
+	}
+	private void CloseResultModal()
+	{
+		showResultModal = false;
+		examResults.Clear();
+	}
+
+	private async Task SearchResultStudent()
+	{
+		try
+		{
+			if (!string.IsNullOrEmpty(searchKeyword))
+			{
+				var response = await client.GetFromJsonAsync<List<ExamHistoryDTO>>($"https://localhost:7046/api/ExamResult/get-search-result2?keyword={searchKeyword}");
+				if (response != null && response.Count > 0)
+				{
+					examResults = response;
+					showResultModal = true; // Hiển thị modal khi tìm kiếm
+					return;
+				}
+			}
+
+			examResults.Clear();
+			showMessageBox = true;
+		}
+		catch (Exception ex)
+		{
+			await jsRuntime.InvokeVoidAsync("alert", $"Lỗi khi tìm kiếm học sinh: {ex.Message}");
+		}
+	}
+
+	private async Task OpenExamReviewModalAsync(string testCode)
+	{
+		showExamReviewModal = true;
+		await LoadExamDetailsAsync(testCode);
+		StateHasChanged();
+	}
+
+	private async Task LoadExamDetailsAsync(string testCode)
+	{
+		try
+		{
+			IsLoading = true;
+			var response = await client.GetFromJsonAsync<ScoreTrueFalseDTO>($"https://localhost:7046/api/ExamResult/Get_Exam_Detail?testCode={testCode}");
+			if (response != null)
+			{
+				ExamDetail = response;
+				TestCode = testCode;
+			}
+		}
+		catch (Exception ex)
+		{
+			await jsRuntime.InvokeVoidAsync("alert", $"Lỗi khi tải chi tiết bài thi: {ex.Message}");
+		}
+		finally
+		{
+			IsLoading = false;
+		}
+	}
+
+	private void CloseExamReviewModal()
+	{
+		showExamReviewModal = false;
+		ExamDetail = null;
+	}
+
+	private async Task CloseMessageBox()
+	{
+		showMessageBox = false;
+		await LoadClass();
+	}
+
+	private async Task OnSearchInputChange(ChangeEventArgs e)
+	{
+		searchKeyword = e.Value?.ToString();
+		if (string.IsNullOrEmpty(searchKeyword))
+		{
+			// Reset danh sách nếu ô tìm kiếm trống
+			examResults.Clear();
+			showResultModal = false;
+		}
+	}
+}

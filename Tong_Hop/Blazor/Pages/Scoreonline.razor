@@ -1,0 +1,125 @@
+﻿@page "/score_online"
+@using System.IdentityModel.Tokens.Jwt
+@using DataBase.DTOs
+@using global::Data.DTOs
+@layout MainLayout
+@inject HttpClient Client
+@inject IJSRuntime jsRuntime
+
+<PageTitle>Score</PageTitle>
+
+@page "/studentscores"
+
+<div class="container mt-5">
+    <div class="card shadow-sm">
+        <div class="card-header bg-info text-white text-center">
+            <h3 class="m-0">Bảng điểm của sinh viên</h3>
+        </div>
+        <div class="card-body">
+            <!-- Hiển thị giá trị CodeStudent -->
+            <p class="text-center font-weight-bold">Code sinh viên: <strong>@id</strong></p>
+
+            @if (scoreslist.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover text-center">
+                        <thead class="bg-primary text-white font-weight-bold">
+                            <tr>
+                                <th rowspan="2" class="align-middle">Môn</th>
+                                @foreach (var ptq in scoreslist.GroupBy(x => x.PointTypeName).Select(g => g.First()))
+                                {
+                                    <th colspan="@ptq.Quantity" class="align-middle">@ptq.PointTypeName</th>
+                                }
+                            </tr>
+                            <tr>
+                                @foreach (var ptq1 in scoreslist.GroupBy(x => x.PointTypeName).Select(g => g.First()))
+                                {
+                                    for (int i = 0; i < ptq1.Quantity; i++)
+                                    {
+                                        <th>@("Point " + (i + 1))</th>
+                                    }
+                                }
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var subjectGroup in scoreslist.GroupBy(x => x.SubjectName))
+                            {
+                                <tr>
+                                    <td class="align-middle font-weight-bold">@subjectGroup.Key</td> <!-- Hiển thị Môn một lần -->
+                                    @foreach (var ptq in scoreslist.GroupBy(x => x.PointTypeName).Select(g => g.First()))
+                                    {
+                                        <!-- Lấy danh sách điểm của từng loại điểm -->
+                                        var scores = subjectGroup
+                                        .Where(x => x.PointTypeName == ptq.PointTypeName)
+                                        .SelectMany(x => x.Scores.Split(','))
+                                        .ToList();
+
+                                        for (int i = 0; i < ptq.Quantity; i++)
+                                        {
+                                            <td>@(scores.Count > i ? scores[i].Trim() : "0")</td> <!-- Điểm hoặc 0 nếu không có -->
+                                        }
+                                    }
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <p class="text-center text-muted">Không có dữ liệu để hiển thị.</p>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Style to further enhance the visual -->
+<style>
+    .card {
+        border-radius: 10px;
+    }
+
+    .card-header {
+        border-radius: 10px 10px 0 0;
+    }
+
+    table thead th {
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    table th, table td {
+        vertical-align: middle;
+    }
+
+    .table-bordered th, .table-bordered td {
+        border: 1px solid #dee2e6;
+    }
+</style>
+
+
+
+
+@code {
+    private List<PointTypeQuantityDTO> scoreslist = new List<PointTypeQuantityDTO>();
+    private TokenResponse tokenResponse;
+    private string id;
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        
+        if (firstRender)
+        {
+            var token = await jsRuntime.InvokeAsync<string>("localStorage.getItem", "YourSuperSecretKeyHere");
+            if (!string.IsNullOrEmpty(token))
+            {
+                tokenResponse = new TokenResponse { Token = token };
+                var handler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
+                var jsonToken = handler.ReadToken(token) as System.IdentityModel.Tokens.Jwt.JwtSecurityToken;
+                id = jsonToken?.Claims.FirstOrDefault(c => c.Type == "CodeStudent")?.Value;
+                scoreslist = await Client.GetFromJsonAsync<List<PointTypeQuantityDTO>>($"api/Score/GetScores_code?code={id}");
+                StateHasChanged();
+            }
+        }
+
+    }
+}

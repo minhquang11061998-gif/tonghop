@@ -1,0 +1,456 @@
+﻿@page "/Exam/{CodeTest:int}"
+    @using DataBase.DTOs
+    @inject HttpClient client
+    @inject IJSRuntime jsruntime
+    @layout LayoutNone
+    @inject NavigationManager navi
+
+
+@if (hist == null)
+{
+	<div class="text-center">
+		<p>Đang tải...</p>
+	</div>
+}
+else if (!string.IsNullOrEmpty(errorMessage))
+{
+	<div class="alert alert-danger text-center">
+		<p>@errorMessage</p>
+	</div>
+}
+else if (isShowResultView)
+{
+	<div class="card mb-3">
+		<div class="card-body">
+			<h4>Kết quả bài thi</h4>
+			<p><strong>Tổng điểm:</strong> @STFDto.TotalScore</p>
+			<p><strong>Số câu đúng:</strong> @STFDto.CorrectAnswers</p>
+			<p><strong>Số câu sai:</strong> @(STFDto.NumberOfQuestions - STFDto.CorrectAnswers)</p>
+			<button class="btn btn-primary" @onclick="RestartExam">Thoát</button>
+		</div>
+	</div>
+}
+else
+{
+	<div class="card  mb-3">
+		<div class="card-body">
+			<p>@hist.TestCodeId</p>
+			@foreach (var item in infomationDTOs)
+			{
+				<div class="row align-items-center mb-4">
+					<div class="col-3">
+						<img style="height: 100px; width: auto;" src="img/Rectangle89.png" alt="Alternate Text" class="img-thumbnail" />
+					</div>
+					<div class="col-4">
+
+						<p class="mb-1">
+							<strong>Môn Thi:</strong> @item.Namesubject
+						</p>
+						<p class="mb-1">
+							<strong>Mã môn:</strong> @item.codesubject
+						</p>
+						<p class="mb-0">
+							<strong>Thời gian:</strong> @item.timeexam phút
+						</p>
+					</div>
+					<div class="col-4">
+
+						<p class="mb-1">
+							<strong>Họ và tên:</strong> @item.namestudent
+						</p>
+						<p class="mb-1">
+							<strong>Mã học sinh:</strong> @item.codestudent
+						</p>
+						<p class="mb-0">
+							<strong>Email:</strong> @item.email
+						</p>
+					</div>
+				</div>
+				<h4 class="card-title"><span class="text-primary">@item.nametesst</span></h4>
+				<span class="text-danger">@remainingTime.ToString(@"hh\:mm\:ss")</span>
+			}
+		</div>
+	</div>
+
+	<div class="card shadow-sm">
+		@if (hist.Questions != null && hist.Questions.Any())
+		{
+			var currentQuestion = hist.Questions[currentQuestionIndex];
+			<div class="card-header">
+				<strong class="d-block mb-2"> Câu hỏi:@currentQuestion.QuestionName</strong>
+			</div>
+			<div class="card-body">
+
+				<div class="mb-4">
+
+					@if (currentQuestion.Answers != null && currentQuestion.Answers.Any())
+					{
+						<ul class="list-group">
+							@foreach (var answer in currentQuestion.Answers)
+							{
+								<li class="list-group-item">
+									<div class="form-check">
+										@if (currentQuestion.type == 2)
+										{
+											<input type="checkbox"
+												   class="form-check-input"
+												   id="answer_@answer.AnswerId"
+												   name="answer_@currentQuestion.QuestionId"
+												   value="@answer.AnswerId"
+												   @onchange="() => UpdateAndSaveAnswer(currentQuestion.QuestionId, answer.AnswerId)"
+												   checked="@(selectedAnswerIds.ContainsKey(currentQuestion.QuestionId) && selectedAnswerIds[currentQuestion.QuestionId] == answer.AnswerId)" />
+										}
+										else
+										{
+											<input type="radio"
+												   class="form-check-input"
+												   id="answer_@answer.AnswerId"
+												   name="answer_@currentQuestion.QuestionId"
+												   value="@answer.AnswerId"
+												   @onchange="() => UpdateAndSaveAnswer(currentQuestion.QuestionId, answer.AnswerId)"
+												   checked="@(selectedAnswerIds.ContainsKey(currentQuestion.QuestionId) && selectedAnswerIds[currentQuestion.QuestionId] == answer.AnswerId)" />
+										}
+										<label class="form-check-label" for="answer_@answer.AnswerId">
+											@answer.AnswerText
+										</label>
+									</div>
+								</li>
+							}
+						</ul>
+					}
+				</div>
+				<div class="d-flex justify-content-center">
+					<button class="btn btn-secondary" @onclick="PreviousQuestion"><i class="bi bi-chevron-double-left"></i></button>
+					<button class="btn btn-primary" @onclick="NextQuestion"><i class="bi bi-chevron-double-right"></i></button>
+				</div>
+
+
+			</div>
+
+		}
+		else
+		{
+			<p class="text-danger">Không có câu hỏi nào được tìm thấy.</p>
+		}
+	</div>
+}
+
+@code {
+	[Parameter]
+	public int CodeTest { get; set; }
+	private HistDTO hist;
+	private string isdtudent;
+	private bool isLoading = true;
+	private string errorMessage = null;
+	private int currentQuestionIndex = 0;
+	private Exam_Room_Histories_DTO examhistories = new Exam_Room_Histories_DTO();
+	private List<infomationDTO> infomationDTOs = new List<infomationDTO>();
+	// Lưu trữ ID của các câu trả lời đã chọn cho mỗi câu hỏi
+	private Dictionary<Guid, Guid?> selectedAnswerIds = new Dictionary<Guid, Guid?>();
+	private TimeSpan remainingTime;  // Thời gian còn lại
+	private bool isTimeUp = false;   // Trạng thái hết giờ
+
+	protected override async Task OnAfterRenderAsync(bool firstRender)
+	{
+		if (firstRender)
+		{
+			isLoading = true;
+			try
+			{
+				await TokenId();
+			}
+			finally
+			{
+				isLoading = false;
+			}
+		}
+
+	}
+	private async Task TokenId()
+	{
+		var token = await jsruntime.InvokeAsync<string>("localStorage.getItem", "YourSuperSecretKeyHere");
+		if (string.IsNullOrEmpty(token))
+		{
+			throw new Exception("Token không tồn tại hoặc không hợp lệ.");
+		}
+		var handler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
+		var jsonToken = handler.ReadToken(token) as System.IdentityModel.Tokens.Jwt.JwtSecurityToken;
+		isdtudent = jsonToken?.Claims.FirstOrDefault(c => c.Type == "Idstudent")?.Value;
+
+	}
+
+	private Guid? Id_dap_an_duoc_tron;
+	private Guid? Id_cau_hoi_duoc_tron;
+
+	private void UpdateSelectedAnswer(Guid questionId, Guid answerId)
+	{
+		// Cập nhật giá trị đã chọn cho câu hỏi
+		selectedAnswerIds[questionId] = answerId;
+		Id_dap_an_duoc_tron = answerId;
+		Id_cau_hoi_duoc_tron = questionId;
+	}
+
+	protected override async Task OnInitializedAsync()
+	{
+		await LoadTestResultAsync();
+
+		await LoadExamDuration(); // Lấy thời gian từ cơ sở dữ liệu
+		if (remainingTime.TotalMinutes > 0)
+		{
+			await StartCountdown(); // Bắt đầu đếm ngược
+		}
+	}
+
+	private async Task LoadTestResultAsync()
+	{
+		try
+		{
+			isLoading = true;
+			hist = await client.GetFromJsonAsync<HistDTO>($"api/ViewExam/test-testcode-question-await?CodeTest={CodeTest}");
+			infomationDTOs = await client.GetFromJsonAsync<List<infomationDTO>>($"https://localhost:7046/api/ViewExam/information_exam?code={CodeTest}&id={isdtudent}");
+		}
+		catch (Exception ex)
+		{
+			errorMessage = $"Lỗi khi tải dữ liệu: {ex.Message}";
+			hist = null;
+		}
+		finally
+		{
+			isLoading = false;
+		}
+	}
+	private async Task UpdateAndSaveAnswer(Guid questionId, Guid answerId)
+	{
+		try
+		{
+			// Cập nhật đáp án vào bộ nhớ tạm
+			selectedAnswerIds[questionId] = answerId;
+			Id_dap_an_duoc_tron = answerId; // Lưu ID đáp án hiện tại
+			Id_cau_hoi_duoc_tron = questionId;
+
+			// Gọi API kiểm tra lịch sử đáp án
+			var answerHistoryCount = await CheckAnswerHistory(CodeTest, questionId, isdtudent);
+
+			if (answerHistoryCount >= 1)
+			{
+				// Nếu đã có 2 đáp án trong lịch sử, xóa đáp án cũ
+				await DeleteHisst(CodeTest, questionId);
+			}
+
+			// Lưu đáp án mới vào API
+			await CreateHist(CodeTest, answerId);
+		}
+		catch (Exception ex)
+		{
+			// Xử lý lỗi khi lưu
+			await jsruntime.InvokeVoidAsync("alert", $"Lỗi khi lưu đáp án: {ex.Message}");
+		}
+	}
+	private async Task DeleteHisst(int codetest, Guid idquest)
+	{
+		var res = await client.DeleteAsync($"api/ViewExam/Delete_hist?Cotesst={codetest}&IDQuestion={idquest}&IDStudent={isdtudent}");
+
+		if (!res.IsSuccessStatusCode)
+		{
+			var error = await res.Content.ReadAsStringAsync();
+			await jsruntime.InvokeVoidAsync("alert", $"Lỗi xóa dữ liệu: {error}");
+		}
+	}
+	private async Task CreateHist(int codetest, Guid idAnswer)
+	{
+		try
+		{
+			// Gán giá trị cho DTO
+			examhistories.TestQuestionAnswerId = idAnswer;
+			examhistories.Id = Guid.NewGuid(); // Tạo ID duy nhất cho lịch sử
+
+			// Gửi yêu cầu POST
+			var response = await client.PostAsJsonAsync(
+				$"api/ViewExam/create-hist?CodeTesst={codetest}&GuidId={isdtudent}&answerId={idAnswer}",
+				examhistories
+			);
+
+			if (!response.IsSuccessStatusCode)
+			{
+				var error = await response.Content.ReadAsStringAsync();
+				throw new Exception($"Lỗi lưu dữ liệu: {error}");
+			}
+		}
+		catch (Exception ex)
+		{
+			throw new Exception($"Lỗi hệ thống: {ex.Message}");
+		}
+	}
+
+
+	private async Task NextQuestion()
+	{
+		if (CanGoNext)
+		{
+			currentQuestionIndex++;
+			var questionId = hist.Questions[currentQuestionIndex].QuestionId;
+			if (selectedAnswerIds.ContainsKey(questionId))
+			{
+				Id_dap_an_duoc_tron = selectedAnswerIds[questionId];
+			}
+			else
+			{
+				Id_dap_an_duoc_tron = null;
+			}
+		}
+		else
+		{
+			await Score_True_False();
+			await UpdateScore();
+			//await jsruntime.InvokeVoidAsync("alert", "Vui lòng chọn đáp án trước khi tiếp tục!dddddddddddddddddddđ");
+		}
+	}
+
+	private async Task UpdateScore()
+	{
+		try
+		{
+			var score = await client.GetAsync($"api/ViewExam/Exam_results_storage?CodeTest={CodeTest}&ExamResultStorage={STFDto.TotalScore}&IdStudent={isdtudent}");
+			var examhistory = await client.GetAsync($"api/ViewExam/Exam_Histories?ExamResultStorage={STFDto.TotalScore}&examRoomStudentId={isdtudent}");
+		}
+		catch (Exception)
+		{
+			await jsruntime.InvokeVoidAsync("alert", "Lỗi khi kiểm tra lịch sử trả lời");
+		}
+	}
+
+	// Hàm kiểm tra xem câu hỏi đã có bao nhiêu đáp án được lưu cho sinh viên
+	private async Task<int> CheckAnswerHistory(int codetest, Guid questionId, string studentId)
+	{
+		var response = await client.GetAsync($"api/ViewExam/check-answer-history?codetest={codetest}&questionId={questionId}&studentId={studentId}");
+
+		if (response.IsSuccessStatusCode)
+		{
+			// Sử dụng ReadFromJsonAsync để đọc dữ liệu JSON và chuyển thành kiểu int
+			var answerHistoryCount = await response.Content.ReadFromJsonAsync<int>();
+			return answerHistoryCount;
+		}
+		else
+		{
+			await jsruntime.InvokeVoidAsync("alert", "Lỗi khi kiểm tra lịch sử trả lời");
+			return 0;
+		}
+	}
+
+	private void PreviousQuestion()
+	{
+		if (CanGoBack)
+		{
+			currentQuestionIndex--;
+
+			// Nếu câu hỏi trước đó đã được chọn đáp án, khôi phục lại giá trị
+			var questionId = hist.Questions[currentQuestionIndex].QuestionId;
+			if (selectedAnswerIds.ContainsKey(questionId))
+			{
+				Id_dap_an_duoc_tron = selectedAnswerIds[questionId];
+			}
+			else
+			{
+				Id_dap_an_duoc_tron = null;
+			}
+		}
+	}
+	private bool CanGoNext => currentQuestionIndex < (hist?.Questions?.Count ?? 0) - 1;
+	private bool CanGoBack => currentQuestionIndex > 0;
+	private async Task LoadExamDuration()
+	{
+		try
+		{
+			isLoading = true;
+
+			// Gọi API lấy thời gian làm bài
+			var response = await client.GetAsync($"https://localhost:7046/api/ViewExam/GetExamDuration?codeTest={CodeTest}");
+			if (response.IsSuccessStatusCode)
+			{
+				var durationMinutes = await response.Content.ReadFromJsonAsync<int>();
+				remainingTime = TimeSpan.FromMinutes(durationMinutes); // Đặt thời gian làm bài
+			}
+			else
+			{
+				await jsruntime.InvokeVoidAsync("alert", "Không tìm thấy thời gian bài thi!");
+				remainingTime = TimeSpan.Zero;
+			}
+		}
+		catch (Exception ex)
+		{
+			await jsruntime.InvokeVoidAsync("alert", $"Lỗi khi tải thời gian: {ex.Message}");
+		}
+		finally
+		{
+			isLoading = false;
+		}
+	}
+
+	private async Task StartCountdown()
+	{
+		var startTime = DateTime.UtcNow;
+		var endTime = startTime + remainingTime;
+
+		while (remainingTime.TotalSeconds > 0)
+		{
+			remainingTime = endTime - DateTime.UtcNow;
+
+			if (remainingTime.TotalSeconds <= 0)
+			{
+				remainingTime = TimeSpan.Zero;
+				break;
+			}
+
+			StateHasChanged(); // Cập nhật giao diện
+			await Task.Delay(1000); // Đếm ngược mỗi giây
+		}
+
+		isTimeUp = true;
+		await OnTimeUp(); // Xử lý khi hết giờ
+	}
+
+	private async Task OnTimeUp()
+	{
+		// Xử lý khi hết giờ (ví dụ: tự động nộp bài)
+		await jsruntime.InvokeVoidAsync("alert", "Thời gian đã hết. Bài thi sẽ được nộp tự động!");
+		await SubmitExam();
+	}
+
+	private async Task SubmitExam()
+	{
+		// Gửi yêu cầu API nộp bài
+		await Task.Delay(500); // Giả lập độ trễ
+		await jsruntime.InvokeVoidAsync("alert", "Bài thi đã được nộp thành công!");
+	}
+
+	private ScoreTrueFalseDTO STFDto = new ScoreTrueFalseDTO();
+	private bool isShowResultView = false; // Trạng thái hiển thị giao diện kết quả
+	private async Task Score_True_False()
+	{
+		try
+		{
+			var End_Exam = await client.GetAsync($"api/ViewExam/List_QuestionAndAnswers?testCodeId={hist.TestCodeId}");
+			if (End_Exam.IsSuccessStatusCode)
+			{
+				STFDto = await End_Exam.Content.ReadFromJsonAsync<ScoreTrueFalseDTO>();
+				isShowResultView = true;
+			}
+			else
+			{
+				await jsruntime.InvokeVoidAsync("alert", "Không thể tải kết quả bài thi. Vui lòng thử lại sau!");
+			}
+		}
+		catch (Exception ex)
+		{
+			await jsruntime.InvokeVoidAsync("alert", $"Đã xảy ra lỗi: {ex.Message}");
+		}
+
+	}
+
+	private void RestartExam()
+	{
+		navi.NavigateTo("/");
+	}
+
+
+}

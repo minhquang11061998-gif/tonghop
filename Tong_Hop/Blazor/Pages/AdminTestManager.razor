@@ -1,0 +1,783 @@
+﻿@page "/manage-test"
+@using DataBase.DTOs
+@using global::Data.DTOs
+@layout AdminLayout
+@inject HttpClient client
+@inject IHttpClientFactory clientFactory;
+@inject NavigationManager NavigationManager
+@inject IJSRuntime Jsruntime
+<div>
+    <div class="row">
+        <div class="border d-flex">
+            <div class="col-2">
+                <div class="border shadow-sm" style="background-color:cornflowerblue">
+                    <h5 class="text-white d-flex justify-content-center align-items-center">Thư mục</h5>
+                </div>
+                <div class="border min-vh-100">
+                    @if (testList != null & testList.Any())
+                    {
+                        @foreach (var item in testList)
+                        {
+                            <div>
+                                <span class="target" value="@item.Id" type="button" @onclick="() => ToggleTest(item.Id)">
+                                    <i class="bi bi-folder-fill text-warning p-1"></i> @item.Name
+                                </span>
+                                <div id="contextMenu" class="context-menu">
+                                    <div class="context-menu-item" @onclick="ShowCreateTestModal">Thêm mới</div>
+                                    <div class="context-menu-item" @onclick="()=>Deletetest(item.Id)">Xóa</div>
+                                    <div class="context-menu-item" onclick="alert('Mục 3 được chọn!')">Đổi tên</div>
+                                </div>
+                                @if (selectedTestId == item.Id)
+                                {
+                                    <ul>
+                                        <li class="nav-link">
+                                            <span class="target" type="button" @onclick="() => LoadQuestions(item.Id, 1)" @oncontextmenu="(e)=>rightclick(item.Id,1)">
+                                                <i class="bi bi-folder-fill text-warning"></i> Câu hỏi dễ
+                                            </span>
+                                            <div id="contextMenu" class="context-menu">
+                                                <div class="context-menu-item" @onclick="OpenModal">Thêm câu hỏi</div>
+                                                <div class="context-menu-item" >Xóa</div>
+                                                <div class="context-menu-item" onclick="alert('Mục 3 được chọn!')">Đổi tên</div>
+                                            </div>
+                                        </li>
+                                        <li class="nav-link">
+                                            <span class="target" type="button" @onclick="() => LoadQuestions(item.Id, 2)" @oncontextmenu="(e)=>rightclick(item.Id,2)">
+                                                <i class="bi bi-folder-fill text-warning"></i> Câu hỏi trung bình
+                                            </span>
+                                            <div id="contextMenu" class="context-menu">
+                                                <div class="context-menu-item" @onclick="OpenModal">Thêm câu hỏi</div>
+                                                <div class="context-menu-item">Xóa</div>
+                                                <div class="context-menu-item" onclick="alert('Mục 3 được chọn!')">Đổi tên</div>
+                                            </div>
+                                        </li>
+                                        <li class="nav-link">
+                                            <span class="target" type="button" @onclick="() => LoadQuestions(item.Id, 3)" @oncontextmenu="(e)=>rightclick(item.Id,3)">
+                                                <i class="bi bi-folder-fill text-warning"></i> Câu hỏi Khó
+                                            </span>
+                                            <div id="contextMenu" class="context-menu">
+                                                <div class="context-menu-item" @onclick="OpenModal">Thêm câu hỏi</div>
+                                                <div class="context-menu-item">Xóa</div>
+                                                <div class="context-menu-item" onclick="alert('Mục 3 được chọn!')">Đổi tên</div>
+                                            </div>
+                                        </li>
+                                        <li class="nav-link">
+                                            <span class="target" type="button" @onclick="() => LoadQuestions(item.Id, 4)" @oncontextmenu="(e)=>rightclick(item.Id,4)">
+                                                <i class="bi bi-folder-fill text-warning"></i> Câu hỏi nâng cao
+                                            </span>
+                                            <div id="contextMenu" class="context-menu">
+                                                <div class="context-menu-item" @onclick="OpenModal">Thêm câu hỏi</div>
+                                                <div class="context-menu-item">Xóa</div>
+                                                <div class="context-menu-item" onclick="alert('Mục 3 được chọn!')">Đổi tên</div>
+                                            </div>
+                                        </li>
+
+                                    </ul>
+                                }
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <span class="target" type="button" @onclick="ShowCreateTestModal">
+                            <i class="bi bi-folder-fill text-warning p-1"></i>
+                        </span>
+                    }
+                </div>
+            </div>
+            <div class="col-10">
+                <div class="border shadow-sm d-flex justify-content-between" style="background-color:cornflowerblue">
+                    <div class="p-1 align-items-center">
+                        <h5 class="text-white" style="font-size:15px">Thông tin chi tiết</h5>
+                    </div>
+                    <div class="p-1" style="font-size:15px">
+                        <span type="button" class="text-white" @onclick="ShowQuestionDetailModal"><i class="bi bi-file-earmark-excel fw-bold text-white"></i>Nhập file Excel</span>
+                        <span type="button" class="text-white" @onclick="DownloadExcelTemplate"><i class="bi bi-arrow-bar-down fw-bold text-white"></i>Tải file mẫu Excel</span>
+                    </div>
+
+                </div>
+                <div class="border min-vh-100">
+                    <table class="table">
+                        <thead class="table-primary">
+                            <tr>
+                                <th scope="col" style="width: 50px;">STT</th>
+                                <th scope="col" style="width: 300px;">Nội dung</th>
+                                <th scope="col" style="width: 100px;">Thao tác</th>
+                            </tr>
+                        </thead>
+                        @if (selectedQuestions != null && selectedQuestions.Any())
+                        {
+                            <tbody>
+                                @foreach (var question in selectedQuestions)
+                                {
+                                    <tr>
+                                        <td>@(selectedQuestions.IndexOf(question) + 1)</td>
+                                        <td>@question.QuestionName</td>
+                                        <td>
+                                            <span type="button" class="text-warning" @onclick="()=>ShowQuestionDetailModalss(question.TestId)"><i class="bi bi-pencil"></i></span>
+                                            <span type="button" class="text-danger" @onclick="()=>deletequestion(question.TestId,question.Level)"><i class="bi bi-trash3"></i></span>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        }
+
+                        else
+                        {
+                            <tbody>
+                                <tr>
+                                    <td colspan="3" class="text-center">Chưa có câu hỏi nào được hiển thị.</td>
+                                </tr>
+                            </tbody>
+                        }
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="container-fluid row p-3">
+    <div class="modal fade @(isCreateTestModalVisible  ? "show" : "")" tabindex="-1" style="display:@(isCreateTestModalVisible  ? "block" : "none")">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Tạo gói đề</h5>
+                    <button type="button" class="btn-close" @onclick="HideCreateTestModal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <label>Tên Đề:</label>
+                            <input type="text" class="form-control" @bind=testDTO.Name />
+                        </div>
+                        <div>
+                            <label>Thời Gian</label>
+                            <input type="text" class="form-control" @bind=testDTO.Minute />
+                        </div>
+                        <div>
+                            <label>Môn học</label>
+                            <select class="form-select" @bind="testDTO.SubjectId">
+                                <option value="value">--chọn--</option>
+                                @foreach (var item in subjectDTO)
+                                {
+                                    <option value="@item.Id">@item.Name</option>
+                                }
+                            </select>
+                        </div>
+                        <div>
+                            <label>Lớp:</label>
+                            <select class="form-select" @bind="testDTO.ClassId">
+                                <option value="value">--chọn--</option>
+                                @foreach (var item in classDTOs)
+                                {
+                                    <option value="@item.Id">@item.Name </option>
+                                }
+                            </select>
+                        </div>
+                        <div>
+                            <label>Điểm:</label>
+                            <select class="form-select" @bind="testDTO.PointTypeId">
+                                <option value="value">--chọn--</option>
+                                @foreach (var item in pointTypeDTOs)
+                                {
+                                    <option value="@item.Id">@item.Name </option>
+                                }
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="Submit">Lưu</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade @(isQuestionDetailModalVisible ? "show" : "")" tabindex="-1" style="display:@(isQuestionDetailModalVisible ? "block" : "none")">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Thêm câu hỏi</h5>
+                    <button type="button" class="btn-close" @onclick="HideQuestionDetailModal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-5 m-1">
+                            <label>Chọn File Excel</label>
+                            <InputFile OnChange="HandleFileSelected" class="form-control" />
+                        </div>
+                        <div class="col-5 m-1">
+                            <label>Gói đề:</label>
+                            <select @bind="testQuestions.TestId" class="form-select">
+                                <option value="">--chọn--</option>
+                                @foreach (var item in testList)
+                                {
+                                    <option value="@item.Id">@item.Name</option>
+                                }
+                            </select>
+                        </div>
+
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <div>
+                        <button class="btn btn-primary" @onclick="UploadFile">
+                            <i class="bi bi-file-earmark-excel"></i>Tải lên
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+<div class="modal fade @(showcreatequestion ? "show" : "")" tabindex="-1" style="display:@(showcreatequestion ? "block" : "none")">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Tạo câu hỏi mới</h5>
+                <button type="button" class="btn-close" ></button>
+            </div>
+            <div class="modal-body">
+                <label>Loại câu hỏi:</label>
+                <select @onchange="ChangeQuestionType" class="form-select">
+                    <option value="1">Trắc nghiệm 1 đáp án</option>
+                    <option value="2">Trắc nghiệm nhiều đáp án</option>
+                    <option value="3">Đúng/Sai</option>
+                </select>
+                <div class="mb-3">
+                    <label for="questionName">Tên câu hỏi:</label>
+                    <input id="questionName" class="form-control" @bind="testQuestion.QuestionName" placeholder="Nhập tên câu hỏi..." />
+                </div>
+                @foreach (var (answer, index) in testQuestion.Answers.Select((value, i) => (value, i)))
+                {
+                    <div class="mb-2">
+                        <input class="form-control" @onchange="e => UpdateAnswer(e, index)" value="@answer" placeholder="Nhập đáp án..." />
+                        @if (testQuestion.QuestionType == 1)
+                        {
+                            <input type="radio" name="correctAnswer" @onclick="() => SetCorrectAnswer(index)" />
+                        }
+                        else if (testQuestion.QuestionType == 2)
+                        {
+                            <input type="checkbox" @onchange="e => ToggleCorrectAnswer(index, (bool)e.Value)" />
+                        }
+                    </div>
+                }
+                <button class="btn btn-sm btn-primary" @onclick="AddAnswerField">Thêm đáp án</button>
+                <div class="text-danger">@Message</div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" @onclick="closemodal" >Đóng</button>
+                <button class="btn btn-primary" @onclick="CreateQuestionWithAnswers">Lưu câu hỏi</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private void rightclick(Guid id,int lever){
+        testQuestion.TestId=id;
+        testQuestion.Level = lever;
+    }
+    private void OpenModal(){
+        showcreatequestion = true;
+    }
+    private void closemodal(){
+        showcreatequestion = false;
+    }
+    private bool showcreatequestion = false;
+    private List<listdetailquestion> testQuestionss = new List<listdetailquestion>();
+    private TestQuestion_TestQuestionAnswersDTO testQuestions = new TestQuestion_TestQuestionAnswersDTO();
+    private List<TestDTO> testList = new List<TestDTO>();
+    private TestQuestionDTO testQuestio = new TestQuestionDTO();
+    private GetListTestQueryDTO queryDTO = new GetListTestQueryDTO();
+    private List<TestQuestionDTO> testQuestionDTOs = new List<TestQuestionDTO>();
+    private List<SubjectDTO> subjectDTO = new List<SubjectDTO>();
+    private List<ClassesDTO> classDTOs = new List<ClassesDTO>();
+    private List<PointTypeDTO> pointTypeDTOs = new List<PointTypeDTO>();
+    private TestDTO testDTO = new TestDTO();
+    private IBrowserFile selectedFile;
+    private string username;
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            await detailtestGrid();
+            await detailsubject();
+            await detailclass();
+            await detailpoint();
+            await SearchTests();
+        }
+        catch (Exception)
+        {
+
+        }
+
+    }
+
+
+    private async Task detailquestion(Guid id)
+    {
+        var client = clientFactory.CreateClient("Get");
+        var url = $"https://localhost:7046/api/TestQuestion/get-by-id-question-answer?id={id}";
+        testQuestions = await client.GetFromJsonAsync<TestQuestion_TestQuestionAnswersDTO>(url);
+
+    }
+    private async Task updatequestion()
+    {
+        var Httpclient = clientFactory.CreateClient("Put");
+        var url = $"https://localhost:7046/api/TestQuestion/update_question_answer";
+        var respon = await Httpclient.PutAsJsonAsync(url, testQuestio);
+
+    }
+    private async Task deletequestion(Guid id, int level)
+    {
+        var Client = clientFactory.CreateClient("Delete");
+        var url = $"https://localhost:7046/api/TestQuestion/Delete_TestQuestion?Id={id}";
+        var respon = await Client.DeleteAsync(url);
+        if (respon.IsSuccessStatusCode)
+        {
+            await LoadQuestions(id, level);
+            StateHasChanged();
+        }
+        else
+        {
+
+            Console.WriteLine("Failed to delete the question.");
+        }
+
+    }
+    private async Task detailtestGrid()
+    {
+        var httpClient = clientFactory.CreateClient("Get");
+        var url = $"https://localhost:7046/api/Test/get-all-test";
+        testList = await httpClient.GetFromJsonAsync<List<TestDTO>>(url);
+    }
+    private async Task detailpoint()
+    {
+        var httpclient = clientFactory.CreateClient("Get");
+        var url = $"https://localhost:7046/api/PointTypeDTO/GetAll_pointtype";
+        pointTypeDTOs = await httpclient.GetFromJsonAsync<List<PointTypeDTO>>(url);
+    }
+    private async Task detailsubject()
+    {
+        var httpclient = clientFactory.CreateClient("Get");
+        var url = $"https://localhost:7046/api/Subject/get-all-subject";
+        subjectDTO = await httpclient.GetFromJsonAsync<List<SubjectDTO>>(url);
+    }
+    private async Task detailclass()
+    {
+        var httpclient = clientFactory.CreateClient("Get");
+        var url = $"https://localhost:7046/api/Classes/get-all-class";
+        classDTOs = await httpclient.GetFromJsonAsync<List<ClassesDTO>>(url);
+    }
+    private List<TestQuestion_TestQuestionAnswersDTO> selectedQuestions = new List<TestQuestion_TestQuestionAnswersDTO>();
+
+    private async Task LoadQuestions(Guid testId, int level)
+    {
+        var response = await client.GetAsync($"https://localhost:7046/api/Test/{testId}/questions?level={level}");
+
+        if (response.IsSuccessStatusCode)
+        {
+            selectedQuestions = await response.Content.ReadFromJsonAsync<List<TestQuestion_TestQuestionAnswersDTO>>();
+        }
+        else
+        {
+            selectedQuestions.Clear();
+        }
+
+        StateHasChanged();
+    }
+    private async Task delete(Guid id)
+    {
+        var httpclient = clientFactory.CreateClient("Delete");
+        var url = $"https://localhost:7046/api/TestQuestion/Delete_TestQuestion?Id={id}";
+        var responseMessage = await httpclient.DeleteAsync(url);
+        NavigationManager.NavigateTo(NavigationManager.Uri, forceLoad: true);
+
+    }
+    private async Task HandleFileSelected(InputFileChangeEventArgs e)
+    {
+        var file = e.GetMultipleFiles(1); // Lấy tệp đầu tiên
+        if (file.Count > 0)
+        {
+            selectedFile = file[0]; // Chọn tệp đầu tiên
+        }
+    }
+    private async Task DownloadExcelTemplate()
+    {
+        var response = await client.GetAsync("https://localhost:7046/api/TestQuestion/export-template");
+        if (response.IsSuccessStatusCode)
+        {
+            var content = await response.Content.ReadAsByteArrayAsync();
+            var base64String = Convert.ToBase64String(content);
+            await Jsruntime.InvokeVoidAsync("downloadFile", "MauCauHoi.xlsx", base64String);
+        }
+    }
+    private async Task UploadFile()
+    {
+        if (selectedFile != null)
+        {
+            var stream = selectedFile.OpenReadStream(100 * 1024 * 1024); // Giới hạn 100MB
+            var content = new MultipartFormDataContent();
+
+            using (var memoryStream = new MemoryStream())
+            {
+                await stream.CopyToAsync(memoryStream);
+                var fileBytes = memoryStream.ToArray();
+
+                // Thêm tệp vào nội dung gửi
+                content.Add(new ByteArrayContent(fileBytes), "file", selectedFile.Name);
+            }
+
+            if (testQuestions.TestId != Guid.Empty)
+            {
+                content.Add(new StringContent(testQuestions.TestId.ToString()), "id");
+            }
+            else
+            {
+                await Jsruntime.InvokeVoidAsync("Swal.fire", new
+                {
+                    title = "Thất bại!",
+                    text = "Vui lòng chọn gói đề",
+                    icon = "error",
+                    confirmButtonText = "OK"
+                });
+            }
+
+            if (username != null)
+            {
+                content.Add(new StringContent(username.ToString()), "Createbyname");
+            }
+
+            var response = await client.PostAsync($"https://localhost:7046/api/TestQuestion/import_questions?id={testQuestions.TestId}", content);
+            if (response.IsSuccessStatusCode)
+            {
+                await Jsruntime.InvokeVoidAsync("Swal.fire", new
+                {
+                    title = "Thành công!",
+                    text = "Thêm đữ liệu thành công!",
+                    icon = "success",
+                    confirmButtonText = "OK"
+                });
+                NavigationManager.NavigateTo(NavigationManager.Uri, forceLoad: true);
+                await question(testQuestions.TestId);
+
+                await CheckForDuplicates();
+            }
+            else
+            {
+                await Jsruntime.InvokeVoidAsync("Swal.fire", new
+                {
+                    title = "Thất bại!",
+                    text = "Đã xảy ra lỗi khi tải lên",
+                    icon = "error",
+                    confirmButtonText = "OK"
+                });
+            }
+        }
+        else
+        {
+            await Jsruntime.InvokeVoidAsync("Swal.fire", new
+            {
+                title = "Thất bại!",
+                text = "Vui lòng chọn một file",
+                icon = "error",
+                confirmButtonText = "OK"
+            });
+        }
+    }
+
+    private async Task question(Guid id)
+    {
+
+        testQuestionss = await client.GetFromJsonAsync<List<listdetailquestion>>($"https://localhost:7046/api/TestQuestion/get-question-details/{id}");
+    }
+
+    private async Task CheckForDuplicates()
+    {
+        var duplicates = testQuestionss.GroupBy(q => q.Questionname)
+            .Where(g => g.Count() > 1)
+            .SelectMany(g => g)
+            .ToList();
+
+        if (duplicates.Any())
+        {
+            string.Join(", ", duplicates.Select(q => q.Questionname));
+
+            testQuestionss = testQuestionss.Where(q => !duplicates.Contains(q)).ToList();
+        }
+    }
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var token = await Jsruntime.InvokeAsync<string>("localStorage.getItem", "YourSuperSecretKeyHere");
+            if (!string.IsNullOrEmpty(token))
+            {
+                try
+                {
+                    var handler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
+                    var jsonToken = handler.ReadToken(token) as System.IdentityModel.Tokens.Jwt.JwtSecurityToken;
+
+                    username = jsonToken?.Claims.FirstOrDefault(c => c.Type == "nameab")?.Value;
+                    testQuestio.CreatedByName = username;
+                    testQuestion.CreatedByName = username;
+                    if (string.IsNullOrEmpty(username))
+                    {
+                        Console.WriteLine("Không tìm thấy tên người dùng trong token.");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Lỗi khi đọc token: {ex.Message}");
+                }
+            }
+            else
+            {
+                Console.WriteLine("Không tìm thấy token trong local storage.");
+            }
+        }
+    }
+    private async Task Submit()
+    {
+        var httpClient = clientFactory.CreateClient("Post");
+        var url = $"https://localhost:7046/api/Test/create-test-testcode-examroomtestcode";
+        var response = await httpClient.PostAsJsonAsync<TestDTO>(url, testDTO);
+        if (response.IsSuccessStatusCode)
+        {
+            await Jsruntime.InvokeVoidAsync("Swal.fire", new
+            {
+                title = "Thành công!",
+                text = "Thêm đữ liệu thành công!",
+                icon = "success",
+                confirmButtonText = "OK"
+            });
+            NavigationManager.NavigateTo(NavigationManager.Uri, forceLoad: true);
+        }
+        else
+        {
+            await Jsruntime.InvokeVoidAsync("Swal.fire", new
+            {
+                title = "Thất bại!",
+                text = "Thêm dữ liệu thất bại.",
+                icon = "error",
+                confirmButtonText = "OK"
+            });
+        }
+
+
+    }
+    private Guid? selectedTestId = null;
+
+    private void ToggleTest(Guid testId)
+    {
+        if (selectedTestId == testId)
+        {
+            // Đóng nếu nhấp lại vào cùng một thư mục
+            selectedTestId = null;
+        }
+        else
+        {
+            // Mở thư mục được nhấp
+            selectedTestId = testId;
+        }
+    }
+    private async Task Deletetest(Guid id)
+    {
+        var httpClient = clientFactory.CreateClient("Delete");
+        var url = $"https://localhost:7046/api/Test/delete-test?id={id}";
+        var res = await httpClient.DeleteAsync(url);
+        StateHasChanged();
+        NavigationManager.NavigateTo(NavigationManager.Uri, forceLoad: true);
+
+    }
+    private async Task SearchTests()
+    {
+
+        var httpClient = clientFactory.CreateClient("Get");
+        var url = $"https://localhost:7046/api/Test/get-list-test";
+        testList = await httpClient.GetFromJsonAsync<List<TestDTO>>(url);
+    }
+ 
+        private bool isCreateTestModalVisible = false;
+        private bool isQuestionDetailModalVisible = false;
+        private bool isQuestionDetailModalVisibles = false;
+        private bool isQuestionDetailModalVisibless = false;
+
+        private void ShowCreateTestModal()
+        {
+            isCreateTestModalVisible = true;
+        }
+
+        private void HideCreateTestModal()
+        {
+            isCreateTestModalVisible = false;
+        }
+        private void ShowQuestionDetailModals()
+        {
+            isQuestionDetailModalVisibles = true;
+
+        }
+        private async void ShowQuestionDetailModalss(Guid id)
+        {
+            await detailquestion(id);
+            isQuestionDetailModalVisibless = true;
+
+        }
+        private void ShowQuestionDetailModal()
+        {
+            isQuestionDetailModalVisible = true;
+        }
+
+        private void HideQuestionDetailModal()
+        {
+            isQuestionDetailModalVisible = false;
+        }
+        private void HideQuestionDetailModals()
+        {
+            isQuestionDetailModalVisibles = false;
+        }
+        private void HideQuestionDetailModalss()
+        {
+            isQuestionDetailModalVisibless = false;
+        }
+    
+    private TestQuestion_TestQuestionAnswersDTO testQuestion = new  TestQuestion_TestQuestionAnswersDTO()
+        {
+            QuestionType = 1,
+            Answers = new List<string> { "" },
+            CorrectAnswers = new List<string>()
+        };
+
+    private string Message;
+
+    // Thay đổi loại câu hỏi
+    private void ChangeQuestionType(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out int type))
+        {
+            testQuestion.QuestionType = type;
+            testQuestion.Answers.Clear();
+            testQuestion.CorrectAnswers.Clear();
+
+            if (type == 1 || type == 2)
+                testQuestion.Answers.AddRange(new string[] { "" });
+            else if (type == 3)
+                testQuestion.Answers.AddRange(new[] { "True", "False" });
+        }
+        StateHasChanged();
+    }
+
+    // Thêm đáp án mới
+    private void AddAnswerField()
+    {
+        if (testQuestion.QuestionType == 1 || testQuestion.QuestionType == 2)
+        {
+            if (testQuestion.Answers.Count < 4)
+                testQuestion.Answers.Add("");
+        }
+        else
+        {
+            testQuestion.Answers.Add("");
+        }
+    }
+
+    // Cập nhật đáp án
+    private void UpdateAnswer(ChangeEventArgs e, int index)
+    {
+        if (index >= 0 && index < testQuestion.Answers.Count)
+            testQuestion.Answers[index] = e.Value?.ToString() ?? "";
+    }
+
+    // Chọn đáp án đúng (1 đáp án)
+    private void SetCorrectAnswer(int index)
+    {
+        if (index >= 0 && index < testQuestion.Answers.Count)
+        {
+            testQuestion.CorrectAnswers.Clear();
+            testQuestion.CorrectAnswers.Add(testQuestion.Answers[index]);
+        }
+    }
+
+    // Chọn/bỏ chọn đáp án đúng (nhiều đáp án)
+    private void ToggleCorrectAnswer(int index, bool isChecked)
+    {
+        if (index >= 0 && index < testQuestion.Answers.Count)
+        {
+            var answer = testQuestion.Answers[index];
+            if (isChecked)
+                testQuestion.CorrectAnswers.Add(answer);
+            else
+                testQuestion.CorrectAnswers.Remove(answer);
+        }
+    }
+
+    // Gửi câu hỏi lên API
+    private async Task CreateQuestionWithAnswers()
+    {
+        // Kiểm tra dữ liệu hợp lệ
+        if (string.IsNullOrWhiteSpace(testQuestion.QuestionName) || testQuestion.Answers.Count == 0)
+        {
+            Message = "Vui lòng điền đầy đủ thông tin câu hỏi và đáp án.";
+            return;
+        }
+
+        if (testQuestion.CorrectAnswers.Any(ca => !testQuestion.Answers.Contains(ca)))
+        {
+            Message = "Đáp án đúng phải nằm trong danh sách đáp án.";
+            return;
+        }
+
+        // Gửi lên API
+        var response = await client.PostAsJsonAsync("https://localhost:7046/api/TestQuestion/create_question_answwer", testQuestion);
+        if (response.IsSuccessStatusCode)
+        {
+            await ShowSuccessMessage("Câu hỏi đã được tạo thành công!");
+            ResetForm();
+        }
+        else
+        {
+            Message = $"Lỗi tạo câu hỏi: {await response.Content.ReadAsStringAsync()}";
+        }
+    }
+
+    // Hiển thị thông báo thành công
+    private async Task ShowSuccessMessage(string text)
+    {
+        await Jsruntime.InvokeVoidAsync("Swal.fire", new { title = "Thành công!", text, icon = "success" });
+        NavigationManager.NavigateTo(NavigationManager.Uri, forceLoad: true);
+    }
+    private void ResetForm()
+    {
+        testQuestion = new TestQuestion_TestQuestionAnswersDTO
+            {
+                QuestionType = 1,
+                Answers = new List<string> { "", "", "", "" },
+                CorrectAnswers = new List<string>()
+            };
+        Message = string.Empty;
+    }
+        
+}
+
+<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+<script>
+    $(document).on('contextmenu', '.target', function (e) {
+        e.preventDefault();
+        $('.context-menu').hide();
+        $(this).siblings('.context-menu').css({
+            display: 'block',
+            left: e.pageX,
+            top: e.pageY
+        });
+    });
+    $(document).on('click', function () {
+        $('.context-menu').hide();
+    });
+    function downloadFile(fileName, base64String) {
+        const link = document.createElement('a');
+        link.href = 'data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,' + base64String;
+        link.download = fileName;
+        link.click();
+    }
+</script>

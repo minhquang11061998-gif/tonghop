@@ -1,0 +1,214 @@
+﻿@page "/contact"
+@using DataBase.DTOs
+@using global::Data.DTOs
+@inject IJSRuntime jsruntime
+@inject HttpClient http
+<PageTitle>Contact</PageTitle>
+<div class="py-5">
+    <div class="columns-widget columns6-6 container">
+        <div class="row">
+            <div class="col-left col-xs-12 col-md-6 col-sm-6">
+                <div class="panel panel-default border rounded ro1 frame564175037f8b9a474e8b4567 frameOptionf6686c87e9 panel-listNews" id="frameBoundB581d5552e1f85">
+                    <div class="panel-heading">
+                        <div class="panel-title bg-primary container text-white align-content-center" style="height:30px">
+                            Thông tin liên hệ
+                        </div>
+                    </div>
+                    <div class="panel-body">
+                        <div class="ModuleWrapper">
+                            <div class="contact-info">
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <div class="row border">
+                                            <div class="col-md-12 container">
+                                                <p><i>Liên hệ trực tiếp:</i></p>
+                                                <p></p><h2>Trường Tiểu Học Cam Phú</h2><p></p>
+                                                <div class="row">
+                                                    <div class="col-md-3">
+                                                        <label class="contact-addr">Địa chỉ:</label>
+                                                    </div>
+                                                    <div class="col-md-9">   Phường Cam Phú, Thành Phố Cam Ranh, Tỉnh Khánh Hòa  </div>
+                                                </div>
+                                                <div class="row">
+                                                    <div class="col-md-3">
+                                                        <label class="contact-phone">Điện thoại:</label>
+                                                    </div>  <div class="col-md-9">
+                                                        583862626
+                                                    </div>
+                                                </div>
+                                                <div class="row">
+                                                    <div class="col-md-3">
+                                                        <label class="contact-email">Email:</label>
+                                                    </div>  <div class="col-md-9">
+                                                        c1cphu.cr@khanhhoa.edu.vn
+                                                    </div>
+                                                </div>
+                                                <p>Cám ơn quý khách đã gửi ý kiến. Chúng tôi sẽ phản hồi trong thời gian sớm nhất !</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div> <div class="col-right col-xs-12 col-md-6 col-sm-6">
+                <div>
+                    <div>
+                        <form id="form26" class="mb-40" name="contact_form" method="post" novalidate="novalidate">
+                            <input type="hidden" name="type" value="Thread">
+                            <input type="hidden" name="fields[formTypeId]" value="565f96637f8b9af6558b4567">
+                            <div class="input-area contact-info p-3">
+                                <div class="row">
+                                    <div class="col-md-12 col-sm-12 col-xs-12 mt-20">
+                                        <p><label>   <b>  Hoặc gửi liên hệ cho chúng tôi theo mẫu dưới đây: </b>   </label> </p>
+                                        @if (tokenResponse != null)
+                                        {
+                                              <EditForm Model="@systemConfigDTO" OnValidSubmit="SaveDataToApi">
+                                                <DataAnnotationsValidator />
+                                                <ValidationSummary />
+                                            <div class="row mb-10 p-2">
+                                                <div class="col-md-12">
+                                                    <input class="form-control" type="text" placeholder="Họ và tên *"  @bind-value="systemConfigDTO.Name">
+                                                </div>
+                                            </div>
+                                            <div class="row mb-10 p-2">
+                                                <div class="col-md-12">
+                                                    <input class="form-control" name="fields[address]"  type="text" placeholder="Địa chỉ" @bind-value="systemConfigDTO.address">
+                                                </div>
+                                            </div>
+                                            <div class="row mb-10 p-2">
+                                                <div class="col-md-12">
+                                                    <input class="form-control"  type="text" placeholder="Số điện thoại *" @bind-value="systemConfigDTO.PhoneNumber">
+                                                </div>
+                                            </div>
+                                            <div class="row mb-10 p-2">
+                                                <div class="col-md-12">
+                                                    <input class="form-control" name="fields[email]"  type="text" placeholder="Email *" @bind-value="systemConfigDTO.Email">
+                                                </div>
+                                            </div>
+                                            <div class="row mb-10 p-2">
+                                                <div class="col-md-12">
+                                                    <textarea class="form-control contact-content" name="fields[content]" placeholder="Nội dung liên hệ *" rows="5" @bind="systemConfigDTO.Value">
+                                                                                </textarea>
+                                                </div>
+                                            </div>
+                                                <div class="btn-submit-form text-right">
+                                                    <i style="font-size:11px;">Dấu<span class="text-color-3"> * </span> là phần không được để trống</i>
+                                                    <button type="submit" class="btn btn-danger mt-10 mb-10">Gửi liên hệ</button>
+                                                </div>
+                                            </EditForm>
+                                            
+                                       }else{
+
+                                            <EditForm Model="@systemConfigDTO" OnValidSubmit="SaveDataToApi">
+                                                <DataAnnotationsValidator />
+                                                <ValidationSummary />
+                                                <div class="row mb-10 p-2">
+                                                    <div class="col-md-12">
+                                                        <input class="form-control" type="text" placeholder="Họ và tên *" @bind-value="systemConfigDTO.Name">
+                                                    </div>
+                                                </div>
+                                                <div class="row mb-10 p-2">
+                                                    <div class="col-md-12">
+                                                        <input class="form-control" name="fields[address]" type="text" placeholder="Địa chỉ" @bind-value="systemConfigDTO.address">
+                                                    </div>
+                                                </div>
+                                                <div class="row mb-10 p-2">
+                                                    <div class="col-md-12">
+                                                        <input class="form-control" type="text" placeholder="Số điện thoại *" @bind-value="systemConfigDTO.PhoneNumber">
+                                                    </div>
+                                                </div>
+                                                <div class="row mb-10 p-2">
+                                                    <div class="col-md-12">
+                                                        <input class="form-control" name="fields[email]" type="text" placeholder="Email *" @bind-value="systemConfigDTO.Email">
+                                                    </div>
+                                                </div>
+                                                <div class="row mb-10 p-2">
+                                                    <div class="col-md-12">
+                                                        <textarea class="form-control contact-content" name="fields[content]" placeholder="Nội dung liên hệ *" rows="5" @bind="systemConfigDTO.Value">
+                                                                                    </textarea>
+                                                    </div>
+                                                </div>
+                                                <div class="btn-submit-form text-right">
+                                                    <i style="font-size:11px;">Dấu<span class="text-color-3"> * </span> là phần không được để trống</i>
+                                                    <button type="submit" class="btn btn-danger mt-10 mb-10">Gửi liên hệ</button>
+                                                </div>
+                                            </EditForm>
+                                       }
+                                    </div>
+                               </div>
+                               </div>
+                            <input type="hidden" name="securityToken" value="f4c30c51ed0063ed9d4aef6c58fca3197c1a6c1d4bd15685e40ecadb1f141c48">
+                            <input type="hidden" name="submitFormId" value="26"><input type="hidden" name="moduleId" value="26">
+                        </form>
+                    </div><style>
+                              .question-list li {
+                                  list-style: none;
+                              }
+                              /**/
+                    </style>
+                </div>
+            </div>
+        </div>
+    </div><style>
+              /**/
+    </style>
+</div>
+@code {
+    private TokenResponse tokenResponse;
+    private string userName;
+    private string emai;
+    private string numberphone;
+    private SystemConfigDTO systemConfigDTO = new SystemConfigDTO();
+
+    private async Task SaveDataToApi()
+    {
+        var response = await http.PostAsJsonAsync("api/SystemConfig/create- system", systemConfigDTO);
+        if (response.IsSuccessStatusCode)
+        {
+            await jsruntime.InvokeVoidAsync("Swal.fire", new
+            {
+                title = "Thành công!",
+                text = "Dữ liệu đã được lưu thành công!",
+                icon = "success",
+                confirmButtonText = "OK"
+            });
+            systemConfigDTO = new SystemConfigDTO();
+        }
+        else
+        {
+            await jsruntime.InvokeVoidAsync("Swal.fire", new
+            {
+                title = "Thất bại!",
+                text = "Gửi yêu cầu thất bại.",
+                icon = "error",
+                confirmButtonText = "OK"
+            });
+        }
+    }
+
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var token = await jsruntime.InvokeAsync<string>("localStorage.getItem", "YourSuperSecretKeyHere");
+            if (!string.IsNullOrEmpty(token))
+            {
+                tokenResponse = new TokenResponse { Token = token };
+                var handler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
+                var jsonToken = handler.ReadToken(token) as System.IdentityModel.Tokens.Jwt.JwtSecurityToken;
+                    systemConfigDTO.Name = jsonToken?.Claims.FirstOrDefault(c => c.Type == "name")?.Value;
+                   systemConfigDTO.Email= jsonToken?.Claims.FirstOrDefault(temp => temp.Type == "email")?.Value;
+                systemConfigDTO.PhoneNumber = jsonToken?.Claims.FirstOrDefault(temp => temp.Type == "numberPhone")?.Value;
+                StateHasChanged();
+            }
+        }
+    }
+}
+<style>
+    .row {
+        --bs-gutter-x: 0;
+    }
+</style>

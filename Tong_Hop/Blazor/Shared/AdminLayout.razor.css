@@ -1,0 +1,49 @@
+﻿.row {
+    --bs-gutter-x: 0;
+}
+
+.nav-link:hover {
+    color: royalblue;
+    font-weight: bold;
+    font-size: 15px;
+}
+
+
+/* Cố định sidebar bên trái */
+
+
+/* Đảm bảo nội dung bên dưới navbar không bị che khuất */
+article {
+    margin-top: 60px; /* Thêm khoảng cách để tránh đè lên navbar */
+}
+main {
+    background-image: url('/img/Untitled-1.png');
+}
+
+/* Mặc định menu con ẩn */
+#manageClassMenu {
+    display: none;
+}
+
+/* Hiển thị menu khi checkbox được chọn */
+#toggleMenu:checked + a + #manageClassMenu {
+    display: block;
+}
+
+/* Mũi tên mặc định là mũi tên xuống */
+#toggleMenu:not(:checked) + a .bi-chevron-down {
+    display: inline-block;
+}
+
+/* Mũi tên khi menu được mở */
+#toggleMenu:checked + a .bi-chevron-down {
+    display: none;
+}
+
+#toggleMenu:checked + a .bi-chevron-up {
+    display: inline-block;
+}
+
+
+
+
