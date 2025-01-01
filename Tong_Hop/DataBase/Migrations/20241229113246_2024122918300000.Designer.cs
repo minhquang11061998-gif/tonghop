@@ -12,13 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DataBase.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-<<<<<<<< HEAD:Tong_Hop/DataBase/Migrations/20241229113246_2024122918300000.Designer.cs
     [Migration("20241229113246_2024122918300000")]
     partial class _2024122918300000
-========
-    [Migration("20241228042254_database")]
-    partial class database
->>>>>>>> newquang:Tong_Hop/DataBase/Migrations/20241228042254_database.Designer.cs
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -865,6 +860,7 @@ namespace DataBase.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("PasswordHash")
+                        .IsRequired()
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
 
@@ -879,6 +875,7 @@ namespace DataBase.Migrations
                         .HasColumnType("int");
 
                     b.Property<string>("UserName")
+                        .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 

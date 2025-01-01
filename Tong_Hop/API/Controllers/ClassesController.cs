@@ -1,6 +1,12 @@
-﻿using DataBase.Data;
+﻿using System.Security.Cryptography;
+using Azure.Core;
+using CloudinaryDotNet;
+using CloudinaryDotNet.Actions;
+using DataBase.Data;
 using DataBase.DTOs;
 using DataBase.Models;
+using Emgu.CV;
+using Emgu.CV.Features2D;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -12,9 +18,11 @@ namespace API.Controllers
     public class ClassesController : ControllerBase
     {
         private readonly AppDbContext _db;
-        public ClassesController(AppDbContext db)
+        private readonly Cloudinary _cloud;
+        public ClassesController(AppDbContext db, Cloudinary cloud)
         {
             _db = db;
+            _cloud = cloud;
         }
 
         private string RamdomCode(int length)
@@ -48,7 +56,35 @@ namespace API.Controllers
 
             return new string(code);
         }
-
+        [HttpGet("Get-Grade-Class")]
+        public IActionResult GetClassesByGrade(Guid gradeId)
+        {
+            var classes = _db.Classes
+                             .Where(c => c.GradeId == gradeId) // Lọc các lớp theo khối
+                             .Select(c => new { c.Id, c.Name }) // Lấy Id và tên lớp
+                             .ToList();
+            return Ok(classes);
+        }
+        [HttpGet("get-all")]
+        public async Task<IActionResult> get()
+        {
+            var data = await (from a in _db.Classes
+                       join b in _db.Teachers on a.TeacherId equals b.Id
+                       join c in _db.Users on b.UserId equals c.Id
+                       select new ClassStandardDTO
+                       {
+                           Id = a.Id,
+                           Name = a.Name,
+                           Code = a.Code,
+                           Status = a.Status,
+                           MaxStudent = a.MaxStudent,
+                           TeacherId = a.TeacherId,
+                           GradeId = a.GradeId,
+                           NameTeacher = c.FullName,
+                       }).ToListAsync();
+           
+            return Ok(data);
+        }
         [HttpGet("get-all-class")]
         public async Task<ActionResult<List<ClassesDTO>>> GetAll()
         {
@@ -98,31 +134,31 @@ namespace API.Controllers
         }
 
         [HttpGet("get-by-id-class")]
-        public async Task<ActionResult<ClassesDTO>> GetById(Guid Id)
+        public async Task<ActionResult<ClassStandardDTO>> GetById(Guid Id)
         {
 
             try
             {
-                var data = await _db.Classes.FirstOrDefaultAsync(x => x.Id == Id);
+                var data = await (from c in _db.Classes
+                                  join t in _db.Teachers on c.TeacherId equals t.Id
+                                  join u in _db.Users on t.UserId equals u.Id
+                                  where c.Id == Id
+                                  select new ClassStandardDTO
+                                  {
+                                      Id = c.Id,
+                                      Code = c.Code,
+                                      Name = c.Name,
+                                      MaxStudent = c.MaxStudent,
+                                      Status = c.Status,
+                                      TeacherId = c.TeacherId,
+                                      GradeId = c.GradeId,
+                                      NameTeacher = u.FullName
+                                  }).FirstOrDefaultAsync();
 
-                if (data == null)
-                {
-                    return BadRequest("Khong co Id nay");
-                }
-
-                var classdto = new ClassesDTO
-                {
-                    Id = data.Id,
-                    Code = data.Code,
-                    Name = data.Name,
-                    MaxStudent = data.MaxStudent,
-                    Status = data.Status,
-                    TeacherId = data.TeacherId,
-                    GradeId = data.GradeId,
-                };
-
-                return Ok(classdto);
+                return Ok(data);
             }
+            
+        
             catch (Exception)
             {
                 return BadRequest("Loi");
@@ -205,67 +241,130 @@ namespace API.Controllers
         public async Task<IActionResult> Delete(Guid Id)
         {
             var data = await _db.Classes.FirstOrDefaultAsync(x => x.Id == Id);
-
+            using var transaction = await _db.Database.BeginTransactionAsync();
             if (data != null)
             {
-                var dataStuClass = await _db.Student_Classes.Where(x => x.Id == Id).ToArrayAsync();
-
+                var dataNotiClass = await _db.Notification_Classes.Where(x => x.Id == Id).ToArrayAsync();
+                var dataStuClass = await _db.Student_Classes.Where(x => x.ClassId == Id).ToListAsync();
+                var studentID = dataStuClass.Select(x => x.StudentId).ToList();
+                var student = await _db.Students.Where(x => studentID.Contains(x.Id)).ToListAsync();
+                var userId= student.Select(x => x.UserId).ToList();
+                var user = await _db.Users.Where(x => userId.Contains(x.Id)).ToListAsync();
                 if (dataStuClass.Any())
                 {
                     _db.Student_Classes.RemoveRange(dataStuClass);
-                    await _db.SaveChangesAsync();
+                   
                 }
+                if (studentID.Any())
+                {
+                    _db.Students.RemoveRange(student);
+                   
+                }
+                if(user.Any())
+                {
+                    
+                    foreach (var users in user)
+                    {
+                        _db.Users.Remove(users);
+                        if (!string.IsNullOrEmpty(users.Avartar))
+                        {
+                            var publicId = users.Avartar.Split('/').Last().Split('.').First();
+                            var deletionParams = new DeletionParams(publicId);
+                            var deletionResult = await _cloud.DestroyAsync(deletionParams);
+                        }
+                    }
 
-                var dataNotiClass = await _db.Notification_Classes.Where(x => x.Id == Id).ToArrayAsync();
-
+                }
                 if (!dataNotiClass.Any())
                 {
-                    _db.Notification_Classes.RemoveRange(dataNotiClass);
-                    await _db.SaveChangesAsync();
+                     _db.Notification_Classes.RemoveRange(dataNotiClass);
                 }
-
+               
                 _db.Classes.Remove(data);
                 await _db.SaveChangesAsync();
+                await transaction.CommitAsync();
 
                 return Ok("Da xoa");
             }
 
             return BadRequest("Khong co lop nay");
         }
-
         [HttpPut("update-class")]
-        public async Task<IActionResult> UpdateClassAndTestCodes(Guid IdClass, string Name, Guid IdTeacher, Guid IdGrade)
+        public async Task<IActionResult> updateclass(ClassStandardDTO classs)
         {
-            var data = await _db.Classes.FirstOrDefaultAsync(x => x.Id == IdClass);
-
-            var grade = await _db.Grades.FirstOrDefaultAsync(x => x.Id == IdGrade);
-
-            var tea = await _db.Teachers.FirstOrDefaultAsync(x => x.Id == IdTeacher);
-
-            if (data == null || grade == null || tea == null)
+            try
             {
-                return NotFound("Lỗi");
+                // Tìm lớp cần cập nhật
+                var update = await _db.Classes.FirstOrDefaultAsync(x => x.Id == classs.Id);
+                if (update == null)
+                {
+                    return NotFound("Lớp không tồn tại");
+                }
+
+                // Lấy tên lớp từ bảng Grades bằng GradeId từ classs
+                var grade = await _db.Grades.FirstOrDefaultAsync(x => x.Id == classs.GradeId);
+                if (grade == null)
+                {
+                    return BadRequest("Lớp không tồn tại trong bảng Grades");
+                }
+
+                // Tạo tên lớp mới
+                string result = ValidateAndTransformString(classs.Name);
+                string ClassesName = $"{grade.Name}{result}";
+                update.Name = ClassesName;
+                update.Status = classs.Status;
+                update.TeacherId = classs.TeacherId;
+                update.GradeId = classs.GradeId;
+
+             
+                _db.Classes.Update(update);
+                await _db.SaveChangesAsync();
+
+                return Ok("Cập nhật thành công");
             }
-
-            var teaClass = await _db.Classes.FirstOrDefaultAsync(x => x.TeacherId == tea.Id);
-
-            if (teaClass != null)
+            catch (Exception ex)        
             {
-                return NotFound("Giáo viên này đã chủ nhiệm 1 lớp rồi");
+                // Log exception nếu cần thiết
+                return BadRequest($"Cập nhật thất bại: {ex.Message}");
             }
-
-            string result = ValidateAndTransformString(Name);
-
-            string ClassesName = $"{grade.Name}{result}";
-
-            data.Name = ClassesName;
-            data.TeacherId = IdTeacher;
-
-            _db.Classes.Update(data);
-            await _db.SaveChangesAsync();
-
-            return Ok("Update class thành công");
         }
+
+        //[HttpPut("update-class")]
+        //public async Task<IActionResult> UpdateClassAndTestCodes([FromBody] ClassesDTO request)
+        //{
+        //    if (string.IsNullOrWhiteSpace(request.Name))
+        //    {
+        //        return BadRequest("Tên lớp không được để trống.");
+        //    }
+
+        //    var data = await _db.Classes.FirstOrDefaultAsync(x => x.Id == request.Id);
+        //    var grade = await _db.Grades.FirstOrDefaultAsync(x => x.Id == request.GradeId);
+        //    var tea = await _db.Teachers.FirstOrDefaultAsync(x => x.Id == request.TeacherId);
+
+        //    if (data == null || grade == null || tea == null)
+        //    {
+        //        return NotFound("Lỗi");
+        //    }
+
+        //    var teaClass = await _db.Classes.FirstOrDefaultAsync(x => x.TeacherId == tea.Id);
+
+        //    if (teaClass != null)
+        //    {
+        //        return BadRequest("Giáo viên này đã chủ nhiệm 1 lớp rồi");
+        //    }
+
+        //    string result = ValidateAndTransformString(request.Name);
+        //    string ClassesName = $"{grade.Name}{result}";
+
+        //    data.Name = ClassesName;
+        //    data.TeacherId = request.TeacherId;
+
+        //    _db.Classes.Update(data);
+        //    await _db.SaveChangesAsync();
+
+        //    return Ok("Update class thành công");
+        //}
+
 
         [HttpGet("search-class")]
         public async Task<ActionResult<IEnumerable<ClassesDTO>>> SearchClass(string keyword)
@@ -336,6 +435,24 @@ namespace API.Controllers
                                       join subj in _db.Subjects on SubjG.SubjectId equals subj.Id
                                       where cl.Id == IdClass
                                       select subj).ToListAsync();
+                return Ok(listSubj);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+        [HttpGet("Listteachersubj")]
+        public async Task<ActionResult> GetListteacherSubj(Guid idsbj)
+        {
+            try
+            {
+                var listSubj = await (from user in _db.Users
+                                      join teacher in _db.Teachers on user.Id equals teacher.UserId
+                                      join teacher_subject in _db.Teacher_Subjects on teacher.Id equals teacher_subject.TeacherId
+                                      join subject in _db.Subjects on teacher_subject.SubjectId equals subject.Id
+                                      where subject.Id == idsbj
+                                      select user).ToListAsync();
                 return Ok(listSubj);
             }
             catch (Exception ex)

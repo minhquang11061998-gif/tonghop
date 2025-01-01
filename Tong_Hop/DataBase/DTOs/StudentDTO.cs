@@ -39,7 +39,6 @@ namespace Data.DTOs
         public string?  picture { get; set; }
         public string?  Username { get; set; }
         public string?  Password { get; set; }
-        public int?  status { get; set; }
         public DateTime  dateofbirt { get; set; }
         public string? RegistrationStatus { get; set; }
     }

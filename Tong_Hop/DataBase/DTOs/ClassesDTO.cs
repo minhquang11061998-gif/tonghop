@@ -24,6 +24,7 @@ namespace DataBase.DTOs
         public Guid Id { get; set; }
         public string? Code { get; set; }
         public string? Name { get; set; }
+        public string? NameTeacher {  get; set; }
         public int Status { get; set; }
         public int MaxStudent { get; set; }
         public Guid GradeId { get; set; }
