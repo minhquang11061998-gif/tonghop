@@ -120,7 +120,7 @@
                     @if(editsubject){
                         <tr>
                             <select class="form-select" @bind="teacher_Subject.idteacher">
-                                <option value="@teacher_Subject.Id">@teacher_Subject.Name"</option>
+                                <option value="@teacher_Subject.idteacher">@teacher_Subject.Name</option>
                                 @foreach(var teacher in teacherDTOs){
                                     <option value="@teacher.Id">@teacher.Name</option>
                                 }
@@ -171,7 +171,7 @@
         await getidsbj(id);
         jsruntime.InvokeVoidAsync("alert", $"{teacher_Subject.Id}");
         editsubject = true;
-      
+
     }
 
 
@@ -210,6 +210,23 @@
 
         }
     }
+    private async Task updateteacher(Guid idsubj, Guid idteacher)
+    {
+        var response = await client.PutAsJsonAsync($"https://localhost:7046/api/Subject/update-subject?IdSubject={idsubj}&IdTeacher={idteacher}",teacher_Subject);
+
+        if (response.IsSuccessStatusCode)
+        {
+            // Xử lý khi yêu cầu thành công
+            Console.WriteLine("Cập nhật thành công.");
+        }
+        else
+        {
+            // Xử lý lỗi khi yêu cầu không thành công
+            var errorMessage = await response.Content.ReadAsStringAsync();
+            Console.WriteLine($"Cập nhật thất bại. Mã lỗi: {response.StatusCode}, Thông báo: {errorMessage}");
+        }
+    }
+
     private List<TeacherDTO> teacherDTOs = new List<TeacherDTO>();
     private List<TeacherDTO> teacherDTOss = new List<TeacherDTO>();
   
@@ -257,7 +274,7 @@
         subjects = await client.GetFromJsonAsync<List<Subjects>>($"https://localhost:7046/api/Classes/ListSubjectFor?IdClass={id}");
 
     }
-    private string SearchText { get; set; }
+    private string? SearchText { get; set; }
 
 }
 
