@@ -132,7 +132,7 @@ namespace API.Controllers
             return Ok(testdto);
         }
 
-        private int RamdomCodeTest(int length)
+        private string RamdomCodeTest(int length)
         {
             const string CodeNew = "0123456789";
 
@@ -145,7 +145,7 @@ namespace API.Controllers
                 code[i] = CodeNew[random.Next(CodeNew.Length)];
             }
 
-            return int.Parse(code);
+            return new string(code);
         }
 
         private string RamdomCodeTestCode(int length)

@@ -289,81 +289,104 @@ namespace API.Controllers
 
             return BadRequest("Khong co lop nay");
         }
-        [HttpPut("update-class")]
-        public async Task<IActionResult> updateclass(ClassStandardDTO classs)
-        {
-            try
-            {
-                // Tìm lớp cần cập nhật
-                var update = await _db.Classes.FirstOrDefaultAsync(x => x.Id == classs.Id);
-                if (update == null)
-                {
-                    return NotFound("Lớp không tồn tại");
-                }
-
-                // Lấy tên lớp từ bảng Grades bằng GradeId từ classs
-                var grade = await _db.Grades.FirstOrDefaultAsync(x => x.Id == classs.GradeId);
-                if (grade == null)
-                {
-                    return BadRequest("Lớp không tồn tại trong bảng Grades");
-                }
-
-                // Tạo tên lớp mới
-                string result = ValidateAndTransformString(classs.Name);
-                string ClassesName = $"{grade.Name}{result}";
-                update.Name = ClassesName;
-                update.Status = classs.Status;
-                update.TeacherId = classs.TeacherId;
-                update.GradeId = classs.GradeId;
-
-             
-                _db.Classes.Update(update);
-                await _db.SaveChangesAsync();
-
-                return Ok("Cập nhật thành công");
-            }
-            catch (Exception ex)        
-            {
-                // Log exception nếu cần thiết
-                return BadRequest($"Cập nhật thất bại: {ex.Message}");
-            }
-        }
 
         //[HttpPut("update-class")]
-        //public async Task<IActionResult> UpdateClassAndTestCodes([FromBody] ClassesDTO request)
+        //public async Task<IActionResult> updateclass(ClassStandardDTO classs)
         //{
-        //    if (string.IsNullOrWhiteSpace(request.Name))
+        //    try
         //    {
-        //        return BadRequest("Tên lớp không được để trống.");
+        //        // Tìm lớp cần cập nhật
+        //        var update = await _db.Classes.FirstOrDefaultAsync(x => x.Id == classs.Id);
+        //        if (update == null)
+        //        {
+        //            return NotFound("Lớp không tồn tại");
+        //        }
+
+        //        // Lấy tên lớp từ bảng Grades bằng GradeId từ classs
+        //        var grade = await _db.Grades.FirstOrDefaultAsync(x => x.Id == classs.GradeId);
+        //        if (grade == null)
+        //        {
+        //            return BadRequest("Lớp không tồn tại trong bảng Grades");
+        //        }
+
+        //        // Tạo tên lớp mới
+        //        string result = ValidateAndTransformString(classs.Name);
+        //        string ClassesName = $"{grade.Name}{result}";
+        //        update.Name = ClassesName;
+        //        update.Status = classs.Status;
+        //        update.TeacherId = classs.TeacherId;
+        //        update.GradeId = classs.GradeId;
+
+        //        _db.Classes.Update(update);
+        //        await _db.SaveChangesAsync();
+
+        //        return Ok("Cập nhật thành công");
         //    }
-
-        //    var data = await _db.Classes.FirstOrDefaultAsync(x => x.Id == request.Id);
-        //    var grade = await _db.Grades.FirstOrDefaultAsync(x => x.Id == request.GradeId);
-        //    var tea = await _db.Teachers.FirstOrDefaultAsync(x => x.Id == request.TeacherId);
-
-        //    if (data == null || grade == null || tea == null)
+        //    catch (Exception ex)        
         //    {
-        //        return NotFound("Lỗi");
+        //        // Log exception nếu cần thiết
+        //        return BadRequest($"Cập nhật thất bại: {ex.Message}");
         //    }
-
-        //    var teaClass = await _db.Classes.FirstOrDefaultAsync(x => x.TeacherId == tea.Id);
-
-        //    if (teaClass != null)
-        //    {
-        //        return BadRequest("Giáo viên này đã chủ nhiệm 1 lớp rồi");
-        //    }
-
-        //    string result = ValidateAndTransformString(request.Name);
-        //    string ClassesName = $"{grade.Name}{result}";
-
-        //    data.Name = ClassesName;
-        //    data.TeacherId = request.TeacherId;
-
-        //    _db.Classes.Update(data);
-        //    await _db.SaveChangesAsync();
-
-        //    return Ok("Update class thành công");
         //}
+
+        [HttpPut("update-class")]
+        public async Task<IActionResult> UpdateClassAndTestCodes([FromBody] ClassesDTO request)
+        {
+            // Kiểm tra nếu tên lớp trống
+            if (string.IsNullOrWhiteSpace(request.Name))
+            {
+                return BadRequest("Tên lớp không được để trống.");
+            }
+
+            // Lấy thông tin lớp cần cập nhật
+            var data = await _db.Classes.FirstOrDefaultAsync(x => x.Id == request.Id);
+            if (data == null)
+            {
+                return NotFound("Lớp học không tồn tại.");
+            }
+
+            // Kiểm tra nếu grade hoặc teacher không tồn tại
+            var grade = await _db.Grades.FirstOrDefaultAsync(x => x.Id == request.GradeId);
+            if (grade == null)
+            {
+                return NotFound("Khối học không tồn tại.");
+            }
+
+            var tea = await _db.Teachers.FirstOrDefaultAsync(x => x.Id == request.TeacherId);
+            if (tea == null)
+            {
+                return NotFound("Giáo viên không tồn tại.");
+            }
+
+            // Kiểm tra nếu giáo viên đang chủ nhiệm một lớp khác
+            var otherClass = await _db.Classes
+                .FirstOrDefaultAsync(x => x.TeacherId == request.TeacherId && x.Id != request.Id);
+            if (otherClass != null)
+            {
+                return BadRequest("Giáo viên này đã chủ nhiệm một lớp khác.");
+            }
+
+            // Kiểm tra nếu giáo viên đang chủ nhiệm chính lớp này
+            if (data.TeacherId == request.TeacherId)
+            {
+                // Chỉ cập nhật tên lớp
+                string result = ValidateAndTransformString(request.Name);
+                data.Name = $"{grade.Name}{result}";
+            }
+            else
+            {
+                // Cập nhật cả tên lớp và giáo viên
+                string result = ValidateAndTransformString(request.Name);
+                data.Name = $"{grade.Name}{result}";
+                data.TeacherId = request.TeacherId;
+            }
+
+            // Cập nhật vào cơ sở dữ liệu
+            _db.Classes.Update(data);
+            await _db.SaveChangesAsync();
+
+            return Ok("Cập nhật lớp học thành công.");
+        }
 
 
         [HttpGet("search-class")]
