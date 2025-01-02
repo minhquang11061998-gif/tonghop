@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace DataBase.Migrations
 {
     /// <inheritdoc />
-    public partial class _2024122918300000 : Migration
+    public partial class datanew : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -484,7 +484,7 @@ namespace DataBase.Migrations
                         column: x => x.ClassId,
                         principalTable: "Classes",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.NoAction);
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_Student_Classes_Students_StudentId",
                         column: x => x.StudentId,
@@ -499,7 +499,7 @@ namespace DataBase.Migrations
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Name = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: false),
-                    Code = table.Column<int>(type: "int", nullable: false),
+                    Code = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Minute = table.Column<int>(type: "int", nullable: true),
                     CreationTime = table.Column<DateTime>(type: "datetime2", nullable: false),
                     Status = table.Column<int>(type: "int", nullable: false),

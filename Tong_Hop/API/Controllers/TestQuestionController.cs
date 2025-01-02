@@ -30,6 +30,7 @@ namespace API.Controllers
                     Questionname = q.QuestionName,
                     RightAnswer = q.RightAnswer,
                     Type = q.Type,
+                    level = q.Level,
                     answer = q.TestQuestionAnswer.Select(a => new AnswerDTO
                     {
                         Answer = a.Answer,

@@ -787,8 +787,9 @@ namespace DataBase.Migrations
                     b.Property<Guid?>("ClassesId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<int>("Code")
-                        .HasColumnType("int");
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("CreationTime")
                         .HasColumnType("datetime2");
