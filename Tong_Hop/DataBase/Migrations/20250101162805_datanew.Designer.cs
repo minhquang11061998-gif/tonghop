@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DataBase.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20241229113246_2024122918300000")]
-    partial class _2024122918300000
+    [Migration("20250101162805_datanew")]
+    partial class datanew
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -790,8 +790,9 @@ namespace DataBase.Migrations
                     b.Property<Guid?>("ClassesId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<int>("Code")
-                        .HasColumnType("int");
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("CreationTime")
                         .HasColumnType("datetime2");
