@@ -64,9 +64,18 @@ namespace API.Controllers
         {
             try
             {
+                var Subj = await _db.Subjects.FirstOrDefaultAsync(x => x.Id == dto.SubjectId);
+
+                if (Subj == null)
+                {
+                    return NotFound("Không để trống môn học");
+                }
+
+                string ExamName = "Bài kiểm tra môn " + Subj.Name;
                 var data = new Exams
                 {
                     Id = Guid.NewGuid(),
+                    Name = ExamName,
                     CreationTime = DateTime.Now,
                     Status = dto.Status,
                     SubjectId = dto.SubjectId,
