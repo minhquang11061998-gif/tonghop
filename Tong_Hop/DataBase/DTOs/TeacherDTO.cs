@@ -21,4 +21,10 @@ namespace DataBase.DTOs
         public Guid idteacher { get; set; }
         public Guid idsubject { get; set; }
     }
+    public class subjectDTO
+    {
+        public Guid Id { get; set; }
+        public Guid idteacher { get; set; }
+        public Guid idsubject { get; set; }
+    }
 }

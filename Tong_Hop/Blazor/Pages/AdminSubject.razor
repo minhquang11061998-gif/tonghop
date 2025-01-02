@@ -88,13 +88,17 @@
                     <!-- Hàng danh sách dữ liệu -->
                     @if (FilteredUserstudent != null && FilteredUserstudent.Any())
                     {
-                        @foreach (var item in FilteredUserstudent.OrderBy(c => c.Name))
+                        @foreach (var item in FilteredUserstudent)
                         {
                             <tr class="align-content-center" @onclick="()=>GetTeacher(item.Id)">
                                 <td>@(FilteredUserstudent.IndexOf(item)+1)</td>
                                 <td>@item.Name</td>
                                 <td>@item.Code</td>
-                                <td>@item.Status</td>
+                                <td>
+                                    <span class="badge @(item.Status == 1 ? "bg-success" : "bg-secondary")">
+                                        @(item.Status == 1 ? "Hoạt động" : "Tạm dừng")
+                                    </span>
+                                </td>
                             </tr>
                         }
                     }
@@ -114,47 +118,64 @@
         <div class="container-fluid mt-3 border bg-light rounded min-vh-100">
             <div class="d-flex justify-content-between align-items-center mb-3 p-3">
                 <h5 class="text-success fw-bold">Danh sách giáo viên</h5>
+                <button class="btn btn-primary btn-sm d-flex align-items-center gap-2 px-1 py-2 " disabled="@(subjectid == Guid.Empty)" @onclick="showedit">
+                    <i class="bi bi-pencil-square"></i>
+                    <span>Cập nhật giáo viên</span>
+                </button>
+
             </div>
             <table class="table table-borderless rounded">
-                <tbody>
-                    @if(editsubject){
+                @if (editsubject)
+                {
+                    <tbody>
                         <tr>
-                            <select class="form-select" @bind="teacher_Subject.idteacher">
-                                <option value="@teacher_Subject.idteacher">@teacher_Subject.Name</option>
-                                @foreach(var teacher in teacherDTOs){
-                                    <option value="@teacher.Id">@teacher.Name</option>
-                                }
-                            </select>
+                            <td>
+                                <select class="form-select" @bind="teacher_Subject.idteacher">
+                                    <option value="@Guid.Empty">Chọn giáo viên</option>
+                                    @foreach (var teacher in teacherDTOs)
+                                    {
+                                        <option value="@teacher.Id">@teacher.Name</option>
+                                    }
+                                </select>
+                            </td>
+                            <td>
+                                <button class="btn btn-success" @onclick="()=>updateteacher(subjectid)">Lưu</button>
+                                <button class="btn btn-warning" @onclick="closeedit">Hủy</button>
+                            </td>
                         </tr>
-                    }else{
-                        @if (teacherDTOss != null && teacherDTOss.Any())
-                        {
-                            <!-- Danh sách giáo viên -->
-                            @foreach (var teacher in teacherDTOss.OrderBy(t => t.Name))
-                            {
-                                <tr>
-                                    <td>@teacher.Name</td>
-                                    <td class="text-end">
-                                        <button class="btn btn-danger btn-sm" @onclick="()=>showedit(teacher.Id)">Chỉnh sửa</button>
-                                    </td>
-                                </tr>
-                            }
-                        }
-                        else
+                    </tbody>
+
+                }
+
+                <tbody>
+                    @if (teacherDTOss != null && teacherDTOss.Any())
+                    {
+                        @foreach (var teacher in teacherDTOss.OrderBy(t => t.Name))
                         {
                             <tr>
-                                <td colspan="2" class="text-center text-danger">Không có dữ liệu.</td>
+                                <td>@teacher.Name</td>
+                                <td class="text-end">
+                                    <button class="btn btn-danger btn-sm" @onclick="()=>deleteacher(subjectid,teacher.Id)">Xóa</button>
+                                </td>
                             </tr>
+
                         }
                     }
-
+                    else
+                    {
+                        <tr>
+                            <td colspan="2" class="text-center text-danger">Không có dữ liệu.</td>
+                        </tr>
+                    }
                 </tbody>
             </table>
+
         </div>
     </div>
 </div>
 
 @code {
+    private Guid idteacher;
     private bool showfaceid = false;
     private Guid idstudent;
     private void showdata(Guid id)
@@ -162,14 +183,13 @@
         idstudent = id;
         showfaceid = true;
     }
-    private void closefaceid()
+    private void closeedit()
     {
-        showfaceid = false;
+        editsubject = false;
     }
 
-    private async Task showedit(Guid id){
-        await getidsbj(id);
-        jsruntime.InvokeVoidAsync("alert", $"{teacher_Subject.Id}");
+    private async Task showedit(){
+
         editsubject = true;
 
     }
@@ -210,26 +230,50 @@
 
         }
     }
-    private async Task updateteacher(Guid idsubj, Guid idteacher)
+    private Guid subjectid;
+    private async Task deleteacher(Guid IdSubject,Guid idteacher)
     {
-        var response = await client.PutAsJsonAsync($"https://localhost:7046/api/Subject/update-subject?IdSubject={idsubj}&IdTeacher={idteacher}",teacher_Subject);
+        teacher_Subject.idteacher = idteacher;
+        teacher_Subject.idsubject = IdSubject;
+        var response = await client.PutAsJsonAsync("https://localhost:7046/api/Subject/update-subject", teacher_Subject);
 
         if (response.IsSuccessStatusCode)
         {
-            // Xử lý khi yêu cầu thành công
-            Console.WriteLine("Cập nhật thành công.");
+
+            await jsruntime.InvokeVoidAsync("alert", "Xóa thành công.");
+            await GetTeacher(IdSubject);
         }
         else
         {
-            // Xử lý lỗi khi yêu cầu không thành công
-            var errorMessage = await response.Content.ReadAsStringAsync();
-            Console.WriteLine($"Cập nhật thất bại. Mã lỗi: {response.StatusCode}, Thông báo: {errorMessage}");
+            await jsruntime.InvokeVoidAsync("alert", "Xóa thất bại");
         }
+
+
     }
+    private async Task updateteacher(Guid IdSubject)
+    {
+       
+            teacher_Subject.idsubject = IdSubject;
+            var response = await client.PutAsJsonAsync("https://localhost:7046/api/Subject/update-subject", teacher_Subject);
+
+            if (response.IsSuccessStatusCode)
+            {
+               
+                await jsruntime.InvokeVoidAsync("alert", "Cập nhật thành công.");
+            await GetTeacher(IdSubject);
+            }
+            else
+            {
+                await jsruntime.InvokeVoidAsync("alert", "Cập nhật thất bại");
+            }
+        
+       
+    }
+
 
     private List<TeacherDTO> teacherDTOs = new List<TeacherDTO>();
     private List<TeacherDTO> teacherDTOss = new List<TeacherDTO>();
-  
+
     private List<Grades> grades = new List<Grades>();
     private List<Classes> classes = new List<Classes>();
     private List<Subjects> subjects = new List<Subjects>();
@@ -243,6 +287,7 @@
         await Getallteacher();
     }
     private async Task getidsbj(Guid id){
+       
         teacher_Subject = await client.GetFromJsonAsync<subject_teacherDTO>($"https://localhost:7046/api/Subject/get-by-id-teach-subj?id={id}");
     }
     private async Task Getallteacher()
@@ -250,6 +295,7 @@
         teacherDTOs = await client.GetFromJsonAsync<List<TeacherDTO>>("https://localhost:7046/api/Teacher/get-all-teacher-all");
     }
     private async Task GetTeacher(Guid id){
+        subjectid = id;
         teacherDTOss = await client.GetFromJsonAsync<List<TeacherDTO>>($"https://localhost:7046/api/Classes/Listteachersubj?idsbj={id}");
     }
     private async Task GetAllClass(Guid id)
