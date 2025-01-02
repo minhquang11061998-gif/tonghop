@@ -330,7 +330,7 @@ namespace API.Controllers
         //}
 
         [HttpPut("update-class")]
-        public async Task<IActionResult> UpdateClassAndTestCodes([FromBody] ClassesDTO request)
+        public async Task<IActionResult> UpdateClassAndTestCodes([FromBody] ClassStandardDTO request)
         {
             // Kiểm tra nếu tên lớp trống
             if (string.IsNullOrWhiteSpace(request.Name))
@@ -476,7 +476,7 @@ namespace API.Controllers
                                       join subject in _db.Subjects on teacher_subject.SubjectId equals subject.Id
                                       where subject.Id == idsbj
                                       select new TeacherDTO{
-                                        Id = teacher_subject.Id,
+                                        Id = teacher_subject.TeacherId,
                                         Code = teacher.Code,
                                         Anh= user.Avartar,
                                         Name=user.FullName

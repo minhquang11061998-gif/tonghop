@@ -201,18 +201,18 @@ namespace API.Controllers
 
 		#region đã sửa có thể update môn khối và giáo viên
 		[HttpPut("update-subject")]
-        public async Task<IActionResult> Update(Guid IdSubject, Guid IdTeacher)
+        public async Task<IActionResult> Update(subjectDTO DTO)
         {
 			try
 			{
 				// Bước 1: Tìm Subject cần cập nhật
-				var subject = await _db.Subjects.FirstOrDefaultAsync(x => x.Id == IdSubject);
+				var subject = await _db.Subjects.FirstOrDefaultAsync(x => x.Id == DTO.idsubject);
 				if (subject == null)
 				{
 					return NotFound("Subject không tồn tại");
 				}
 
-                var Teacher = _db.Teachers.FirstOrDefault(x => x.Id == IdTeacher);
+                var Teacher = _db.Teachers.FirstOrDefault(x => x.Id == DTO.idteacher);
                 if (Teacher == null)
                 {
                     return NotFound("Teacher không tồn tại");
@@ -237,8 +237,8 @@ namespace API.Controllers
 					_db.Teacher_Subjects.Add(new Teacher_Subject
 					{
 						Id = Guid.NewGuid(),
-						SubjectId = IdSubject,
-						TeacherId = IdTeacher
+						SubjectId = DTO.idsubject,
+						TeacherId = DTO.idteacher,
 
 					});
 				}

@@ -188,7 +188,7 @@
                         <div class="row g-3">
                             <!-- Họ và Tên -->
                             <div class="col-md-6">
-                                <label class="form-label">Họ và Tên</label>
+                                <label class="form-label">Họ và tên</label>
                                 <input type="text" class="form-control" placeholder="Nhập họ và tên" @bind="user.FullName"
                                 disabled="@(CurrentModalType == ModalType.Detail)" />
                             </div>
@@ -206,27 +206,27 @@
                             </div>
                             <!-- Tên Đăng Nhập -->
                             <div class="col-md-6">
-                                <label class="form-label">Tên Đăng Nhập</label>
+                                <label class="form-label">Tên đăng nhập</label>
                                 <input type="text" class="form-control" placeholder="Nhập tên đăng nhập" @bind="user.UserName"
                                 disabled="@(CurrentModalType == ModalType.Detail)" />
                             </div>
                             <!-- Mật Khẩu (Chỉ khi thêm hoặc sửa) -->
 
                             <div class="col-md-6">
-                                <label class="form-label">Mật Khẩu</label>
+                                <label class="form-label">Mật khẩu</label>
                                 <input type="text" class="form-control" placeholder="Nhập mật khẩu" @bind="user.PasswordHash"
                                 disabled="@(CurrentModalType == ModalType.Detail)" />
                             </div>
 
                             <!-- Ngày Sinh -->
                             <div class="col-md-6">
-                                <label class="form-label">Ngày Sinh</label>
+                                <label class="form-label">Ngày sinh</label>
                                 <input type="date" class="form-control" @bind="user.DateOfBirth"
                                 disabled="@(CurrentModalType == ModalType.Detail)" />
                             </div>
                             <!-- Hình Ảnh -->
                             <div class="col-md-6">
-                                <label class="form-label">Hình Ảnh</label>
+                                <label class="form-label">Hình ảnh</label>
                                 <div class="d-flex align-items-center">
                                     <div class="me-2">
                                         @if (CurrentModalType != ModalType.Detail)
@@ -250,7 +250,7 @@
                             </div>
                             <!-- Trạng Thái -->
                             <div class="col-md-6">
-                                <label class="form-label">Trạng Thái</label>
+                                <label class="form-label">Trạng thái</label>
                                 <select class="form-select" @bind="user.Status" disabled="@(CurrentModalType == ModalType.Detail)">
                                     <option value="1">Hoạt động</option>
                                     <option value="0">Tạm dừng</option>
@@ -267,7 +267,7 @@
                         <button class="btn btn-warning" @onclick="()=>showmodaal(ModalType.Edit,user.Id)">Chỉnh sửa</button>
                     }else{
                         <button type="button" class="btn btn-outline-primary" @onclick="showexcel">
-                            <i class="bi bi-file-earmark-excel"></i> Thêm từ file Excel
+                            <i class="bi bi-file-earmark-excel"></i> Thêm từ file excel
                         </button>
 
                         <!-- Nút tải file mẫu Excel -->
@@ -661,18 +661,18 @@
             var respon = await client.PostAsJsonAsync("https://localhost:7046/api/Classes/create-class", classcreateandupdate);
             if (respon.IsSuccessStatusCode)
             {
-               
+                await jsruntime.InvokeVoidAsync("alert", $"Thêm Lớp thành công");
                 idgrade = Guid.Empty;
                 await GetAllClass();
 
             }
-            else { await jsruntime.InvokeVoidAsync("alert", $"Thêm Lớp thất bại{idclass}"); }
+            else { await jsruntime.InvokeVoidAsync("alert", $"Thêm Lớp thất bại"); }
         }else{
             classcreateandupdate.Id = idclass;
             var respon = await client.PutAsJsonAsync("https://localhost:7046/api/Classes/update-class", classcreateandupdate);
             if (respon.IsSuccessStatusCode)
             {
-               
+                await jsruntime.InvokeVoidAsync("alert", $"Thêm Lớp thành công");
                 await GetAllClass();
             }
             else

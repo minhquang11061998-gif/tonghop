@@ -18,31 +18,14 @@ article {
 }
 main {
     background-image: url('/img/Untitled-1.png');
+    background-size: cover; /* Ảnh sẽ tự động phóng to hoặc thu nhỏ để bao phủ toàn bộ vùng */
+    background-repeat: no-repeat; /* Không lặp lại ảnh */
+    background-position: center; /* Đặt vị trí trung tâm của ảnh */
+    height: 100vh; /* Chiều cao của phần tử main chiếm toàn bộ chiều cao màn hình */
+    width: 100%; /* Chiều rộng chiếm toàn bộ chiều rộng */
 }
 
-/* Mặc định menu con ẩn */
-#manageClassMenu {
-    display: none;
-}
 
-/* Hiển thị menu khi checkbox được chọn */
-#toggleMenu:checked + a + #manageClassMenu {
-    display: block;
-}
-
-/* Mũi tên mặc định là mũi tên xuống */
-#toggleMenu:not(:checked) + a .bi-chevron-down {
-    display: inline-block;
-}
-
-/* Mũi tên khi menu được mở */
-#toggleMenu:checked + a .bi-chevron-down {
-    display: none;
-}
-
-#toggleMenu:checked + a .bi-chevron-up {
-    display: inline-block;
-}
 
 
 
