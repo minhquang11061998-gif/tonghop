@@ -88,13 +88,17 @@
                     <!-- Hàng danh sách dữ liệu -->
                     @if (FilteredUserstudent != null && FilteredUserstudent.Any())
                     {
-                        @foreach (var item in FilteredUserstudent.OrderBy(c => c.Name))
+                        @foreach (var item in FilteredUserstudent)
                         {
                             <tr class="align-content-center" @onclick="()=>GetTeacher(item.Id)">
                                 <td>@(FilteredUserstudent.IndexOf(item)+1)</td>
                                 <td>@item.Name</td>
                                 <td>@item.Code</td>
-                                <td>@item.Status</td>
+                                <td>
+                                    <span class="badge @(item.Status == 1 ? "bg-success" : "bg-secondary")">
+                                        @(item.Status == 1 ? "Hoạt động" : "Tạm dừng")
+                                    </span>
+                                </td>
                             </tr>
                         }
                     }
@@ -114,47 +118,64 @@
         <div class="container-fluid mt-3 border bg-light rounded min-vh-100">
             <div class="d-flex justify-content-between align-items-center mb-3 p-3">
                 <h5 class="text-success fw-bold">Danh sách giáo viên</h5>
+                <button class="btn btn-primary btn-sm d-flex align-items-center gap-2 px-1 py-2 " disabled="@(subjectid == Guid.Empty)" @onclick="showedit">
+                    <i class="bi bi-pencil-square"></i>
+                    <span>Cập nhật giáo viên</span>
+                </button>
+
             </div>
             <table class="table table-borderless rounded">
-                <tbody>
-                    @if(editsubject){
+                @if (editsubject)
+                {
+                    <tbody>
                         <tr>
-                            <select class="form-select">
-                                <option value="@teacher_Subject.TeacherId" hidden>@GetTeacherNameById(teacher_Subject.TeacherId)</option>
-                                @foreach(var teacher in teacherDTOs){
-                                    <option value="@teacher.Id" hidden>@teacher.Name</option>
-                                }
-                            </select>
+                            <td>
+                                <select class="form-select" @bind="teacher_Subject.idteacher">
+                                    <option value="@Guid.Empty">Chọn giáo viên</option>
+                                    @foreach (var teacher in teacherDTOs)
+                                    {
+                                        <option value="@teacher.Id">@teacher.Name</option>
+                                    }
+                                </select>
+                            </td>
+                            <td>
+                                <button class="btn btn-success" @onclick="()=>updateteacher(subjectid)">Lưu</button>
+                                <button class="btn btn-warning" @onclick="closeedit">Hủy</button>
+                            </td>
                         </tr>
-                    }else{
-                        @if (users != null && users.Any())
-                        {
-                            <!-- Danh sách giáo viên -->
-                            @foreach (var teacher in users.OrderBy(t => t.FullName))
-                            {
-                                <tr>
-                                    <td>@teacher.FullName</td>
-                                    <td class="text-end">
-                                        <button class="btn btn-danger btn-sm" @onclick="showedit">Chỉnh sửa</button>
-                                    </td>
-                                </tr>
-                            }
-                        }
-                        else
+                    </tbody>
+
+                }
+
+                <tbody>
+                    @if (teacherDTOss != null && teacherDTOss.Any())
+                    {
+                        @foreach (var teacher in teacherDTOss.OrderBy(t => t.Name))
                         {
                             <tr>
-                                <td colspan="2" class="text-center text-danger">Không có dữ liệu.</td>
+                                <td>@teacher.Name</td>
+                                <td class="text-end">
+                                    <button class="btn btn-danger btn-sm" @onclick="()=>deleteacher(subjectid,teacher.Id)">Xóa</button>
+                                </td>
                             </tr>
+
                         }
                     }
-
+                    else
+                    {
+                        <tr>
+                            <td colspan="2" class="text-center text-danger">Không có dữ liệu.</td>
+                        </tr>
+                    }
                 </tbody>
             </table>
+
         </div>
     </div>
 </div>
 
 @code {
+    private Guid idteacher;
     private bool showfaceid = false;
     private Guid idstudent;
     private void showdata(Guid id)
@@ -162,74 +183,20 @@
         idstudent = id;
         showfaceid = true;
     }
-    private void closefaceid()
+    private void closeedit()
     {
-        showfaceid = false;
+        editsubject = false;
     }
-    private string GetTeacherNameById(Guid teacherId)
-    {
-        if (teacher_Subject.TeacherId == teacherId)
-        {
-            return teacher_Subject.Teacher?.User?.FullName ?? "Tên không tồn tại";
-        }
-        return "Tên không tồn tại";
-    }
-    private void showedit(){
+
+    private async Task showedit(){
+
         editsubject = true;
-    }
-
-    private async Task delete(string id)
-    {
-        var resrpon = await client.DeleteAsync($"https://localhost:7046/api/FaceId/remove-face?userId={id}");
-        if (resrpon.IsSuccessStatusCode)
-        {
-            await jsruntime.InvokeVoidAsync("alert", "xóa dữ liệu thành công");
-        }
-        else { await jsruntime.InvokeVoidAsync("alert", "xóa dữ liệu thất bại"); }
 
     }
-    private async Task RegisterFaceAsync(string userId)
-    {
-        if (string.IsNullOrWhiteSpace(userId))
-        {
-            await jsruntime.InvokeVoidAsync("alert", "vui lòng nhập ID user");
-            return;
-        }
-
-        try
-        {
-            var response = await client.PostAsync($"https://localhost:7046/api/FaceId/register-face?userId={userId}", null);
-            if (response.IsSuccessStatusCode)
-            {
-
-                await jsruntime.InvokeVoidAsync("alert", "thêm dữ liệu  thành công");
-                await jsruntime.InvokeVoidAsync("reloadCameraFeed");
-                showfaceid = false;
 
 
-            }
-            else
-            {
-                var errorResponse = await response.Content.ReadAsStringAsync();
-                await jsruntime.InvokeVoidAsync("alert", "thêm dữ liệu không thành công");
-                await jsruntime.InvokeVoidAsync("reloadCameraFeed");
-            }
-        }
-        catch (Exception)
-        {
-            await jsruntime.InvokeVoidAsync("alert", "thêm dữ liệu không thành công");
-            await jsruntime.InvokeVoidAsync("reloadCameraFeed");
-        }
-    }
+
 }
-<script>
-    function reloadCameraFeed() {
-        const cameraImage = document.querySelector("#cameraStream");
-        if (cameraImage) {
-            cameraImage.src = "https://localhost:7046/api/FaceId/camera-stream?" + new Date().getTime();
-        }
-    }
-</script>
 @code {
     private bool editsubject= false;
     private Guid newGradeName = Guid.Empty;
@@ -238,13 +205,13 @@
     private Guid selectidclass;
     private Guid? TaskIdToEdit = null;
     private Guid? EditClass = null;
-    private Teacher_Subject teacher_Subject = new Teacher_Subject();
+    private subject_teacherDTO teacher_Subject = new subject_teacherDTO();
     private void OnInputChanged(string? value)
     {
         if (int.TryParse(value, out var parsedValue))
         {
             gradescreate.Name = parsedValue;
-          
+
             StateHasChanged();
         }
     }
@@ -252,7 +219,7 @@
     {
 
         var inputValue = e.Value?.ToString();
-       
+
         StateHasChanged();
     }
     private void OnClassChanged(ChangeEventArgs e)
@@ -263,8 +230,50 @@
 
         }
     }
+    private Guid subjectid;
+    private async Task deleteacher(Guid IdSubject,Guid idteacher)
+    {
+        teacher_Subject.idteacher = idteacher;
+        teacher_Subject.idsubject = IdSubject;
+        var response = await client.PutAsJsonAsync("https://localhost:7046/api/Subject/update-subject", teacher_Subject);
+
+        if (response.IsSuccessStatusCode)
+        {
+
+            await jsruntime.InvokeVoidAsync("alert", "Xóa thành công.");
+            await GetTeacher(IdSubject);
+        }
+        else
+        {
+            await jsruntime.InvokeVoidAsync("alert", "Xóa thất bại");
+        }
+
+
+    }
+    private async Task updateteacher(Guid IdSubject)
+    {
+       
+            teacher_Subject.idsubject = IdSubject;
+            var response = await client.PutAsJsonAsync("https://localhost:7046/api/Subject/update-subject", teacher_Subject);
+
+            if (response.IsSuccessStatusCode)
+            {
+               
+                await jsruntime.InvokeVoidAsync("alert", "Cập nhật thành công.");
+            await GetTeacher(IdSubject);
+            }
+            else
+            {
+                await jsruntime.InvokeVoidAsync("alert", "Cập nhật thất bại");
+            }
+        
+       
+    }
+
+
     private List<TeacherDTO> teacherDTOs = new List<TeacherDTO>();
-    private List<Users> users = new List<Users>();
+    private List<TeacherDTO> teacherDTOss = new List<TeacherDTO>();
+
     private List<Grades> grades = new List<Grades>();
     private List<Classes> classes = new List<Classes>();
     private List<Subjects> subjects = new List<Subjects>();
@@ -275,14 +284,19 @@
     protected override async Task OnInitializedAsync()
     {
         await GetAllGrade();
-
+        await Getallteacher();
+    }
+    private async Task getidsbj(Guid id){
+       
+        teacher_Subject = await client.GetFromJsonAsync<subject_teacherDTO>($"https://localhost:7046/api/Subject/get-by-id-teach-subj?id={id}");
     }
     private async Task Getallteacher()
     {
-        teacherDTOs = await client.GetFromJsonAsync<List<TeacherDTO>>("https://localhost:7046/api/Teacher/get-all-teacher");
+        teacherDTOs = await client.GetFromJsonAsync<List<TeacherDTO>>("https://localhost:7046/api/Teacher/get-all-teacher-all");
     }
     private async Task GetTeacher(Guid id){
-        users = await client.GetFromJsonAsync<List<Users>>($"https://localhost:7046/api/Classes/Listteachersubj?idsbj={id}");
+        subjectid = id;
+        teacherDTOss = await client.GetFromJsonAsync<List<TeacherDTO>>($"https://localhost:7046/api/Classes/Listteachersubj?idsbj={id}");
     }
     private async Task GetAllClass(Guid id)
     {
@@ -306,7 +320,7 @@
         subjects = await client.GetFromJsonAsync<List<Subjects>>($"https://localhost:7046/api/Classes/ListSubjectFor?IdClass={id}");
 
     }
-    private string SearchText { get; set; }
+    private string? SearchText { get; set; }
 
 }
 

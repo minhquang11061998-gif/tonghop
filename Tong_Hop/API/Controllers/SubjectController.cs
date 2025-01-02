@@ -32,6 +32,26 @@ namespace API.Controllers
 
             return new string(code);
         }
+        [HttpGet("get-by-id-teach-subj")]
+        public async Task<IActionResult> Getbyidteach(Guid id)
+        {
+            var teacherSubject = await (from a in _db.Teacher_Subjects
+                                        join b in _db.Teachers on a.TeacherId equals b.Id
+                                        join c in _db.Users on b.UserId equals c.Id
+                                        where a.Id == id
+                                        select new subject_teacherDTO
+                                        {
+                                            Id = a.Id,
+                                            Name = c.FullName,
+                                            idteacher=a.TeacherId,
+                                            idsubject=a.SubjectId
+                                        }).FirstOrDefaultAsync();
+            if (teacherSubject == null)
+            {
+                return NotFound("Không tìm thấy giáo viên với ID này.");
+            }
+            return Ok(teacherSubject); 
+        }
 
         [HttpGet("get-all-subject")]
         public async Task<ActionResult<List<SubjectDTO>>> GetAll()
@@ -181,18 +201,18 @@ namespace API.Controllers
 
 		#region đã sửa có thể update môn khối và giáo viên
 		[HttpPut("update-subject")]
-        public async Task<IActionResult> Update(Guid IdSubject, Guid IdTeacher)
+        public async Task<IActionResult> Update(subjectDTO DTO)
         {
 			try
 			{
 				// Bước 1: Tìm Subject cần cập nhật
-				var subject = await _db.Subjects.FirstOrDefaultAsync(x => x.Id == IdSubject);
+				var subject = await _db.Subjects.FirstOrDefaultAsync(x => x.Id == DTO.idsubject);
 				if (subject == null)
 				{
 					return NotFound("Subject không tồn tại");
 				}
 
-                var Teacher = _db.Teachers.FirstOrDefault(x => x.Id == IdTeacher);
+                var Teacher = _db.Teachers.FirstOrDefault(x => x.Id == DTO.idteacher);
                 if (Teacher == null)
                 {
                     return NotFound("Teacher không tồn tại");
@@ -217,8 +237,8 @@ namespace API.Controllers
 					_db.Teacher_Subjects.Add(new Teacher_Subject
 					{
 						Id = Guid.NewGuid(),
-						SubjectId = IdSubject,
-						TeacherId = IdTeacher
+						SubjectId = DTO.idsubject,
+						TeacherId = DTO.idteacher,
 
 					});
 				}

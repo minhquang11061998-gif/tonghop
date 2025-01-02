@@ -77,7 +77,7 @@
                                         <span class="fw-semibold">Giáo viên:</span> @classItem.NameTeacher
                                     </td>
                                     <td class="text-center align-middle">
-                                        <button class="btn btn-sm btn-success me-2" title="Thêm mới" @onclick="()=>ShowCreateStudent(ModalType.Add)">
+                                        <button class="btn btn-sm btn-success me-2" title="Thêm mới" @onclick="()=>ShowCreateStudent(ModalType.Add,classItem.Id)">
                                             <i class="bi bi-plus-circle-dotted"></i>
                                         </button>
                                         <button class="btn btn-sm btn-primary" @onclick="()=>showupdateclass(ModalTypeClass.Edit,classItem.Id)" title="Chỉnh sửa">
@@ -188,7 +188,7 @@
                         <div class="row g-3">
                             <!-- Họ và Tên -->
                             <div class="col-md-6">
-                                <label class="form-label">Họ và Tên</label>
+                                <label class="form-label">Họ và tên</label>
                                 <input type="text" class="form-control" placeholder="Nhập họ và tên" @bind="user.FullName"
                                 disabled="@(CurrentModalType == ModalType.Detail)" />
                             </div>
@@ -206,33 +206,33 @@
                             </div>
                             <!-- Tên Đăng Nhập -->
                             <div class="col-md-6">
-                                <label class="form-label">Tên Đăng Nhập</label>
+                                <label class="form-label">Tên đăng nhập</label>
                                 <input type="text" class="form-control" placeholder="Nhập tên đăng nhập" @bind="user.UserName"
                                 disabled="@(CurrentModalType == ModalType.Detail)" />
                             </div>
                             <!-- Mật Khẩu (Chỉ khi thêm hoặc sửa) -->
 
                             <div class="col-md-6">
-                                <label class="form-label">Mật Khẩu</label>
+                                <label class="form-label">Mật khẩu</label>
                                 <input type="text" class="form-control" placeholder="Nhập mật khẩu" @bind="user.PasswordHash"
                                 disabled="@(CurrentModalType == ModalType.Detail)" />
                             </div>
 
                             <!-- Ngày Sinh -->
                             <div class="col-md-6">
-                                <label class="form-label">Ngày Sinh</label>
+                                <label class="form-label">Ngày sinh</label>
                                 <input type="date" class="form-control" @bind="user.DateOfBirth"
                                 disabled="@(CurrentModalType == ModalType.Detail)" />
                             </div>
                             <!-- Hình Ảnh -->
                             <div class="col-md-6">
-                                <label class="form-label">Hình Ảnh</label>
+                                <label class="form-label">Hình ảnh</label>
                                 <div class="d-flex align-items-center">
                                     <div class="me-2">
                                         @if (CurrentModalType != ModalType.Detail)
                                         {
 
-                                            <InputFile id="selectfile" style="display:none" class="form-control" onchange="HandfileAvatarTeacher" />
+                                            <InputFile id="selectfile" style="display:none" class="form-control" OnChange="HandfileAvatarTeacher" />
                                             <button class="btn btn-outline-primary" type="button" @onclick="TriggerFileInput">Chọn Ảnh</button>
                                         }
                                     </div>
@@ -250,7 +250,7 @@
                             </div>
                             <!-- Trạng Thái -->
                             <div class="col-md-6">
-                                <label class="form-label">Trạng Thái</label>
+                                <label class="form-label">Trạng thái</label>
                                 <select class="form-select" @bind="user.Status" disabled="@(CurrentModalType == ModalType.Detail)">
                                     <option value="1">Hoạt động</option>
                                     <option value="0">Tạm dừng</option>
@@ -267,7 +267,7 @@
                         <button class="btn btn-warning" @onclick="()=>showmodaal(ModalType.Edit,user.Id)">Chỉnh sửa</button>
                     }else{
                         <button type="button" class="btn btn-outline-primary" @onclick="showexcel">
-                            <i class="bi bi-file-earmark-excel"></i> Thêm từ file Excel
+                            <i class="bi bi-file-earmark-excel"></i> Thêm từ file excel
                         </button>
 
                         <!-- Nút tải file mẫu Excel -->
@@ -335,16 +335,14 @@
                 <div class="mb-3">
                     <label for="teacherSelect" class="form-label">Chọn giáo viên</label>
                     <select id="teacherSelect" class="form-select" @bind="classcreateandupdate.TeacherId">
-                        <option value="@classcreateandupdate.Id" hidden >@classcreateandupdate.NameTeacher</option>
-                    
-                            @foreach (var teacher in teacherDTOs)
-                            {
+                        <option value="@classcreateandupdate.TeacherId" hidden>@classcreateandupdate.NameTeacher</option>
+                        @foreach (var teacher in teacherDTOs)
+                        {
                             <option value="@teacher.Id">@teacher.Name</option>
-                            }
-                 
-                       
+                        }
                     </select>
                 </div>
+
                 <div class="text-center">
                     <button type="button" class="btn btn-primary me-2" @onclick="createclass">Lưu</button>
                     <button type="button" class="btn btn-secondary" @onclick="CloseModal">Hủy</button>
@@ -370,7 +368,7 @@
           ? getallStudentDT0s
           : getallStudentDT0s.Where(seacher =>
               seacher.Name.Contains(seachestudent, StringComparison.OrdinalIgnoreCase)).ToList();
-    private IBrowserFile avatarFile;
+    private IBrowserFile? avatarFile;
     private bool ShowModal { get; set; } = false;
     private ModalType CurrentModalType { get; set; } = ModalType.Add;
     private ModalTypeClass CurrentModalTypeclass { get; set; } = ModalTypeClass.Add;
@@ -391,16 +389,17 @@
             isClassModalVisible = true;
         }else{
             isClassModalVisible = true;
+
         }
-      
-        
+
+
 
     }
     private  async Task showmodaal(ModalType modalType, Guid id)
     {
-        CurrentModalType = modalType; // Cập nhật kiểu modal
+        CurrentModalType = modalType; 
 
-        if (CurrentModalType == ModalType.Detail)  // Kiểm tra nếu modal là Detail
+        if (CurrentModalType == ModalType.Detail)  
         {
             await detail(id);
             ShowModal = true; 
@@ -408,7 +407,6 @@
         }
         else
         {
-
             ShowModal = true;  
         }
     }
@@ -416,9 +414,10 @@
 
 
 
-    private void ShowCreateStudent(ModalType modalType)
+    private void ShowCreateStudent(ModalType modalType,Guid id)
     {
         CurrentModalType = modalType;
+        idclass = id;
         ShowModal = true; 
     }
 
@@ -469,7 +468,7 @@
         }
     }
 
-    private IBrowserFile selectedFile;
+    private IBrowserFile? selectedFile;
     private async Task HandleFileSelected(InputFileChangeEventArgs e)
     {
         var file = e.GetMultipleFiles(1); // Lấy tệp đầu tiên
@@ -502,41 +501,29 @@
                 content.Add(new ByteArrayContent(fileBytes), "file", selectedFile.Name);
             }
 
-            if (selectidclass != Guid.Empty)
+            if (idclass != Guid.Empty)
             {
-                content.Add(new StringContent(selectidclass.ToString()), "selectidclass");
+                content.Add(new StringContent(idclass.ToString()), "idclass");
             }
             else
             {
                 await jsruntime.InvokeVoidAsync("alert", "chưa chọn lớp học");
 
             }
-            var response = await client.PostAsync($"https://localhost:7046/api/User/import-excel?id={selectidclass}", content);
+            var response = await client.PostAsync($"https://localhost:7046/api/User/import-excel?id={idclass}", content);
             if (response.IsSuccessStatusCode)
             {
                 await jsruntime.InvokeVoidAsync("alert", "Tải file thành công");
-                await getallstudent(selectidclass);
+                await getallstudent(idclass);
             }
             else
             {
-                await jsruntime.InvokeVoidAsync("Swal.fire", new
-                {
-                    title = "Thất bại!",
-                    text = "Đã xảy ra lỗi khi tải lên",
-                    icon = "error",
-                    confirmButtonText = "OK"
-                });
+                await jsruntime.InvokeVoidAsync("alert", "Tải file không thành công");
             }
         }
         else
         {
-            await jsruntime.InvokeVoidAsync("Swal.fire", new
-            {
-                title = "Thất bại!",
-                text = "Vui lòng chọn một file",
-                icon = "error",
-                confirmButtonText = "OK"
-            });
+            await jsruntime.InvokeVoidAsync("alert", "Tải file không thành công");
         }
     }
     private async Task SaveOrder()
@@ -567,14 +554,15 @@
         var response = await client.PostAsync($"https://localhost:7046/api/User/create-user?id={idclass}", content);
         if (response.IsSuccessStatusCode)
         {
-
+            await jsruntime.InvokeVoidAsync("alert", "Thêm học sinh thành công");
             selectidclass = Guid.Empty;
             user = new Users();
             await getallstudent(idclass);
+
         }
         else
         {
-            await jsruntime.InvokeVoidAsync("alert",$"{selectidclass}");
+            await jsruntime.InvokeVoidAsync("alert", "Thêm học sinh thất bại");
         }
 
 
@@ -595,7 +583,7 @@
             }
             catch (Exception ex)
             {
-                await jsruntime.InvokeVoidAsync("alert", $"Lỗi xử lý ảnh: {ex.Message}");
+                await jsruntime.InvokeVoidAsync("alert", $"Lỗi xử lý ảnh");
                 return;
             }
         }
@@ -616,13 +604,13 @@
         var respon = await client.PutAsync($"https://localhost:7046/api/User/update-user-teacher/", content);
         if (respon.IsSuccessStatusCode)
         {
-            await getallstudent(selectidclass);
-
+            await getallstudent(idclass);
+            await jsruntime.InvokeVoidAsync("alert", "Cập nhật học sinh thành công");
         }
         else
         {
             var errorResponse = await respon.Content.ReadAsStringAsync();
-            await jsruntime.InvokeVoidAsync("alert", $"Cập nhật tài khoản không thành công: {errorResponse}");
+            await jsruntime.InvokeVoidAsync("alert", $"Cập nhật học sinh không thành công");
         }
         CloseModal();
     }
@@ -673,18 +661,18 @@
             var respon = await client.PostAsJsonAsync("https://localhost:7046/api/Classes/create-class", classcreateandupdate);
             if (respon.IsSuccessStatusCode)
             {
-               
+                await jsruntime.InvokeVoidAsync("alert", $"Thêm Lớp thành công");
                 idgrade = Guid.Empty;
                 await GetAllClass();
 
             }
-            else { await jsruntime.InvokeVoidAsync("alert", $"Thêm Lớp thất bại{idclass}"); }
+            else { await jsruntime.InvokeVoidAsync("alert", $"Thêm Lớp thất bại"); }
         }else{
             classcreateandupdate.Id = idclass;
             var respon = await client.PutAsJsonAsync("https://localhost:7046/api/Classes/update-class", classcreateandupdate);
             if (respon.IsSuccessStatusCode)
             {
-               
+                await jsruntime.InvokeVoidAsync("alert", $"Thêm Lớp thành công");
                 await GetAllClass();
             }
             else
@@ -722,7 +710,7 @@
     }
     private List<Guid> ExpandedTasks = new List<Guid>();
     private List<Guid> Expandedstudent = new List<Guid>();
-    private string SearchText { get; set; }
+    private string? SearchText { get; set; }
     private async Task HideModal()
     {
         await jsruntime.InvokeVoidAsync("HideModal");

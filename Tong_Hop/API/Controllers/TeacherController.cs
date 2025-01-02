@@ -16,6 +16,20 @@ namespace API.Controllers
         {
             _db = db;
         }
+        [HttpGet("get-all-teacher-all")]
+        public async Task<ActionResult<List<TeacherDTO>>> GetAllteacher()
+        {
+            var data = await (from user in _db.Users
+                              join teacher in _db.Teachers on user.Id equals teacher.UserId
+                              select new TeacherDTO
+                              {
+                                  Id = teacher.Id,
+                                  Name = user.FullName,
+                                  Code = teacher.Code
+                              }).ToListAsync();
+
+            return Ok(data);
+        }
 
         [HttpGet("get-all-teacher")]
         public async Task<ActionResult<List<TeacherDTO>>> GetAll()

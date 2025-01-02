@@ -1,89 +1,139 @@
-﻿.router-space {
-    background-color: #FFFF;
-    border-radius: 12px;
+﻿body {
+    font-family: 'Roboto', sans-serif;
+    background-color: #f9f9f9;
 }
 
-.bi:hover {
-    color: cornflowerblue
+.btn {
+    transition: all 0.3s ease;
+    padding: 0.5rem 1rem;
 }
 
-.row {
-    --bs-gutter-x: 0;
-}
-
-.modal.fade.show {
-    display: block;
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 1050; /* Đảm bảo modal luôn nằm trên các phần tử khác */
-    overflow-y: auto; /* Đảm bảo modal cuộn khi nội dung nhiều */
-}
-
-.folder-item {
-    cursor: pointer;
-}
-
-.info-action {
-    cursor: pointer;
-    margin-right: 10px;
-}
-
-.folder-header {
-    background-color: cornflowerblue;
-}
-
-.info-header {
-    background-color: cornflowerblue;
-}
-
-.custom-context-menu {
-    display: none;
-    position: absolute;
-    z-index: 1000;
-    background-color: #ffffff;
-    border: 1px solid #ccc;
-    box-shadow: 2px 2px 10px rgba(0,0,0,0.2);
-    padding: 10px;
-}
-
-    .custom-context-menu.show {
-        display: block;
+    .btn:hover {
+        transform: scale(1.05);
     }
-/* Định dạng cơ bản cho menu ngữ cảnh */
-.context-menu {
-    position: absolute;
-    z-index: 1000;
-    width: 150px;
-    margin-left:-170px;
-    background-color: #ffffff;
-    border: 1px solid #cccccc;
-    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
+
+.btn-primary {
+    background-color: #4CAF50;
+    border: none;
+}
+
+    .btn-primary:hover {
+        background-color: #45a049;
+    }
+
+.btn-info {
+    background-color: #17a2b8;
+    border: none;
+}
+
+    .btn-info:hover {
+        background-color: #138496;
+    }
+
+.table-hover tbody tr:hover {
+    background-color: #f2f2f2;
+}
+
+.modal-header, .modal-footer {
+    background-color: #f1f1f1;
+    border-bottom: 1px solid #ddd;
+    border-top: 1px solid #ddd;
+}
+
+.modal-content {
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.input-group {
+    border-radius: 20px;
+    overflow: hidden;
+}
+
+.input-group-text {
+    background-color: #007bff;
+    color: white;
+}
+
+table {
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+thead {
+    font-weight: bold;
+}
+
+tbody tr {
+    transition: all 0.2s ease-in-out;
+}
+
+    tbody tr:hover {
+        background-color: #e9f7ff;
+    }
+
+/*Model page question*/
+.modal-header {
+    background: linear-gradient(90deg, #0056b3, #007bff);
+    color: white;
+    border-bottom: none;
+    padding: 1.2rem;
+    font-size: 1.25rem;
+    letter-spacing: 0.02em;
+}
+
+.modal-body {
+    padding: 2rem;
+    background-color: #f9f9f9;
+}
+
+.modal-footer {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid #dee2e6;
+}
+
+.table {
+    border-radius: 10px;
+    overflow: hidden;
+    font-size: 0.95rem;
+}
+
+    .table th {
+        background: #e3f2fd;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        padding: 0.75rem;
+    }
+
+.btn {
+    transition: all 0.3s ease;
+}
+
+    .btn:hover {
+        transform: scale(1.1);
+        opacity: 0.95;
+    }
+
+.btn-close {
+    color: white;
+    opacity: 0.9;
+}
+
+    .btn-close:hover {
+        opacity: 1;
+        background-color: #d9534f;
+        border-radius: 50%;
+    }
+
+.form-select {
+    border: 1px solid #80bdff;
+    padding: 0.5rem;
+    font-size: 0.95rem;
+}
+
+.alert {
+    font-size: 1rem;
+    margin-top: 2rem;
     border-radius: 5px;
-    display: none; /* Mặc định là ẩn */
-
-}
-
-/* Các mục bên trong menu ngữ cảnh */
-.context-menu-item {
-    padding: 10px;
-    cursor: pointer;
-    font-size: 14px;
-    color: #333333;
-    transition: background-color 0.3s ease;
-}
-
-    /* Màu nền khi di chuột vào từng mục */
-    .context-menu-item:hover {
-        background-color: #f0f0f0;
-    }
-
-    /* Thêm khoảng cách giữa các phần tử, nếu cần */
-    .context-menu-item + .context-menu-item {
-        border-top: 1px solid #eeeeee;
-    }
-
-.text-white:hover {
-    color: mediumblue
 }
