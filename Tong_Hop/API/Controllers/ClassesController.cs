@@ -192,7 +192,7 @@ namespace API.Controllers
 
                 if (result != null)
                 {
-                    string ClassesName = $"{grade.Name}{classDTO.Name}";
+                    string ClassesName = $"{grade.Name}{result}";
 
                     var data = new Classes
                     {
