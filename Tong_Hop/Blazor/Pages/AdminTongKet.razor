@@ -68,7 +68,7 @@
 	</div>
 </div>
 
-<div class="modal fade" id="summaryModal" tabindex="-1" aria-labelledby="summaryModalLabel" aria-hidden="true">
+<div class="modal fade" id="summaryModal" tabindex="-1" aria-labelledby="summaryModalLabel" aria-hidden="true" data-bs-backdrop="false">
 	<div class="modal-dialog modal-lg modal-dialog-centered">
 		<div class="modal-content">
 			<div class="modal-header">
@@ -79,6 +79,7 @@
 				<div class="summary-header mb-4">
 					<p><strong>Lớp:</strong> <span class="highlight-text">@className</span></p>
 					<p><strong>Kỳ hiện tại:</strong> <span class="highlight-text">@currentSemesterName</span></p>
+
 				</div>
 				<table class="table table-striped table-hover table-bordered custom-table">
 					<thead>
@@ -124,27 +125,18 @@
 				</table>
 			</div>
 			<div class="modal-footer">
-				@*  <button class="btn btn-primary" @onclick="CalculateFinalScores" disabled="@isCalculating">Tính toán điểm tổng kết</button> *@
-				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal" @onclick="CloseModal">Đóng</button>
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
 			</div>
 		</div>
 	</div>
 </div>
-
-
-@* @if (isCalculating)
-{
-	<div class="overlay @(isCalculating ? "active" : "")">
-		<div class="spinner-border text-primary" role="status"></div>
-		<span>Đang xử lý...</span>
-	</div>
-} *@
 
 <!-- Bootstrap Bundle JS (bao gồm Popper.js) -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
 @code {
 	private List<ClassesDTO> classList = new List<ClassesDTO>();
+	private List<GradeDTO> grades = new List<GradeDTO>();
 	private List<Learning_SummaryDTO> learningSummaryList = new List<Learning_SummaryDTO>();
 	private List<string> Subjects = new();
 	private string searchKeyword;
@@ -160,7 +152,6 @@
 	private bool showCalculationMessage = false;
 	private Guid? CurrentClassId { get; set; } // Lưu ClassID
 	private Guid? CurrentTeacherId { get; set; } // Lưu TeacherID
-	// private bool isCalculating = false; // Biến kiểm soát trạng thái tính toán
 
 
 	protected override async Task OnInitializedAsync()
@@ -176,17 +167,32 @@
 		{
 			var httpClient = clientFactory.CreateClient("DefaultClient");
 			var classUrl = "https://localhost:7046/api/Classes/get-all-class";
-			var response = await httpClient.GetAsync(classUrl);
+			classList = await httpClient.GetFromJsonAsync<List<ClassesDTO>>(classUrl);
 
-			if (response.IsSuccessStatusCode)
-			{
-				classList = await response.Content.ReadFromJsonAsync<List<ClassesDTO>>();
-			}
-			else
-			{
-				var errorContent = await response.Content.ReadAsStringAsync();
-				await jsRuntime.InvokeVoidAsync("alert", $"Nội dung: {errorContent}");
-			}
+			// Lấy danh sách khối lớp
+			var gradeUrl = "https://localhost:7046/api/Grade/get-grade";
+			grades = await httpClient.GetFromJsonAsync<List<GradeDTO>>(gradeUrl);
+
+			// Kết hợp dữ liệu từ hai bảng
+			classList = classList
+				.Join(
+					grades,
+					c => c.GradeId, // Khóa ngoại từ bảng Classes
+					g => g.Id, // Khóa chính từ bảng Grades
+					(c, g) => new ClassesDTO
+						{
+							Id = c.Id,
+							Name = c.Name,
+							TeacherName = c.TeacherName,
+							Status = c.Status,
+							MaxStudent = c.MaxStudent,
+							GradeId = c.GradeId,
+							GradeName = g.Name // Gắn thêm GradeName từ bảng Grades
+						}
+				)
+				.OrderBy(c => c.GradeName) // Sắp xếp theo khối (6, 7, 8, 9)
+				.ThenBy(c => c.Name) // Sắp xếp theo tên lớp trong từng khối
+				.ToList();
 		}
 		catch (Exception ex)
 		{
@@ -243,9 +249,19 @@
 
 		if (semesters != null)
 		{
-			semesterMapping = semesters.ToDictionary(s => s.Id, s => s.Name); // Ánh xạ ID -> Tên
+			semesterMapping = semesters.ToDictionary(s => s.Id, s => s.Name);
+			Console.WriteLine("Danh sách kỳ học đã tải:");
+			foreach (var semester in semesters)
+			{
+				Console.WriteLine($"ID: {semester.Id}, Name: {semester.Name}");
+			}
+		}
+		else
+		{
+			Console.WriteLine("Không thể tải danh sách kỳ học.");
 		}
 	}
+
 
 	private async Task LoadAndCalculateLearningSummary(Guid classId)
 	{
@@ -295,7 +311,8 @@
 							{
 								StudentId = g.Key,
 								StudentName = g.First().StudentName,
-								SubjectScores = g.SelectMany(s => s.SubjectScores).ToDictionary(k => k.Key, v => v.Value),
+								SubjectScores = g.Where(x => x.SubjectName != null)
+												 .ToDictionary(x => x.SubjectName, x => x.Point_Summary),
 								SemesterID = g.First().SemesterID
 							})
 						.OrderBy(summary => summary.StudentName)
@@ -307,9 +324,17 @@
 						.ToList();
 
 					var firstSummary = result.FirstOrDefault();
-					currentSemesterName = firstSummary != null && semesterMapping.TryGetValue(firstSummary.SemesterID, out var semesterName)
-						? semesterName
-						: "Không xác định";
+					if (firstSummary != null && firstSummary.SemesterID.HasValue && semesterMapping.TryGetValue(firstSummary.SemesterID.Value, out var semesterName))
+					{
+						currentSemesterName = semesterName;
+					}
+					else
+					{
+						currentSemesterName = "Không xác định";
+					}
+
+
+
 				}
 				else
 				{
@@ -346,88 +371,6 @@
 		}
 	}
 
-
-
-	// private async Task CalculateFinalScores()
-	// {
-	//     try
-	//     {
-	//         isCalculating = true; // Bắt đầu tính toán
-	//         StateHasChanged(); // Cập nhật giao diện
-
-	//         await Task.Delay(2000); // Giả lập thời gian tính toán
-
-	//         if (!CurrentClassId.HasValue || !CurrentTeacherId.HasValue)
-	//         {
-	//             await jsRuntime.InvokeVoidAsync("alert", "Thông tin lớp học hoặc giáo viên không hợp lệ.");
-	//             return;
-	//         }
-
-	//         // Gửi yêu cầu đến API tính điểm tổng kết
-	//         var url = $"https://localhost:7046/api/Learning_Summary/CalculateFinalScores?classId={CurrentClassId}&teacherId={CurrentTeacherId}";
-	//         var response = await client.PostAsync(url, null);
-
-	//         if (response.IsSuccessStatusCode)
-	//         {
-	//             var result = await response.Content.ReadFromJsonAsync<List<Learning_SummaryDTO>>();
-
-	//             if (result == null || result.Count == 0)
-	//             {
-	//                 // Hiển thị thông báo khi không có điểm gì mới
-	//                 await jsRuntime.InvokeVoidAsync("Swal.fire", new
-	//                 {
-	//                     title = "Không có điểm gì mới để cập nhật!",
-	//                     text = "Không có dữ liệu mới để tính toán.",
-	//                     icon = "info",
-	//                     confirmButtonText = "OK"
-	//                 });
-	//             }
-	//             else
-	//             {
-	//                 // Hiển thị thông báo thành công
-	//                 await jsRuntime.InvokeVoidAsync("Swal.fire", new
-	//                 {
-	//                     title = "Thành công!",
-	//                     text = "Thông báo đã được gửi thành công!",
-	//                     icon = "success",
-	//                     confirmButtonText = "OK"
-	//                 });
-
-	//                 // Sau khi nhấn "OK", tải lại trang modal
-
-	//                 // Tải lại danh sách tổng kết sau khi tính toán
-	//                 learningSummaryList = result;
-	//                 await LoadAndCalculateLearningSummary(CurrentClassId.Value);
-	//             }
-	//         }
-	//         else
-	//         {
-	//             var errorMessage = await response.Content.ReadAsStringAsync();
-
-	//             // Hiển thị thông báo thất bại
-	//             await jsRuntime.InvokeVoidAsync("Swal.fire", new
-	//             {
-	//                 title = "Thất bại!",
-	//                 text = $"Gửi thông báo thất bại: {errorMessage}",
-	//                 icon = "error",
-	//                 confirmButtonText = "OK"
-	//             });
-	//         }
-
-	//         // Hiển thị thông báo kết quả tính toán
-	//         showCalculationMessage = true;
-	//         await jsRuntime.InvokeVoidAsync("bootstrapModal.show", "#summaryModal");
-	//     }
-	//     catch (Exception ex)
-	//     {
-	//         await jsRuntime.InvokeVoidAsync("alert", $"Đã xảy ra lỗi: {ex.Message}");
-	//     }
-	//     finally
-	//     {
-	//         isCalculating = false; // Kết thúc tính toán
-	//         StateHasChanged(); // Cập nhật giao diện
-	//     }
-	// }
 
 	private void CloseModal()
 	{

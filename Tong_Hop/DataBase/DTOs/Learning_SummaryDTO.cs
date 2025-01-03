@@ -18,8 +18,9 @@ namespace DataBase.DTOs
         public bool IsView { get; set; } = false;
         public string StudentName { get; set; }
         public string SubjectName { get; set; }
-        public Guid SemesterID { get; set; }
-        public Guid StudentId { get; set; }
+        public Guid? SemesterID { get; set; }
+		public string SemesterName { get; set; }
+		public Guid StudentId { get; set; }
         public Guid SubjectId { get; set; }
         public Guid ClassId { get; set; }
         public Dictionary<string, double> SubjectScores { get; set; }
