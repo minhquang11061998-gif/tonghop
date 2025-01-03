@@ -210,47 +210,58 @@
                     <button type="button" class="btn-close" @onclick="HideCreateTestModal"></button>
                 </div>
                 <div class="modal-body">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <label>Tên Đề:</label>
-                            <input type="text" class="form-control" @bind=testDTO.Name />
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Tên Đề:</label>
+                            <input type="text" class="form-control" @bind=testDTO.Name placeholder="Nhập tên đề" />
                         </div>
-                        <div>
-                            <label>Thời Gian</label>
-                            <input type="text" class="form-control" @bind=testDTO.Minute />
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Thời Gian (phút):</label>
+                            <input type="number" class="form-control" @bind=testDTO.Minute placeholder="Nhập thời gian" />
                         </div>
-                        <div>
-                            <label>Môn học</label>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Môn học:</label>
                             <select class="form-select" @bind="testDTO.SubjectId">
-                                <option value="value">--chọn--</option>
+                                <option value="">-- Chọn môn học --</option>
                                 @foreach (var item in subjectDTO)
                                 {
                                     <option value="@item.Id">@item.Name</option>
                                 }
                             </select>
                         </div>
-                        <div>
-                            <label>Lớp:</label>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Lớp:</label>
                             <select class="form-select" @bind="testDTO.ClassId">
-                                <option value="value">--chọn--</option>
+                                <option value="">-- Chọn lớp --</option>
                                 @foreach (var item in classDTOs)
                                 {
-                                    <option value="@item.Id">@item.Name </option>
+                                    <option value="@item.Id">@item.Name</option>
                                 }
                             </select>
                         </div>
-                        <div>
-                            <label>Điểm:</label>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Điểm:</label>
                             <select class="form-select" @bind="testDTO.PointTypeId">
-                                <option value="value">--chọn--</option>
+                                <option value="">-- Chọn kiểu điểm --</option>
                                 @foreach (var item in pointTypeDTOs)
                                 {
-                                    <option value="@item.Id">@item.Name </option>
+                                    <option value="@item.Id">@item.Name</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Phòng thi:</label>
+                            <select class="form-select" @bind="testDTO.ExamRoomId">
+                                <option value="">-- Chọn phòng thi --</option>
+                                @foreach (var item in roomDTOs)
+                                {
+                                    <option value="@item.Id">@item.Name</option>
                                 }
                             </select>
                         </div>
                     </div>
                 </div>
+
 
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" @onclick="Submit">Lưu</button>
@@ -448,6 +459,7 @@
     private List<SubjectDTO> subjectDTO = new List<SubjectDTO>();
     private List<ClassesDTO> classDTOs = new List<ClassesDTO>();
     private List<PointTypeDTO> pointTypeDTOs = new List<PointTypeDTO>();
+    private List<RoomDTO> roomDTOs = new List<RoomDTO>();
     private TestDTO testDTO = new TestDTO();
     private IBrowserFile selectedFile;
     private string username;
@@ -464,6 +476,7 @@
             await detailclass();
             await detailpoint();
             await SearchTests();
+            await detailroom();
             StateHasChanged();
         }
         catch (Exception)
@@ -473,7 +486,11 @@
 
     }
 
-
+    private async Task detailroom(){
+        var client = clientFactory.CreateClient("Get");
+        var url = "https://localhost:7046/api/Room/get-all-room";
+        roomDTOs = await client.GetFromJsonAsync<List<RoomDTO>>(url);
+    }
     private async Task detailquestion(Guid id)
     {
         var client = clientFactory.CreateClient("Get");
