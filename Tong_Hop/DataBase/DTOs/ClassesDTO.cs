@@ -17,7 +17,8 @@ namespace DataBase.DTOs
         public string? TeacherName { get; set; }
         public Guid TeacherId { get; set; }
         public Guid GradeId { get; set; }
-        public Guid SubjectId { get; set; }
+		public int GradeName { get; set; }
+		public Guid SubjectId { get; set; }
     }
     public class ClassStandardDTO
     {

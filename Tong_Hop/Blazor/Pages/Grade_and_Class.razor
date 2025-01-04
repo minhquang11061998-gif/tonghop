@@ -335,7 +335,11 @@
                 <div class="mb-3">
                     <label for="teacherSelect" class="form-label">Chọn giáo viên</label>
                     <select id="teacherSelect" class="form-select" @bind="classcreateandupdate.TeacherId">
-                        <option value="@classcreateandupdate.TeacherId" hidden>@classcreateandupdate.NameTeacher</option>
+                        @if(CurrentModalTypeclass==ModalTypeClass.Edit){
+                            <option value="@classcreateandupdate.TeacherId" hidden>@classcreateandupdate.NameTeacher</option>
+                        }else{
+                            <option value="@Guid.Empty" hidden>--chọn giáo viên--</option>
+                        }
                         @foreach (var teacher in teacherDTOs)
                         {
                             <option value="@teacher.Id">@teacher.Name</option>
@@ -514,6 +518,7 @@
             if (response.IsSuccessStatusCode)
             {
                 await jsruntime.InvokeVoidAsync("alert", "Tải file thành công");
+                isExcelModalVisible = false;
                 await getallstudent(idclass);
             }
             else
@@ -557,6 +562,7 @@
             await jsruntime.InvokeVoidAsync("alert", "Thêm học sinh thành công");
             selectidclass = Guid.Empty;
             user = new Users();
+            avatarFile = null;
             await getallstudent(idclass);
 
         }
@@ -620,6 +626,7 @@
     {
         ShowModal = false;
         user=new Users();
+        classcreateandupdate = new ClassStandardDTO();
         isExcelModalVisible = false;
         isClassModalVisible = false;
     }
@@ -654,7 +661,7 @@
         getallStudentDT0s = await client.GetFromJsonAsync<List<GetallStudentDT0>>($"https://localhost:7046/api/Student/get-all-ID-class?id={id}");
 
     }
-    
+
     private async Task createclass(){
         if(idclass==Guid.Empty){
             classcreateandupdate.GradeId = idgrade;
@@ -662,6 +669,8 @@
             if (respon.IsSuccessStatusCode)
             {
                 await jsruntime.InvokeVoidAsync("alert", $"Thêm Lớp thành công");
+                isClassModalVisible = false;
+                classcreateandupdate = new ClassStandardDTO();
                 idgrade = Guid.Empty;
                 await GetAllClass();
 
@@ -673,6 +682,8 @@
             if (respon.IsSuccessStatusCode)
             {
                 await jsruntime.InvokeVoidAsync("alert", $"Thêm Lớp thành công");
+                classcreateandupdate = new ClassStandardDTO();
+                isClassModalVisible = false;
                 await GetAllClass();
             }
             else
