@@ -35,6 +35,7 @@ namespace DataBase.DTOs
         public DateTime StartTime { get; set; }
         public DateTime EndTime { get; set; }
         public DateTime CreationTime { get; set; }
+        public Guid IdEaxmRoom { get; set; }
     }
     public class UpdateExamDTO
     {

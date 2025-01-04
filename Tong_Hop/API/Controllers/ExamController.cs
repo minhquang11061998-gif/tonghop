@@ -42,6 +42,7 @@ namespace API.Controllers
                                   CreationTime = exam.CreationTime,
                                   StartTime = examRoom.StartTime,
                                   EndTime = examRoom.EndTime,
+                                  IdEaxmRoom = examRoom.Id,
                               }).ToListAsync();
 
             if (!data.Any())
