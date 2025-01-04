@@ -1,4 +1,5 @@
 ﻿@page "/manage-test"
+@using Blazor.Data
 @using DataBase.DTOs
 @using global::Data.DTOs
 @layout AdminLayout
@@ -8,98 +9,291 @@
 @inject IJSRuntime Jsruntime
 
 <div class="container-fluid mt-3">
-    <!-- Header Buttons -->
-    <div class="d-flex shadow-sm align-items-center p-3 bg-light rounded">
-        <div class="d-flex flex-wrap gap-2">
-            <button class="btn btn-primary btn-sm rounded-pill shadow" @onclick="ShowCreateTestModal" disabled="@(SelectedTest != Guid.Empty)">
-                <i class="bi bi-plus-circle"></i> Tạo mới
-            </button>
-            <button class="btn btn-danger btn-sm rounded-pill shadow" @onclick="Deletetest" disabled="@(SelectedTest == Guid.Empty)">
-                <i class="bi bi-trash"></i> Xóa
-            </button>
-            <button class="btn btn-success btn-sm rounded-pill shadow" @onclick="ShowQuestionDetailModal">
-                <i class="bi bi-file-earmark-excel"></i> Nhập file Excel
-            </button>
-            <button class="btn btn-secondary btn-sm rounded-pill shadow" @onclick="DownloadExcelTemplate">
-                <i class="bi bi-file-earmark-excel"></i> Tải file mẫu Excel
-            </button>
+    <div class="container-fluid mt-3">
+        <!-- Header Buttons -->
+        <div class="d-flex shadow-sm align-items-center p-3 bg-light rounded">
+            <div class="d-flex flex-wrap gap-2">
+                <button class="btn btn-primary btn-sm rounded-pill shadow" @onclick="()=>showexam(ModalTypeExam.Add)">
+                    <i class="bi bi-plus-circle"></i> Tạo mới
+                </button>
+                <button class="btn btn-danger btn-sm rounded-pill shadow" @onclick="deleteexam" disabled="@(idexam == Guid.Empty)">
+                    <i class="bi bi-trash"></i> Xóa
+                </button>
+                <button class="btn btn-warning btn-sm rounded-pill shadow" @onclick="()=>showexam(ModalTypeExam.Edit)" disabled="@(idexam == Guid.Empty)">
+                    <i class="bi bi-pencil"></i> Chỉnh sửa
+                </button>
+
+            </div>
+
+            <!-- Search Bar -->
+            <div class="ms-auto" style="width: 300px;">
+                <div class="input-group shadow-sm">
+                    <input type="text" placeholder="Tìm kiếm..." class="form-control border-0" @bind="SearchText" style="border-radius: 20px 0 0 20px;" />
+                    <span class="input-group-text bg-primary text-white border-0" style="border-radius: 0 20px 20px 0;">
+                        <i class="bi bi-search"></i>
+                    </span>
+                </div>
+            </div>
         </div>
 
-        <!-- Search Bar -->
-        <div class="ms-auto" style="width: 300px;">
-            <div class="input-group shadow-sm">
-                <input type="text" placeholder="Tìm kiếm..." class="form-control border-0" @bind="SearchText" style="border-radius: 20px 0 0 20px;" />
-                <span class="input-group-text bg-primary text-white border-0" style="border-radius: 0 20px 20px 0;">
-                    <i class="bi bi-search"></i>
-                </span>
+        <!-- Table Section -->
+        <div class="table-responsive border rounded shadow-sm mt-4 bg-white">
+            <table class="table table-hover table-striped align-middle text-center">
+                <caption class="text-end">
+                    <div class="d-flex justify-content-end gap-2">
+                        <button class="btn btn-secondary btn-sm rounded-pill shadow" @onclick="PreviousPage" disabled="@(!CanGoPrevious)">
+                            <i class="bi bi-arrow-left"></i> Trước
+                        </button>
+                        <span class="align-self-center">Trang @CurrentPage / @TotalPages</span>
+                        <button class="btn btn-secondary btn-sm rounded-pill shadow" @onclick="NextPage" disabled="@(!CanGoNext)">
+                            <i class="bi bi-arrow-right"></i> Sau
+                        </button>
+                    </div>
+                </caption>
+                <thead class="table-primary" style="border-radius: 10px;">
+                    <tr>
+                        <th style="width: 50px;">
+                            <input type="checkbox" @onchange="ToggleSelectAll" title="Chọn tất cả" />
+                        </th>
+                        <th>Tên bài thi</th>
+                        <th>Môn</th>
+                        <th>Phòng thi</th>
+                        <th>Giáo viên 1</th>
+                        <th>Giáo viên 2</th>
+                        <th>Hành động</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (filterExam.Any())
+                    {
+                        @foreach (var exam in filterExam)
+                        {
+                            <tr class="@(idexam == exam.Id ? "table-info" : "")">
+                                <td>
+                                    <input type="checkbox" checked="@(idexam==exam.Id)" @onchange="() => SelectTestexam(exam.Id)" title=" Chọn đề thi này" />
+                                </td>
+                                <td>@exam.Name</td>
+                                <td>@exam.NameSubject</td>
+                                <td>@exam.Nameroom</td>
+                                <td>@exam.NameTeacher1</td>
+                                <td>@exam.NameTeacher2</td>
+                                <td>
+                                    <button class="btn btn-info btn-sm rounded-pill shadow" @onclick="showtest">
+                                        <i class="bi bi-eye"></i> Xem chi tiết
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="8" class="text-muted text-center">Không tìm thấy danh sách bài thi</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="modal fade @(isExamModalVisible ? "show" : "")" tabindex="-1" style="display:@(isExamModalVisible ? "block" : "none")">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    @switch(modalTypeExam){
+                        case ModalTypeExam.Add:
+                            <h4>Tạo mới bài thi</h4>
+                            break;
+                        case ModalTypeExam.Edit:
+                            <h4>Chỉnh sửa bài thi</h4>
+                            break;
+                    }
+                    <button type="button" class="btn-close" @onclick="HideQuestionDetailModal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-5 m-1">
+                            <label>Phòng thi:</label>
+                            <select class="form-select" @bind="examDTO.idrom">
+                                @if(modalTypeExam==ModalTypeExam.Edit){
+                                    <option value="@examDTO.idrom">@examDTO.Nameroom</option>
+                                }else{
+                                    <option value="@Guid.Empty">-- Chọn phòng thi --</option>
+                                }
+                                @foreach (var item in roomDTOs)
+                                {
+                                    <option value="@item.Id">@item.Name</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-5 m-1">
+                            <label>Môn Học:</label>
+                            <select class="form-select" @bind="examDTO.idsubject">
+                                @if(modalTypeExam==ModalTypeExam.Edit){
+                                    <option value="@examDTO.idsubject">@examDTO.NameSubject</option>
+                                }else{
+                                    <option value="@Guid.Empty">-- Chọn môn học --</option>
+                                }
+                                @foreach (var item in subjectDTO)
+                                {
+                                    <option value="@item.Id">@item.Name</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-5 m-1">
+                            <label>Giáo viên 1:</label>
+                            <select class="form-select" @bind="examDTO.idteacher1" >
+                                @if(modalTypeExam==ModalTypeExam.Edit){
+                                    <option value="@examDTO.idteacher1">@examDTO.NameTeacher1</option>
+                                }else{
+                                    <option value="@Guid.Empty">-- Chọn giáo viên --</option>
+                                }
+                                @foreach (var item in teacherDTOs)
+                                {
+                                    <option value="@item.Id">@item.Name</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-5 m-1">
+                            <label>Giáo viên 2:</label>
+                            <select class="form-select" @bind=examDTO.idteacher2 >
+                                @if(modalTypeExam==ModalTypeExam.Edit){
+                                    <option value="@examDTO.idteacher2">@examDTO.NameTeacher2</option>
+                                }else{
+                                    <option value="@Guid.Empty">-- Chọn Giáo viên --</option>
+                                }
+                                @foreach (var item in teacherDTOs)
+                                {
+                                    <option value="@item.Id">@item.Name</option>
+                                }
+                            </select>
+                        </div>
+
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <div>
+                        @if(modalTypeExam==ModalTypeExam.Add){
+                            <button class="btn btn-success" @onclick="createExam">
+                                <i class="bi bi-save"></i> Lưu
+                            </button>
+                        }else if(modalTypeExam==ModalTypeExam.Edit){
+                            <button class="btn btn-success" @onclick="createExam">
+                                <i class="bi bi-save"></i> Cập nhật
+                            </button>
+                        }
+
+
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Table Section -->
-    <div class="table-responsive border rounded shadow-sm mt-4 bg-white">
-        <table class="table table-hover table-striped align-middle text-center">
-            <caption class="text-end">
-                <div class="d-flex justify-content-end gap-2">
-                    <button class="btn btn-secondary btn-sm rounded-pill shadow" @onclick="PreviousPage" disabled="@(!CanGoPrevious)">
-                        <i class="bi bi-arrow-left"></i> Trước
-                    </button>
-                    <span class="align-self-center">Trang @CurrentPage / @TotalPages</span>
-                    <button class="btn btn-secondary btn-sm rounded-pill shadow" @onclick="NextPage" disabled="@(!CanGoNext)">
-                        <i class="bi bi-arrow-right"></i> Sau
-                    </button>
+    <div class="modal fade   @(istestModalVisible ? "show" : "")" tabindex="-1"  style="display:@(istestModalVisible ? "block" : "none")">
+        <div class="modal-dialog modal-dialog-scrollable modal-xl min-vh-100" style="max-width:80vw; width: 80%;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="testModalLabel">Danh sách đề thi</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-            </caption>
-            <thead class="table-primary" style="border-radius: 10px;">
-                <tr>
-                    <th style="width: 50px;">
-                        <input type="checkbox" @onchange="ToggleSelectAll" title="Chọn tất cả" />
-                    </th>
-                    <th>Tên đề thi</th>
-                    <th>Mã đề thi</th>
-                    <th>Thời gian (phút)</th>
-                    <th>Môn học</th>
-                    <th>Lớp</th>
-                    <th>Điểm</th>
-                    <th>Hành động</th>
-                </tr>
-            </thead>
-            <tbody>
-                @if (FilteredTests.Any())
-                {
-                    @foreach (var test in FilteredTests)
-                    {
-                        <tr class="@(SelectedTest == test.Id ? "table-info" : "")">
-                            <td>
-                                <input type="checkbox" checked="@(SelectedTest == test.Id)" @onchange="() => SelectTest(test.Id)" title="Chọn đề thi này" />
-                            </td>
-                            <td>@test.Name</td>
-                            <td>@test.Code</td>
-                            <td>@test.Minute</td>
-                            <td>@(SubjectNameMap.TryGetValue(test.SubjectId, out var subjectName) ? subjectName : "N/A")</td>
-                            <td>@(ClassNameMap.TryGetValue(test.ClassId, out var className) ? className : "N/A")</td>
-                            <td>@(PointTypeNameMap.TryGetValue(test.PointTypeId, out var pointTypeName) ? pointTypeName : "N/A")</td>
-                            <td>
-                                <button class="btn btn-primary btn-sm rounded-pill shadow" @onclick="OpenModal" disabled="@(SelectedTest == Guid.Empty)">
-                                    <i class="bi bi-eye"></i> Tạo câu hỏi
-                                </button>
-                                <button class="btn btn-info btn-sm rounded-pill shadow" @onclick="() => ShowTestDetailsModal(test.Id)">
-                                    <i class="bi bi-eye"></i> Xem chi tiết
-                                </button>
-                            </td>
-                        </tr>
-                    }
-                }
-                else
-                {
-                    <tr>
-                        <td colspan="8" class="text-muted text-center">Không tìm thấy đề thi.</td>
-                    </tr>
-                }
-            </tbody>
-        </table>
+                <div class="modal-body">
+                    <!-- Nội dung chuyển vào modal -->
+                    <div class="d-flex shadow-sm align-items-center p-3 bg-light rounded">
+                        <div class="d-flex flex-wrap gap-2">
+                            <button class="btn btn-primary btn-sm rounded-pill shadow" @onclick="ShowCreateTestModal" disabled="@(SelectedTest != Guid.Empty)">
+                                <i class="bi bi-plus-circle"></i> Tạo mới
+                            </button>
+                            <button class="btn btn-danger btn-sm rounded-pill shadow" @onclick="Deletetest" disabled="@(SelectedTest == Guid.Empty)">
+                                <i class="bi bi-trash"></i> Xóa
+                            </button>
+                            <button class="btn btn-success btn-sm rounded-pill shadow" @onclick="ShowQuestionDetailModal">
+                                <i class="bi bi-file-earmark-excel"></i> Nhập file Excel
+                            </button>
+                            <button class="btn btn-secondary btn-sm rounded-pill shadow" @onclick="DownloadExcelTemplate">
+                                <i class="bi bi-file-earmark-excel"></i> Tải file mẫu Excel
+                            </button>
+                        </div>
+
+                        <div class="ms-auto" style="width: 300px;">
+                            <div class="input-group shadow-sm">
+                                <input type="text" placeholder="Tìm kiếm..." class="form-control border-0" @bind="SearchText" style="border-radius: 20px 0 0 20px;" />
+                                <span class="input-group-text bg-primary text-white border-0" style="border-radius: 0 20px 20px 0;">
+                                    <i class="bi bi-search"></i>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive border rounded shadow-sm mt-4 bg-white">
+                        <table class="table table-hover table-striped align-middle text-center">
+                            <caption class="text-end">
+                                <div class="d-flex justify-content-end gap-2">
+                                    <button class="btn btn-secondary btn-sm rounded-pill shadow" @onclick="PreviousPage" disabled="@(!CanGoPrevious)">
+                                        <i class="bi bi-arrow-left"></i> Trước
+                                    </button>
+                                    <span class="align-self-center">Trang @CurrentPage / @TotalPages</span>
+                                    <button class="btn btn-secondary btn-sm rounded-pill shadow" @onclick="NextPage" disabled="@(!CanGoNext)">
+                                        <i class="bi bi-arrow-right"></i> Sau
+                                    </button>
+                                </div>
+                            </caption>
+                            <thead class="table-primary" style="border-radius: 10px;">
+                                <tr>
+                                    <th style="width: 50px;">
+                                        <input type="checkbox" @onchange="ToggleSelectAll" title="Chọn tất cả" />
+                                    </th>
+                                    <th>Tên đề thi</th>
+                                    <th>Mã đề thi</th>
+                                    <th>Thời gian (phút)</th>
+                                    <th>Môn học</th>
+                                    <th>Lớp</th>
+                                    <th>Điểm</th>
+                                    <th>Hành động</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (FilteredTests.Any())
+                                {
+                                    @foreach (var test in FilteredTests)
+                                    {
+                                        <tr class="@(SelectedTest == test.Id ? "table-info" : "")">
+                                            <td>
+                                                <input type="checkbox" checked="@(SelectedTest == test.Id)" @onchange="() => SelectTest(test.Id)" title="Chọn đề thi này" />
+                                            </td>
+                                            <td>@test.Name</td>
+                                            <td>@test.Code</td>
+                                            <td>@test.Minute</td>
+                                            <td>@(SubjectNameMap.TryGetValue(test.SubjectId, out var subjectName) ? subjectName : "N/A")</td>
+                                            <td>@(ClassNameMap.TryGetValue(test.ClassId, out var className) ? className : "N/A")</td>
+                                            <td>@(PointTypeNameMap.TryGetValue(test.PointTypeId, out var pointTypeName) ? pointTypeName : "N/A")</td>
+                                            <td>
+                                                <button class="btn btn-primary btn-sm rounded-pill shadow" @onclick="OpenModal" disabled="@(SelectedTest == Guid.Empty)">
+                                                    <i class="bi bi-eye"></i> Tạo câu hỏi
+                                                </button>
+                                                <button class="btn btn-info btn-sm rounded-pill shadow" @onclick="() => ShowTestDetailsModal(test.Id)">
+                                                    <i class="bi bi-eye"></i> Xem chi tiết
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                                else
+                                {
+                                    <tr>
+                                        <td colspan="8" class="text-muted text-center">Không tìm thấy đề thi.</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+               
+            </div>
+        </div>
     </div>
 </div>
+
 <!-- Modal Page for Test Questions -->
 <div class="modal fade @(isTestQuestionsModalVisible ? "show" : "")" tabindex="-1" style="display:@(isTestQuestionsModalVisible ? "block" : "none"); overflow-y:auto;">
     <div class="modal-dialog modal-xl">
@@ -393,6 +587,10 @@
     {
         SelectedTest = SelectedTest == orderId ? Guid.Empty : orderId;
     }
+    private void SelectTestexam(Guid orderId)
+    {
+        idexam = idexam == orderId ? Guid.Empty : orderId;
+    }
     private void ToggleSelectAll(ChangeEventArgs e)
     {
         var isChecked = (bool)e.Value;
@@ -460,23 +658,32 @@
     private List<ClassesDTO> classDTOs = new List<ClassesDTO>();
     private List<PointTypeDTO> pointTypeDTOs = new List<PointTypeDTO>();
     private List<RoomDTO> roomDTOs = new List<RoomDTO>();
+    private List<TeacherDTO> teacherDTOs = new List<TeacherDTO>();
     private TestDTO testDTO = new TestDTO();
+    private GetAllExamDTO examDTO = new GetAllExamDTO();
+    private List<GetAllExamDTO> getAllExamDTOs = new List<GetAllExamDTO>();
+    private List<GetAllExamDTO> filterExam => getAllExamDTOs.Where(z => string.IsNullOrEmpty(Searchexam) || z.Name.Contains(Searchexam, StringComparison.OrdinalIgnoreCase)).ToList();
     private IBrowserFile selectedFile;
     private string username;
     private string SearchText { get; set; }
+    private string Searchexam { get; set; }
     private int CurrentPage { get; set; } = 1;
     private int ItemsPerPage { get; set; } = 5; // Số mục trên mỗi trang
     private int TotalPages => (int)Math.Ceiling((double)FilteredTests.Count() / ItemsPerPage);
+    private ModalTypeExam modalTypeExam { get; set; } = ModalTypeExam.Add;
     protected override async Task OnInitializedAsync()
     {
         try
         {
+            await getallteacher();
             await detailtestGrid();
             await detailsubject();
             await detailclass();
             await detailpoint();
             await SearchTests();
             await detailroom();
+            await getallexam();
+
             StateHasChanged();
         }
         catch (Exception)
@@ -485,7 +692,51 @@
         }
 
     }
+    private async Task createExam(){
+        if(idexam==Guid.Empty){
+            var respon = await client.PostAsJsonAsync("https://localhost:7046/api/Exam/create-exam", examDTO);
+            if (respon.IsSuccessStatusCode)
+            {
+                await Jsruntime.InvokeVoidAsync("alert", "Tạo bài thi thành công");
+                isExamModalVisible = false;
+                await getallexam();
+            }else{
+                await Jsruntime.InvokeVoidAsync("alert", "Tạo bài thi thất bại");
+            }
 
+        }
+        else if (idexam != Guid.Empty)
+        {
+            var respon = await client.PutAsJsonAsync("https://localhost:7046/api/Exam/update-exam", examDTO);
+
+            if (respon.IsSuccessStatusCode)
+            {
+
+
+                await Jsruntime.InvokeVoidAsync("alert", "Chỉnh sửa bài thi thành công");
+                isExamModalVisible = false;
+                await getallexam(); // Tải lại danh sách bài thi
+            }
+            else
+            {
+                var errorMessage = await respon.Content.ReadAsStringAsync();
+                await Jsruntime.InvokeVoidAsync("alert",$"Lỗi từ API: {errorMessage}");
+                await Jsruntime.InvokeVoidAsync("alert", $"Chỉnh sửa bài thi thất bại: {errorMessage}");
+            }
+        }
+
+
+
+    }
+    private async Task getIdexam(Guid id){
+        examDTO = await client.GetFromJsonAsync<GetAllExamDTO>($"https://localhost:7046/api/Exam/get-Byid-exam-new?id={id}");
+    }
+    private async Task getallteacher(){
+        teacherDTOs = await client.GetFromJsonAsync<List<TeacherDTO>>("https://localhost:7046/api/Teacher/get-all-teacher-all");
+    }
+    private async Task getallexam(){
+        getAllExamDTOs = await client.GetFromJsonAsync<List<GetAllExamDTO>>("https://localhost:7046/api/Exam/get-all-exam-new");
+    }
     private async Task detailroom(){
         var client = clientFactory.CreateClient("Get");
         var url = "https://localhost:7046/api/Room/get-all-room";
@@ -775,6 +1026,15 @@
             selectedTestId = testId;
         }
     }
+    private Guid idexam;
+    private async Task deleteexam(){
+        var respon = await client.DeleteAsync($"https://localhost:7046/api/Exam/Delete-exam?id={idexam}");
+        if(respon.IsSuccessStatusCode){
+            await Jsruntime.InvokeVoidAsync("alert", "Xóa bài thi thành công");
+            await getallexam();
+        }
+        await Jsruntime.InvokeVoidAsync("alert", "Xóa bài thi thất bại");
+    }
     private async Task Deletetest()
     {
         var httpClient = clientFactory.CreateClient("Delete");
@@ -791,42 +1051,61 @@
         var url = $"https://localhost:7046/api/Test/get-list-test";
         testList = await httpClient.GetFromJsonAsync<List<TestDTO>>(url);
     }
- 
-        private bool isCreateTestModalVisible = false;
-        private bool isQuestionDetailModalVisible = false;
-        private bool isQuestionDetailModalVisibles = false;
-        private bool isQuestionDetailModalVisibless = false;
 
-        private void ShowCreateTestModal()
-        {
-            isCreateTestModalVisible = true;
-            StateHasChanged();
+    private bool isCreateTestModalVisible = false;
+    private bool isQuestionDetailModalVisible = false;
+    private bool isQuestionDetailModalVisibles = false;
+    private bool isQuestionDetailModalVisibless = false;
+    private bool isExamModalVisible = false;
+    private bool istestModalVisible = false;
+    private void showtest(){
+        istestModalVisible = true;
+    }
+    private async Task showexam(ModalTypeExam modalType){
+
+        modalTypeExam = modalType;
+        if(modalTypeExam==ModalTypeExam.Edit){
+            await getIdexam(idexam);
+            isExamModalVisible = true;
+
+        }else{
+            isExamModalVisible = true;
         }
 
-        private void HideCreateTestModal()
-        {
-            isCreateTestModalVisible = false;
-        }
-        private void ShowQuestionDetailModals()
-        {
-            isQuestionDetailModalVisibles = true;
+    }
+    private void ShowCreateTestModal()
+    {
+        isCreateTestModalVisible = true;
+        StateHasChanged();
+    }
 
-        }
-        private async void UpdateQuestionModal(Guid id)
-        {
+    private void HideCreateTestModal()
+    {
+        isCreateTestModalVisible = false;
+    }
+    private void ShowQuestionDetailModals()
+    {
+        isQuestionDetailModalVisibles = true;
+
+    }
+    private async void UpdateQuestionModal(Guid id)
+    {
         await updatequestion();
-            isQuestionDetailModalVisibless = true;
+        isQuestionDetailModalVisibless = true;
 
-        }
-        private void ShowQuestionDetailModal()
-        {
-            isQuestionDetailModalVisible = true;
-        }
+    }
+    private void ShowQuestionDetailModal()
+    {
+        isQuestionDetailModalVisible = true;
+    }
 
-        private void HideQuestionDetailModal()
-        {
-            isQuestionDetailModalVisible = false;
-        }
+    private void HideQuestionDetailModal()
+    {
+        isQuestionDetailModalVisible = false;
+        isExamModalVisible = false;
+        examDTO=new GetAllExamDTO();
+        StateHasChanged();
+    }
         private void HideQuestionDetailModals()
         {
             isQuestionDetailModalVisibles = false;
