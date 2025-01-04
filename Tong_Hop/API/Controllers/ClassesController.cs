@@ -147,13 +147,15 @@ namespace API.Controllers
                                   {
                                       Id = c.Id,
                                       Code = c.Code,
-                                      Name = c.Name,
+                                      Name = c.Name.Length > 1 ? c.Name[1].ToString() : string.Empty,
                                       MaxStudent = c.MaxStudent,
                                       Status = c.Status,
                                       TeacherId = c.TeacherId,
                                       GradeId = c.GradeId,
-                                      NameTeacher = u.FullName
+                                      NameTeacher = u.FullName,
+                                   
                                   }).FirstOrDefaultAsync();
+
 
                 return Ok(data);
             }
