@@ -705,7 +705,7 @@ namespace API.Controllers
                          new Claim("Idteacher",teacherId.Id.ToString()),
                          new Claim("email",data.Email.ToString()),
                          new Claim("numberPhone",data.PhoneNumber.ToString()),
-                         new Claim("avatar",data.Avartar.ToString()),
+                         //new Claim("avatar",data.Avartar.ToString()),
                          
                          new Claim("CodeTeacher", teacherId.Code.ToString())
                             

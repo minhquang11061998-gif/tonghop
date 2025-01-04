@@ -38,7 +38,7 @@
     <!-- Table -->
     <div class="table-responsive border rounded shadow-sm" style="background-color: #ffffff;max-height: 800px; border: 1px solid #ddd; border-radius: 5px;">
         <table class="table table-hover  table-sm align-middle text-center" style="">
-           
+
             <thead class="table-primary border" style="height:45px">
                 <tr>
                     <th style="width: 50px;">
@@ -356,8 +356,42 @@
         // Export logic can be implemented using a third-party library or JavaScript interop
         Console.WriteLine("Export to Excel functionality is triggered.");
     }
-    private void HandfileAvatarTeacher(InputFileChangeEventArgs e){
+    private const long MaxFileSize = 10 * 1024 * 1024;
+    private async void HandfileAvatarTeacher(InputFileChangeEventArgs e){
         avatarTeacher = e.File; 
+        var file = e.File;
+        if (file == null || file.Size > MaxFileSize)
+        {
+            Console.WriteLine("Invalid file or file size exceeds the allowed limit.");
+            return;
+        }
+
+        // Kiểm tra loại file có hợp lệ không
+        var allowedTypes = new[] { "image/png", "image/jpeg", "image/jpg" };
+        if (!allowedTypes.Contains(file.ContentType))
+        {
+            Console.WriteLine("Invalid file type.");
+            return;
+        }
+
+        // Cập nhật tên file vào userDTOs
+        usercreate.Avartar = file.Name;
+
+        try
+        {
+            // Đọc stream của file
+            using var stream = file.OpenReadStream(MaxFileSize);
+            using var memoryStream = new MemoryStream();
+            await stream.CopyToAsync(memoryStream);
+            usercreate.Avartar = $"data:{file.ContentType};base64,{Convert.ToBase64String(memoryStream.ToArray())}";
+
+            Console.WriteLine("Image uploaded successfully.");
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error uploading file: {ex.Message}");
+        }
     }
     #region
     private async Task TriggerFileInput()
@@ -442,10 +476,7 @@
             content.Add(new StringContent(usercreate.PhoneNumber ?? ""), "PhoneNumber");
             content.Add(new StringContent(usercreate.PasswordHash ?? ""), "PasswordHash");
             content.Add(new StringContent(usercreate.IsLocked.ToString()), "IsLocked");
-
             content.Add(new StringContent(usercreate.RoleId.ToString()), "RoleId");
-
-
             content.Add(new StringContent(usercreate.Avartar), "Avartar");
 
             var respon = await client.PutAsync($"https://localhost:7046/api/User/update-user-teacher/", content);
