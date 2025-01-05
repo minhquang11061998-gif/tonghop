@@ -17,7 +17,7 @@ namespace DataBase.DTOs
     }
     public class Login_Exam_DTO
     {
-        public string codelogin { get; set; }
+        public string? codelogin { get; set; }
 
     }
 }

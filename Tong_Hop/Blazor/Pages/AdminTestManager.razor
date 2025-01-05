@@ -265,7 +265,7 @@
                                             <td>@(ClassNameMap.TryGetValue(test.ClassId, out var className) ? className : "N/A")</td>
                                             <td>@(PointTypeNameMap.TryGetValue(test.PointTypeId, out var pointTypeName) ? pointTypeName : "N/A")</td>
                                             <td>
-                                                <button class="btn btn-primary btn-sm rounded-pill shadow" @onclick="()=>OpenModal(test.Id)">
+                                                <button class="btn btn-primary btn-sm rounded-pill shadow" @onclick="()=>OpenModal(ModalTypeQuestion.Add,test.Id)">
                                                     <i class="bi bi-eye"></i> Tạo câu hỏi
                                                 </button>
                                                 <button class="btn btn-info btn-sm rounded-pill shadow" @onclick="() => ShowTestDetailsModal(test.Id)">
@@ -293,105 +293,7 @@
 </div>
 
 <!-- Modal Page for Test Questions -->
-<div class="modal fade @(isTestQuestionsModalVisible ? "show" : "")" tabindex="-1" style="display:@(isTestQuestionsModalVisible ? "block" : "none"); overflow-y:auto;">
-    <div class="modal-dialog modal-xl">
-        <!-- Enhanced Modal Styling -->
-        <div class="modal-content shadow-lg rounded-4">
-            <div class="modal-header bg-gradient-primary text-white shadow-sm rounded-top">
-                <h5 class="modal-title fw-bold">Danh sách câu hỏi</h5>
-                <button type="button" class="btn-close text-white" @onclick="HideTestDetailsModal"></button>
-            </div>
-            <div class="modal-body p-4" style="max-height: 70vh; overflow-y: auto; background-color: #fdfdfd;">
-                <!-- Filter Section -->
-                @if (testQuestionDTOs.Any())
-                {
-                    <div class="mb-4 d-flex align-items-center border-bottom pb-3">
-                        <label for="filterType" class="form-label me-3 fw-semibold">Lọc theo loại câu hỏi:</label>
-                        <select id="filterType" @onchange="OnTypeChanged" class="form-select w-auto border-primary shadow-sm">
-                            <option value="">Tất cả</option>
-                            <option value="1">Trắc nghiệm 1 Đáp án</option>
-                            <option value="2">Trắc nghiệm nhiều đáp án</option>
-                            <option value="3">Đúng/Sai</option>
-                            <option value="4">Điền vào chỗ trống</option>
-                        </select>
-                    </div>
 
-                    <!-- Table Section -->
-                    <div class="table-responsive rounded border shadow-sm">
-                        <table class="table table-hover table-striped align-middle text-center">
-                            <thead class="table-primary">
-                                <tr>
-                                    <th scope="col" class="py-3">STT</th>
-                                    <th scope="col">Nội dung</th>
-                                    <th scope="col">Đáp án</th>
-                                    <th scope="col">Đáp án đúng</th>
-                                    <th scope="col">Mức độ</th>
-                                    <th scope="col" style="width: 100px;">Thao tác</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @if (filteredQuestions.Any())
-                                {
-                                    @foreach (var question in filteredQuestions)
-                                    {
-                                        <tr class="align-middle">
-                                            <td class="fw-bold">@(filteredQuestions.IndexOf(question) + 1)</td>
-                                            <td class="text-start">@question.QuestionName</td>
-                                            <td>@string.Join(", ", question.Answers.Select(a => a.Answer))</td>
-                                            <td class="text-success fw-bold">@question.RightAnswer</td>
-                                            <td>
-                                                @switch (question.Level)
-                                                {
-                                                    case 1:
-                                                        <span class="badge bg-success">Dễ</span>
-                                                        break;
-                                                    case 2:
-                                                        <span class="badge bg-warning">Trung Bình</span>
-                                                        break;
-                                                    case 3:
-                                                        <span class="badge bg-danger">Khó</span>
-                                                        break;
-                                                    case 4:
-                                                        <span class="badge bg-dark">Siêu Khó</span>
-                                                        break;
-                                                    default:
-                                                        <span class="badge bg-secondary">Không xác định</span>
-                                                        break;
-                                                }
-                                            </td>
-
-                                            <td>
-                                                <button type="button" class="btn btn-warning btn-sm shadow-sm rounded-pill px-3" title="Chỉnh sửa" @onclick="() => UpdateQuestionModal(question.Id)">
-                                                    <i class="bi bi-pencil"></i>
-                                                </button>
-                                                <button type="button" class="btn btn-danger btn-sm shadow-sm rounded-pill px-3" title="Xóa" @onclick="() => deletequestion(question.Id, question.Level)">
-                                                    <i class="bi bi-trash3"></i>
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    }
-                                }
-                                else
-                                {
-                                    <tr>
-                                        <td colspan="5" class="text-center text-muted py-4">Không có câu hỏi nào trong đề thi này.</td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
-                    </div>
-                }
-                else
-                {
-                    <div class="alert alert-warning text-center fw-semibold">Không có câu hỏi nào trong đề thi này.</div>
-                }
-            </div>
-            <div class="modal-footer bg-light d-flex justify-content-end border-top rounded-bottom">
-                <button type="button" class="btn btn-secondary shadow-sm px-4" @onclick="HideTestDetailsModal">Đóng</button>
-            </div>
-        </div>
-    </div>
-</div>
 
 <div class="container-fluid row p-3">
     <div class="modal fade @(isCreateTestModalVisible  ? "show" : "")" tabindex="-1" role="dialog" style="display:@(isCreateTestModalVisible  ? "block" : "none");">
@@ -473,7 +375,14 @@
         <div class="modal-content">
             <!-- Header -->
             <div class="modal-header">
-                <h5 class="modal-title">Tạo câu hỏi mới</h5>
+                @switch(modalTypeQuestion){
+                    case ModalTypeQuestion.Add:
+                        <h4>Tạo mới câu hỏi</h4>
+                        break;
+                    case ModalTypeQuestion.Edit:
+                        <h4>Chỉnh sửa câu hỏi</h4>
+                        break;
+                }
                 <button type="button" class="btn-close" @onclick="closemodal" aria-label="Close"></button>
             </div>
 
@@ -542,13 +451,18 @@
 
             <!-- Footer -->
             <div class="modal-footer">
-                <button class="btn btn-success btn-sm rounded-pill shadow" @onclick="ShowQuestionDetailModal">
-                    <i class="bi bi-file-earmark-excel"></i> Nhập file Excel
-                </button>
-                <button class="btn btn-secondary btn-sm rounded-pill shadow" @onclick="DownloadExcelTemplate">
-                    <i class="bi bi-file-earmark-excel"></i> Tải file mẫu Excel
-                </button>
-                <button class="btn btn-primary" @onclick="CreateQuestionWithAnswers">Lưu câu hỏi</button>
+                @if(modalTypeQuestion== ModalTypeQuestion.Add){
+                    <button class="btn btn-success btn-sm rounded-pill shadow" @onclick="ShowQuestionDetailModal">
+                        <i class="bi bi-file-earmark-excel"></i> Nhập file Excel
+                    </button>
+                    <button class="btn btn-secondary btn-sm rounded-pill shadow" @onclick="DownloadExcelTemplate">
+                        <i class="bi bi-file-earmark-excel"></i> Tải file mẫu Excel
+                    </button>
+                    <button class="btn btn-primary" @onclick="CreateQuestionWithAnswers">Lưu câu hỏi</button>
+                }else if(modalTypeQuestion==ModalTypeQuestion.Edit){
+                    <button class="btn btn-primary" @onclick="CreateQuestionWithAnswers">Cập nhật</button>
+                }
+
             </div>
         </div>
     </div>
@@ -590,16 +504,132 @@
         </div>
     </div>
 </div>
+<div class="modal fade @(isTestQuestionsModalVisible ? "show" : "")" tabindex="-1" style="display:@(isTestQuestionsModalVisible ? "block" : "none"); overflow-y:auto;">
+    <div class="modal-dialog modal-xl">
+        <!-- Enhanced Modal Styling -->
+        <div class="modal-content shadow-lg rounded-4">
+            <div class="modal-header bg-gradient-primary text-white shadow-sm rounded-top">
+                <h5 class="modal-title fw-bold">Danh sách câu hỏi</h5>
+                <button type="button" class="btn-close text-white" @onclick="HideTestDetailsModal"></button>
+            </div>
+            <div class="modal-body p-4" style="max-height: 70vh; overflow-y: auto; background-color: #fdfdfd;">
+                <!-- Filter Section -->
+                @if (testQuestionDTOs.Any())
+                {
+                    <div class="mb-4 d-flex align-items-center border-bottom pb-3">
+                        <label for="filterType" class="form-label me-3 fw-semibold">Lọc theo loại câu hỏi:</label>
+                        <select id="filterType" @onchange="OnTypeChanged" class="form-select w-auto border-primary shadow-sm">
+                            <option value="">Tất cả</option>
+                            <option value="1">Trắc nghiệm 1 Đáp án</option>
+                            <option value="2">Trắc nghiệm nhiều đáp án</option>
+                            <option value="3">Đúng/Sai</option>
+                            <option value="4">Điền vào chỗ trống</option>
+                        </select>
+                    </div>
 
+                    <!-- Table Section -->
+                    <div class="table-responsive rounded border shadow-sm">
+                        <table class="table table-hover table-striped align-middle text-center">
+                            <thead class="table-primary">
+                                <tr>
+                                    <th scope="col" class="py-3">STT</th>
+                                    <th scope="col">Nội dung</th>
+                                    <th scope="col">Đáp án</th>
+                                    <th scope="col">Đáp án đúng</th>
+                                    <th scope="col">Mức độ</th>
+                                    <th scope="col" style="width: 100px;">Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (filteredQuestions.Any())
+                                {
+                                    @foreach (var question in filteredQuestions)
+                                    {
+                                        <tr class="align-middle">
+                                            <td class="fw-bold">@(filteredQuestions.IndexOf(question) + 1)</td>
+                                            <td class="text-start">@question.QuestionName</td>
+                                            <td>
+                                                @foreach (var answer in question.Answers.Select((a, index) => $"{(char)('A' + index)}. {a.Answer}"))
+                                                {
+                                                    <div>@answer</div>
+                                                }
+                                            </td>
+
+                                            <td class="text-success fw-bold">
+                                                @($"{Convert.ToChar('A' + question.Answers.FindIndex(a => a.Answer == question.RightAnswer))}. {question.RightAnswer}")
+                                            </td>
+                                            <td>
+                                                @switch (question.Level)
+                                                {
+                                                    case 1:
+                                                        <span class="badge bg-success">Dễ</span>
+                                                        break;
+                                                    case 2:
+                                                        <span class="badge bg-warning">Trung Bình</span>
+                                                        break;
+                                                    case 3:
+                                                        <span class="badge bg-danger">Khó</span>
+                                                        break;
+                                                    case 4:
+                                                        <span class="badge bg-dark">Siêu Khó</span>
+                                                        break;
+                                                    default:
+                                                        <span class="badge bg-secondary">Không xác định</span>
+                                                        break;
+                                                }
+                                            </td>
+
+                                            <td>
+                                                <button type="button" class="btn btn-warning btn-sm shadow-sm rounded-pill px-3" title="Chỉnh sửa" @onclick="() =>OpenModal(ModalTypeQuestion.Edit,question.Id)">
+                                                    <i class="bi bi-pencil"></i>@question.Id
+                                                </button>
+                                                <button type="button" class="btn btn-danger btn-sm shadow-sm rounded-pill px-3" title="Xóa" @onclick="() => deletequestion(question.Id, question.Level)">
+                                                    <i class="bi bi-trash3"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                                else
+                                {
+                                    <tr>
+                                        <td colspan="5" class="text-center text-muted py-4">Không có câu hỏi nào trong đề thi này.</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="alert alert-warning text-center fw-semibold">Không có câu hỏi nào trong đề thi này.</div>
+                }
+            </div>
+            <div class="modal-footer bg-light d-flex justify-content-end border-top rounded-bottom">
+                <button type="button" class="btn btn-secondary shadow-sm px-4" @onclick="HideTestDetailsModal">Đóng</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 @code {
     private Dictionary<Guid, string> SubjectNameMap => subjectDTO.ToDictionary(s => s.Id, s => s.Name);
     private Dictionary<Guid, string> ClassNameMap => classDTOs.ToDictionary(c => c.Id, c => c.Name);
     private Dictionary<Guid, string> PointTypeNameMap => pointTypeDTOs.ToDictionary(p => p.Id, p => p.Name);
     private ModalTypeTest modalTypeTest { get; set; } = ModalTypeTest.Add;
-    private void OpenModal(Guid id){
-        testQuestion.TestId = id; // Gán TestId vào câu hỏi
-        showcreatequestion = true;
+    private async Task OpenModal(ModalTypeQuestion type,Guid id){
+        modalTypeQuestion = type;
+        if(modalTypeQuestion==ModalTypeQuestion.Edit){
+            await Jsruntime.InvokeVoidAsync("alert", $"{id}");
+           await detailquestion(id);
+           
+
+            showcreatequestion = true;
+        }else{
+            testQuestion.TestId = id;
+            showcreatequestion = true;
+        }
+        
     }
     private void closemodal(){
         showcreatequestion = false;
@@ -708,17 +738,19 @@
     private int ItemsPerPage { get; set; } = 5; // Số mục trên mỗi trang
     private int TotalPages => (int)Math.Ceiling((double)FilteredTests.Count() / ItemsPerPage);
     private ModalTypeExam modalTypeExam { get; set; } = ModalTypeExam.Add;
+    private ModalTypeQuestion modalTypeQuestion { get; set; } = ModalTypeQuestion.Add;
     protected override async Task OnInitializedAsync()
     {
         try
         {
-            await getallexam();
             await detailroom();
             await detailpoint();
             await getallteacher();
             await detailsubject();
+            await getallexam();
             await detailclass();
             await SearchTests();
+
             StateHasChanged();
         }
         catch (Exception)
@@ -777,11 +809,10 @@
         var url = "https://localhost:7046/api/Room/get-all-room";
         roomDTOs = await client.GetFromJsonAsync<List<RoomDTO>>(url);
     }
+
     private async Task detailquestion(Guid id)
     {
-        var client = clientFactory.CreateClient("Get");
-        var url = $"https://localhost:7046/api/TestQuestion/get-by-id-question-answer?id={id}";
-        testQuestions = await client.GetFromJsonAsync<TestQuestion_TestQuestionAnswersDTO>(url);
+        testQuestions = await client.GetFromJsonAsync<TestQuestion_TestQuestionAnswersDTO>($"https://localhost:7046/api/TestQuestion/get-by-id-question-answer?id={id}");
 
     }
     private async Task updatequestion()

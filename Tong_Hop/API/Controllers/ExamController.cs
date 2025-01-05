@@ -240,7 +240,7 @@ namespace API.Controllers
 
             _db.Exam_Rooms.Remove(examRoom);
             _db.Exams.Remove(data);
-            await  _db.SaveChangesAsync();
+            await _db.SaveChangesAsync();
             return BadRequest("Loi");
         }
     }
