@@ -226,14 +226,21 @@ namespace API.Controllers
         {
             var data = await _db.Exams.FirstOrDefaultAsync(x => x.Id == id);
 
-            if (data != null)
+            if (data == null)
             {
-                _db.Exams.Remove(data);
-                _db.SaveChanges();
-
-                return Ok("Delete thanh cong");
+                return NotFound("Khong co bai kiem tra nay");
             }
 
+            var examRoom = await _db.Exam_Rooms.FirstOrDefaultAsync(x => x.ExamId == id);
+
+            if (examRoom == null)
+            {
+                return NotFound("Bai kiem tra nay chua thiet lap phong thi");
+            }
+
+            _db.Exam_Rooms.Remove(examRoom);
+            _db.Exams.Remove(data);
+            await  _db.SaveChangesAsync();
             return BadRequest("Loi");
         }
     }
