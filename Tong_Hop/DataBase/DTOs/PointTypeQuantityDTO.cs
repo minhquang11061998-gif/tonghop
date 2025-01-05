@@ -12,5 +12,12 @@ namespace Data.DTOs
         public string PointTypeName { get; set; }
         public int Quantity { get; set; }
         public string Scores { get; set; }
+
+        // Các danh sách điểm cho từng loại điểm
+        public List<double> FifteenMinutes { get; set; }
+        public List<double> Miệng { get; set; }
+        public List<double> FortyFiveMinutes { get; set; }
+        public List<double> MidTerm { get; set; }
+        public List<double> Final { get; set; }
     }
 }

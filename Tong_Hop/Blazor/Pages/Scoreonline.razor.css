@@ -1,0 +1,40 @@
+﻿<style >
+.custom-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+.custom-table th, .custom-table td {
+    padding: 10px;
+    text-align: center;
+}
+
+.custom-table th {
+    background-color: #4CAF50;
+    color: white;
+}
+
+.custom-table td {
+    border: 1px solid #ddd;
+}
+
+    .custom-table td.bg-warning {
+        background-color: #f8d7da;
+    }
+
+.alert-danger {
+    background-color: #f8d7da;
+    color: #721c24;
+    padding: 10px;
+    border-radius: 5px;
+    font-weight: bold;
+    margin-bottom: 20px;
+}
+
+h2.text-center {
+    color: #333;
+    margin-top: 30px;
+}
+
+</style >
