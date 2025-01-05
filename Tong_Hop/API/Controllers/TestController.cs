@@ -20,32 +20,60 @@ namespace API.Controllers
         }
 
         [HttpGet("get-all-test")]
-        public async Task<ActionResult<List<TestDTO>>> GetAll()
+        public async Task<ActionResult<List<TestDTO>>> GetAll(Guid id)
         {
-            var data = await _db.Tests.ToListAsync();
+            var data = await (from test in _db.Tests
+                              join examtestcode in _db.Exam_Room_TestCodes on test.Id equals examtestcode.TestId
+                              join examroom in _db.Exam_Rooms on examtestcode.ExamRoomId equals examroom.Id
+                              where examroom.Id == id select new TestDTO
+                              {
+                                  Id = test.Id,
+                                  Name = test.Name,
+                                  Code = test.Code,
+                                  CreationTime = test.CreationTime,
+                                  Minute = test.Minute,
+                                  Maxstudent = test.MaxStudent,
+                                  Status = test.Status,
+                                  ClassId = test.ClassId,
+                                  SubjectId = test.SubjectId,
+                                  PointTypeId = test.PointTypeId,
+                                  ExamRoomId=examroom.Id,
+                              }).ToListAsync();
 
             if (data == null)
             {
                 return NotFound("Danh sach trong");
             }
-
-            var testdto = data.Select(x => new TestDTO
-            {
-                Id = x.Id,
-                Name = x.Name,
-                Code = x.Code,
-                CreationTime = x.CreationTime,
-                Minute = x.Minute,
-                Maxstudent = x.MaxStudent,
-                Status = x.Status,
-                ClassId = x.ClassId,
-                SubjectId = x.SubjectId, 
-                PointTypeId = x.PointTypeId,
-            }).ToList();
-
-            return Ok(testdto);
+            return Ok(data);
         }
+        [HttpGet("get-ByID-test")]
+        public async Task<ActionResult<List<TestDTO>>> GetByid(Guid id)
+        {
+            var data = await (from test in _db.Tests
+                              join examtestcode in _db.Exam_Room_TestCodes on test.Id equals examtestcode.TestId
+                              join examroom in _db.Exam_Rooms on examtestcode.ExamRoomId equals examroom.Id
+                              where test.Id == id
+                              select new TestDTO
+                              {
+                                  Id = test.Id,
+                                  Name = test.Name,
+                                  Code = test.Code,
+                                  CreationTime = test.CreationTime,
+                                  Minute = test.Minute,
+                                  Maxstudent = test.MaxStudent,
+                                  Status = test.Status,
+                                  ClassId = test.ClassId,
+                                  SubjectId = test.SubjectId,
+                                  PointTypeId = test.PointTypeId,
+                                  ExamRoomId = examroom.Id,
+                              }).FirstOrDefaultAsync();
 
+            if (data == null)
+            {
+                return NotFound("Danh sach trong");
+            }
+            return Ok(data);
+        }
         [HttpGet("{testId}/questions")]
         public async Task<IActionResult> GetQuestions(Guid testId, [FromQuery] int level)
         {
@@ -132,7 +160,7 @@ namespace API.Controllers
             return Ok(testdto);
         }
 
-        private int RamdomCodeTest(int length)
+        private string RamdomCodeTest(int length)
         {
             const string CodeNew = "0123456789";
 
@@ -145,7 +173,7 @@ namespace API.Controllers
                 code[i] = CodeNew[random.Next(CodeNew.Length)];
             }
 
-            return int.Parse(code);
+            return new string(code);
         }
 
         private string RamdomCodeTestCode(int length)
@@ -277,6 +305,88 @@ namespace API.Controllers
                 return BadRequest($"Lỗi khi tạo bài kiểm tra: {ex.Message}");
             }
         }
+        [HttpPut("update-test-testcode")]
+        public async Task<IActionResult> UpdateTest_Testcode( TestDTO testDTO)
+        {
+            try
+            {
+                // Tìm bài kiểm tra cần cập nhật
+                var existingTest = await _db.Tests.FirstOrDefaultAsync(t => t.Id == testDTO.Id);
+                if (existingTest == null)
+                {
+                    return NotFound("Không tìm thấy bài kiểm tra.");
+                }
+
+                // Cập nhật thông tin bài kiểm tra
+                existingTest.Name = testDTO.Name;
+                existingTest.Minute = testDTO.Minute;
+                existingTest.SubjectId = testDTO.SubjectId;
+                existingTest.PointTypeId = testDTO.PointTypeId;
+                existingTest.ClassId = testDTO.ClassId;
+                existingTest.MaxStudent = GetMaxStudent(testDTO.ClassId);
+
+                // Kiểm tra và cập nhật số lượng mã bài kiểm tra
+                var currentTestCodes = await _db.TestCodes.Where(tc => tc.TestId == testDTO.Id).ToListAsync();
+                int currentCount = currentTestCodes.Count;
+                int maxStudents = existingTest.MaxStudent;
+
+                if (currentCount < maxStudents)
+                {
+                    // Thêm mã bài kiểm tra mới nếu số lượng hiện tại nhỏ hơn MaxStudent
+                    for (int i = currentCount; i < maxStudents; i++)
+                    {
+                        var newTestCode = new TestCodes
+                        {
+                            Id = Guid.NewGuid(),
+                            Code = RamdomCodeTestCode(8), // Tạo mã ngẫu nhiên
+                            Status = 1,
+                            TestId = testDTO.Id,
+                        };
+                        await _db.TestCodes.AddAsync(newTestCode);
+                    }
+                }
+                else if (currentCount > maxStudents)
+                {
+                    // Xóa mã bài kiểm tra dư thừa nếu số lượng hiện tại lớn hơn MaxStudent
+                    var excessTestCodes = currentTestCodes.Skip(maxStudents).ToList();
+                    _db.TestCodes.RemoveRange(excessTestCodes);
+                }
+
+                // Cập nhật thông tin Exam_Room_TestCode nếu cần
+                var existingExamRoomTestCode = await _db.Exam_Room_TestCodes.FirstOrDefaultAsync(ertc => ertc.TestId == testDTO.Id);
+                if (existingExamRoomTestCode != null)
+                {
+                    existingExamRoomTestCode.ExamRoomId = testDTO.ExamRoomId;
+                }
+                else if (testDTO.ExamRoomId != null)
+                {
+                    // Nếu không tồn tại, tạo mới
+                    var newExamRoomTestCode = new Exam_Room_TestCode
+                    {
+                        Id = Guid.NewGuid(),
+                        TestId = testDTO.Id,
+                        ExamRoomId = testDTO.ExamRoomId,
+                    };
+                    await _db.Exam_Room_TestCodes.AddAsync(newExamRoomTestCode);
+                }
+
+                // Lưu thay đổi vào cơ sở dữ liệu
+                await _db.SaveChangesAsync();
+
+                return Ok("Cập nhật bài kiểm tra và mã bài kiểm tra thành công.");
+            }
+            catch (Exception ex)
+            {
+                if (ex.InnerException != null)
+                {
+                    return BadRequest($"Lỗi khi cập nhật bài kiểm tra: {ex.InnerException.Message}");
+                }
+
+                // Bắt lỗi cụ thể và trả về phản hồi lỗi chi tiết
+                return BadRequest($"Lỗi khi cập nhật bài kiểm tra: {ex.Message}");
+            }
+        }
+
         [HttpDelete("delete-test")]
         public async Task<IActionResult> Delete_test(Guid id)
         {

@@ -12,7 +12,7 @@ namespace DataBase.Models
         [Key]
         public Guid Id { get; set; }
 
-        [StringLength(50, ErrorMessage = "Name ko quá 50 ký tự")]
+        [StringLength(50, ErrorMessage = "Tên phòng không quá 50 ký tự")]
         public string Name { get; set; }
         public string Code { get; set; }
         public int Status { get; set; }

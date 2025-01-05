@@ -14,7 +14,7 @@ namespace DataBase.Models
         [Key]
         public Guid Id { get; set; }
         public string Code { get; set; }
-        [StringLength(20, ErrorMessage = "Tên không được quá 20 ký tự")]
+        [StringLength(3, ErrorMessage = "Tên lớp không được quá 3 ký tự")]
         public string Name { get; set; }
         public int Status { get; set; }
         public int MaxStudent { get; set; }

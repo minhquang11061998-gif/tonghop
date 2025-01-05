@@ -1,4 +1,5 @@
 ﻿using DataBase.Data;
+using DataBase.DTOs;
 using DataBase.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -15,13 +16,37 @@ namespace API.Controllers
         {
             _db = db;
         }
-
-        [HttpGet("get-all-teacher")]
-        public async Task<ActionResult<List<Teachers>>> GetAll()
+        [HttpGet("get-all-teacher-all")]
+        public async Task<ActionResult<List<TeacherDTO>>> GetAllteacher()
         {
-            var data = await _db.Teachers.ToListAsync();
+            var data = await (from user in _db.Users
+                              join teacher in _db.Teachers on user.Id equals teacher.UserId
+                              select new TeacherDTO
+                              {
+                                  Id = teacher.Id,
+                                  Name = user.FullName,
+                                  Code = teacher.Code
+                              }).ToListAsync();
+
             return Ok(data);
         }
+
+        [HttpGet("get-all-teacher")]
+        public async Task<ActionResult<List<TeacherDTO>>> GetAll()
+        {
+            var data = await (from user in _db.Users
+                              join teacher in _db.Teachers on user.Id equals teacher.UserId
+                              where !_db.Classes.Any(c => c.TeacherId == teacher.Id) 
+                              select new TeacherDTO
+                              {
+                                  Id = teacher.Id,
+                                  Name = user.FullName,
+                                  Code = teacher.Code
+                              }).ToListAsync();
+
+            return Ok(data);
+        }
+
 
         [HttpGet("get-by-id")]
         public async Task<ActionResult<Teachers>> GetById(Guid id)

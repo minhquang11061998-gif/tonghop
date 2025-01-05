@@ -17,8 +17,11 @@
             <button class="btn btn-danger btn-sm" @onclick="DeleteOrder" disabled="@(SelectedOrder == Guid.Empty)">
                 <i class="bi bi-trash"></i> Xóa
             </button>
-            <button class="btn btn-success btn-sm" @onclick="ExportToExcel">
+            <button class="btn btn-success btn-sm" @onclick="showexcel">
                 <i class="bi bi-file-earmark-excel"></i> Thêm file Excel
+            </button>
+            <button class="btn btn-success btn-sm" @onclick="dowloadexcel">
+                <i class="bi bi-file-earmark-excel"></i> Tải file mẫu Excel
             </button>
         </div>
 
@@ -33,19 +36,9 @@
     </div>
 
     <!-- Table -->
-    <div class="table-responsive border rounded shadow-sm" style="background-color: #ffffff;">
-        <table class="table table-hover  table-sm align-middle text-center">
-            <caption class="text-end">
-                <div class="d-flex  justify-content-end mt-3">
-                    <button class="btn btn-secondary btn-sm" @onclick="PreviousPage" disabled="@(!CanGoPrevious)">
-                        <i class="bi bi-arrow-left"></i> Trước
-                    </button>
-                    <span>Trang @CurrentPage / @TotalPages</span>
-                    <button class="btn btn-secondary btn-sm" @onclick="NextPage" disabled="@(!CanGoNext)">
-                        <i class="bi bi-arrow-right"></i> Sau
-                    </button>
-                </div>
-            </caption>
+    <div class="table-responsive border rounded shadow-sm" style="background-color: #ffffff;max-height: 800px; border: 1px solid #ddd; border-radius: 5px;">
+        <table class="table table-hover  table-sm align-middle text-center" style="">
+
             <thead class="table-primary border" style="height:45px">
                 <tr>
                     <th style="width: 50px;">
@@ -61,31 +54,31 @@
                     <th style="width: 120px;">Trạng thái</th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody >
                 @if (FilteredOrders.Any())
                 {
                     @foreach (var order in FilteredOrders)
                     {
                         <tr class="@(SelectedOrder == order.Id ? "table-primary" : "")"
-                            style="cursor: pointer;"
-                            @onclick="() => SelectOrder(order.Id)">
+                        style="cursor: pointer;"
+                        @onclick="() => SelectOrder(order.Id)">
                             <td>
                                 <input type="checkbox"
-                                       checked="@(SelectedOrder == order.Id)"
-                                       @onchange="() => SelectOrder(order.Id)"
-                                       title="Chọn đơn hàng này" />
+                                checked="@(SelectedOrder == order.Id)"
+                                @onchange="() => SelectOrder(order.Id)"
+                                title="Chọn tài khoản này" />
                             </td>
                             <td>
                                 <img src="@order.Avartar" alt="Avatar"
-                                     class="img-thumbnail rounded-circle"
-                                     style="width: 40px; height: 40px;" />
+                                class="img-thumbnail rounded-circle"
+                                style="width: 40px; height: 40px;" />
                             </td>
                             <td>@order.FullName</td>
                             <td>@order.Email</td>
                             <td>@order.DateOfBirth?.ToString("d")</td>
                             <td>@order.PhoneNumber</td>
                             <td>@order.UserName</td>
-                            <td>********</td>
+                            <td>@order.PasswordHash</td>
                             <td>
                                 <span class="badge @(order.Status == 1 ? "bg-success" : "bg-secondary")">
                                     @(order.Status == 1 ? "Hoạt động" : "Tạm dừng")
@@ -105,7 +98,7 @@
         </table>
     </div>
 
-    
+
 
 </div>
 
@@ -151,7 +144,7 @@
                                 <label class="form-label">Hình Ảnh</label>
                                 <div class="d-flex align-items-center">
                                     <div class="me-2">
-                                        <InputFile id="selectfile" style="display:none" class="form-control" onchange="HandfileAvatarTeacher" />
+                                        <InputFile id="selectfile" style="display:none" class="form-control" OnChange="HandfileAvatarTeacher" />
                                         <button class="btn btn-outline-primary" type="button" @onclick="TriggerFileInput">Chọn Ảnh</button>
                                     </div>
                                     <div class="position-relative">
@@ -187,23 +180,50 @@
     </div>
 
 }
-
+<div class="modal fade @(isExcelModalVisible ? "show" : "")" tabindex="-1" style="display:@(isExcelModalVisible ? "block" : "none"); background-color: rgba(0,0,0,0.5);">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <!-- Tiêu đề -->
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title @* @(selectedClassId=Guid.Empty)? *@">Nhập dữ liệu học sinh</h5>
+                <button type="button" class="btn-close" aria-label="Close" @onclick="CloseModal"></button>
+            </div>
+            <!-- Nội dung -->
+            <div class="modal-body">
+                <div class="mb-3">
+                    <div class="mb-3 text-center">
+                        <!-- Nhãn tải lên tệp -->
+                        <label for="fileInput" class="btn btn-outline-primary" style="cursor: pointer;">
+                            <i class="bi bi-upload"></i> Chọn file Excel
+                        </label>
+                        <!-- Input file -->
+                        <InputFile OnChange="HandleFileSelected" id="fileInput" class="form-control d-none" oninput="fileNameDisplay.value = fileInput.value" />
+                        <!-- Hiển thị tên file -->
+                        <input type="text" id="fileNameDisplay" class="form-control mt-2 text-muted text-center" placeholder="File chưa được chọn" readonly />
+                    </div>
+                </div>
+                <div class="text-center">
+                    <button type="button" class="btn btn-primary me-2" @onclick="UploadFile">Lưu</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 @code {
+    private bool isExcelModalVisible = false;
     private List<UserDTOTEACHER> userDTOs = new List<UserDTOTEACHER>();
     private List<UserDTOTEACHER> FilteredOrders => userDTOs
        .Where(o => string.IsNullOrEmpty(SearchText) || o.FullName.Contains(SearchText, StringComparison.OrdinalIgnoreCase))
-       .Skip((CurrentPage - 1) * ItemsPerPage)
-       .Take(ItemsPerPage)
        .ToList();
 
     private bool CanGoPrevious => CurrentPage > 1;
     private bool CanGoNext => CurrentPage < TotalPages;
     private UserDTOTEACHER usercreate = new UserDTOTEACHER();
-    private string SearchText { get; set; }
+    private string? SearchText { get; set; }
     private Guid SelectedOrder { get; set; } = Guid.Empty;
     private UserDTOTEACHER EditingOrder { get; set; } = new UserDTOTEACHER();
     private bool ShowModal { get; set; } = false;
-    private IBrowserFile avatarTeacher;
+    private IBrowserFile? avatarTeacher;
     private int CurrentPage { get; set; } = 1;
     private int ItemsPerPage { get; set; } = 5; // Số mục trên mỗi trang
     private int TotalPages => (int)Math.Ceiling((double)FilteredOrders.Count() / ItemsPerPage);
@@ -224,6 +244,72 @@
         if (CanGoNext)
         {
             CurrentPage++;
+        }
+    }
+    private void showexcel()
+    {
+        isExcelModalVisible = true;
+    }
+    private async Task dowloadexcel()
+    {
+        var respon = await client.GetAsync("https://localhost:7046/api/User/export-sample");
+        if (respon.IsSuccessStatusCode)
+        {
+            var content = await respon.Content.ReadAsByteArrayAsync();
+            var base64String = Convert.ToBase64String(content);
+            await jsruntime.InvokeVoidAsync("downloadFile", $"Template_Sample_{DateTime.Now:yyyyMMddHHmmss}.xlsx", base64String);
+        }
+    }
+    private IBrowserFile? selectedFile;
+    private async Task HandleFileSelected(InputFileChangeEventArgs e)
+    {
+        var file = e.GetMultipleFiles(1); // Lấy tệp đầu tiên
+        if (file.Count > 0)
+        {
+            selectedFile = file[0]; // Chọn tệp đầu tiên
+        }
+    }
+    private async Task UploadFile()
+    {
+        if (selectedFile != null)
+        {
+            var stream = selectedFile.OpenReadStream(100 * 1024 * 1024); // Giới hạn 100MB
+            var content = new MultipartFormDataContent();
+
+            using (var memoryStream = new MemoryStream())
+            {
+                await stream.CopyToAsync(memoryStream);
+                var fileBytes = memoryStream.ToArray();
+                content.Add(new ByteArrayContent(fileBytes), "file", selectedFile.Name);
+            }
+
+
+            var response = await client.PostAsync($"https://localhost:7046/api/User/import-excel-teacher", content);
+            if (response.IsSuccessStatusCode)
+            {
+                await jsruntime.InvokeVoidAsync("alert", "Tải file thành công");
+                await getuser();
+            }
+            else
+            {
+                await jsruntime.InvokeVoidAsync("Swal.fire", new
+                {
+                    title = "Thất bại!",
+                    text = "Đã xảy ra lỗi khi tải lên",
+                    icon = "error",
+                    confirmButtonText = "OK"
+                });
+            }
+        }
+        else
+        {
+            await jsruntime.InvokeVoidAsync("Swal.fire", new
+            {
+                title = "Thất bại!",
+                text = "Vui lòng chọn một file",
+                icon = "error",
+                confirmButtonText = "OK"
+            });
         }
     }
     private async Task getuser()
@@ -270,8 +356,42 @@
         // Export logic can be implemented using a third-party library or JavaScript interop
         Console.WriteLine("Export to Excel functionality is triggered.");
     }
-    private void HandfileAvatarTeacher(InputFileChangeEventArgs e){
+    private const long MaxFileSize = 10 * 1024 * 1024;
+    private async void HandfileAvatarTeacher(InputFileChangeEventArgs e){
         avatarTeacher = e.File; 
+        var file = e.File;
+        if (file == null || file.Size > MaxFileSize)
+        {
+            Console.WriteLine("Invalid file or file size exceeds the allowed limit.");
+            return;
+        }
+
+        // Kiểm tra loại file có hợp lệ không
+        var allowedTypes = new[] { "image/png", "image/jpeg", "image/jpg" };
+        if (!allowedTypes.Contains(file.ContentType))
+        {
+            Console.WriteLine("Invalid file type.");
+            return;
+        }
+
+        // Cập nhật tên file vào userDTOs
+        usercreate.Avartar = file.Name;
+
+        try
+        {
+            // Đọc stream của file
+            using var stream = file.OpenReadStream(MaxFileSize);
+            using var memoryStream = new MemoryStream();
+            await stream.CopyToAsync(memoryStream);
+            usercreate.Avartar = $"data:{file.ContentType};base64,{Convert.ToBase64String(memoryStream.ToArray())}";
+
+            Console.WriteLine("Image uploaded successfully.");
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error uploading file: {ex.Message}");
+        }
     }
     #region
     private async Task TriggerFileInput()
@@ -356,10 +476,7 @@
             content.Add(new StringContent(usercreate.PhoneNumber ?? ""), "PhoneNumber");
             content.Add(new StringContent(usercreate.PasswordHash ?? ""), "PasswordHash");
             content.Add(new StringContent(usercreate.IsLocked.ToString()), "IsLocked");
-
             content.Add(new StringContent(usercreate.RoleId.ToString()), "RoleId");
-
-
             content.Add(new StringContent(usercreate.Avartar), "Avartar");
 
             var respon = await client.PutAsync($"https://localhost:7046/api/User/update-user-teacher/", content);
@@ -381,6 +498,7 @@
 
     private void CloseModal()
     {
+        isExcelModalVisible = false;
         ShowModal = false;
         EditingOrder = new UserDTOTEACHER();
     }

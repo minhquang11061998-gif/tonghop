@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace DataBase.Migrations
 {
     /// <inheritdoc />
-    public partial class DataValide202412252010 : Migration
+    public partial class datacontext : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -16,7 +16,7 @@ namespace DataBase.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Name = table.Column<int>(type: "int", maxLength: 30, nullable: false),
+                    Name = table.Column<int>(type: "int", maxLength: 2, nullable: false),
                     Status = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
@@ -45,7 +45,7 @@ namespace DataBase.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                    Name = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: false)
                 },
                 constraints: table =>
                 {
@@ -57,7 +57,7 @@ namespace DataBase.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Name = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
                     Status = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
@@ -98,7 +98,7 @@ namespace DataBase.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Name = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: false),
                     Code = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     CreationTime = table.Column<DateTime>(type: "datetime2", nullable: false),
                     Status = table.Column<int>(type: "int", nullable: false)
@@ -114,7 +114,7 @@ namespace DataBase.Migrations
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Name = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    Email = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: false),
+                    Email = table.Column<string>(type: "nvarchar(254)", maxLength: 254, nullable: false),
                     PhoneNumber = table.Column<string>(type: "nvarchar(12)", maxLength: 12, nullable: false),
                     address = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     Type = table.Column<int>(type: "int", nullable: false),
@@ -161,6 +161,7 @@ namespace DataBase.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(100)", maxLength: 20, nullable: false),
                     CreationTime = table.Column<DateTime>(type: "datetime2", nullable: false),
                     Status = table.Column<int>(type: "int", nullable: false),
                     SubjectId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
@@ -229,38 +230,6 @@ namespace DataBase.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Tests",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Code = table.Column<int>(type: "int", nullable: false),
-                    Minute = table.Column<int>(type: "int", nullable: true),
-                    CreationTime = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    Status = table.Column<int>(type: "int", nullable: false),
-                    MaxStudent = table.Column<int>(type: "int", nullable: false),
-                    ClassId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    SubjectId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    PointTypeId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Tests", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Tests_PointTypes_PointTypeId",
-                        column: x => x.PointTypeId,
-                        principalTable: "PointTypes",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_Tests_Subjects_SubjectId",
-                        column: x => x.SubjectId,
-                        principalTable: "Subjects",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "Students",
                 columns: table => new
                 {
@@ -296,49 +265,6 @@ namespace DataBase.Migrations
                         principalTable: "Users",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "TestCodes",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Code = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Status = table.Column<int>(type: "int", nullable: false),
-                    TestId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    TestsId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_TestCodes", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_TestCodes_Tests_TestsId",
-                        column: x => x.TestsId,
-                        principalTable: "Tests",
-                        principalColumn: "Id");
-                });
-
-            migrationBuilder.CreateTable(
-                name: "TestQuestions",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    QuestionName = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Type = table.Column<int>(type: "int", nullable: false),
-                    Level = table.Column<int>(type: "int", nullable: false),
-                    RightAnswer = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    CreatedByName = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    TestId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    TestsId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_TestQuestions", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_TestQuestions_Tests_TestsId",
-                        column: x => x.TestsId,
-                        principalTable: "Tests",
-                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -425,7 +351,7 @@ namespace DataBase.Migrations
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Code = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Name = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(3)", maxLength: 3, nullable: false),
                     Status = table.Column<int>(type: "int", nullable: false),
                     MaxStudent = table.Column<int>(type: "int", nullable: false),
                     TeacherId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
@@ -469,13 +395,13 @@ namespace DataBase.Migrations
                         column: x => x.ExamId,
                         principalTable: "Exams",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.NoAction);
                     table.ForeignKey(
                         name: "FK_Exam_Rooms_Rooms_RoomId",
                         column: x => x.RoomId,
                         principalTable: "Rooms",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.NoAction);
                     table.ForeignKey(
                         name: "FK_Exam_Rooms_Teachers_TeacherId1",
                         column: x => x.TeacherId1,
@@ -511,50 +437,6 @@ namespace DataBase.Migrations
                         name: "FK_Teacher_Subjects_Teachers_TeacherId",
                         column: x => x.TeacherId,
                         principalTable: "Teachers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "TestCode_TestQuestion",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    TestCodeId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    TestQuestionId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    TestCodesId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_TestCode_TestQuestion", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_TestCode_TestQuestion_TestCodes_TestCodesId",
-                        column: x => x.TestCodesId,
-                        principalTable: "TestCodes",
-                        principalColumn: "Id");
-                    table.ForeignKey(
-                        name: "FK_TestCode_TestQuestion_TestQuestions_TestQuestionId",
-                        column: x => x.TestQuestionId,
-                        principalTable: "TestQuestions",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "TestQuestionAnswers",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Answer = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    TestQuestionId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_TestQuestionAnswers", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_TestQuestionAnswers_TestQuestions_TestQuestionId",
-                        column: x => x.TestQuestionId,
-                        principalTable: "TestQuestions",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -613,6 +495,44 @@ namespace DataBase.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Tests",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: false),
+                    Code = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Minute = table.Column<int>(type: "int", nullable: true),
+                    CreationTime = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    Status = table.Column<int>(type: "int", nullable: false),
+                    MaxStudent = table.Column<int>(type: "int", nullable: false),
+                    ClassId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    SubjectId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    PointTypeId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    ClassesId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Tests", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Tests_Classes_ClassesId",
+                        column: x => x.ClassesId,
+                        principalTable: "Classes",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_Tests_PointTypes_PointTypeId",
+                        column: x => x.PointTypeId,
+                        principalTable: "PointTypes",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Tests_Subjects_SubjectId",
+                        column: x => x.SubjectId,
+                        principalTable: "Subjects",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Exam_Room_TestCodes",
                 columns: table => new
                 {
@@ -632,6 +552,49 @@ namespace DataBase.Migrations
                         principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_Exam_Room_TestCodes_Tests_TestsId",
+                        column: x => x.TestsId,
+                        principalTable: "Tests",
+                        principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
+                name: "TestCodes",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Code = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Status = table.Column<int>(type: "int", nullable: false),
+                    TestId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    TestsId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_TestCodes", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_TestCodes_Tests_TestsId",
+                        column: x => x.TestsId,
+                        principalTable: "Tests",
+                        principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
+                name: "TestQuestions",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    QuestionName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Type = table.Column<int>(type: "int", nullable: false),
+                    Level = table.Column<int>(type: "int", nullable: false),
+                    RightAnswer = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    CreatedByName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    TestId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    TestsId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_TestQuestions", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_TestQuestions_Tests_TestsId",
                         column: x => x.TestsId,
                         principalTable: "Tests",
                         principalColumn: "Id");
@@ -665,26 +628,45 @@ namespace DataBase.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Exam_Room_Student_AnswerHistories",
+                name: "TestCode_TestQuestion",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    ExamRoomStudentId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    TestQuestionAnswerId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    ExamRoomStudentId0 = table.Column<Guid>(name: "Exam_Room_StudentId", type: "uniqueidentifier", nullable: true)
+                    TestCodeId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    TestQuestionId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    TestCodesId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Exam_Room_Student_AnswerHistories", x => x.Id);
+                    table.PrimaryKey("PK_TestCode_TestQuestion", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Exam_Room_Student_AnswerHistories_Exam_Room_Students_Exam_Room_StudentId",
-                        column: x => x.ExamRoomStudentId0,
-                        principalTable: "Exam_Room_Students",
+                        name: "FK_TestCode_TestQuestion_TestCodes_TestCodesId",
+                        column: x => x.TestCodesId,
+                        principalTable: "TestCodes",
                         principalColumn: "Id");
                     table.ForeignKey(
-                        name: "FK_Exam_Room_Student_AnswerHistories_TestQuestionAnswers_TestQuestionAnswerId",
-                        column: x => x.TestQuestionAnswerId,
-                        principalTable: "TestQuestionAnswers",
+                        name: "FK_TestCode_TestQuestion_TestQuestions_TestQuestionId",
+                        column: x => x.TestQuestionId,
+                        principalTable: "TestQuestions",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "TestQuestionAnswers",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Answer = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    TestQuestionId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_TestQuestionAnswers", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_TestQuestionAnswers_TestQuestions_TestQuestionId",
+                        column: x => x.TestQuestionId,
+                        principalTable: "TestQuestions",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -707,6 +689,31 @@ namespace DataBase.Migrations
                         column: x => x.ExamRoomStudentId0,
                         principalTable: "Exam_Room_Students",
                         principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Exam_Room_Student_AnswerHistories",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    ExamRoomStudentId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    TestQuestionAnswerId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    ExamRoomStudentId0 = table.Column<Guid>(name: "Exam_Room_StudentId", type: "uniqueidentifier", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Exam_Room_Student_AnswerHistories", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Exam_Room_Student_AnswerHistories_Exam_Room_Students_Exam_Room_StudentId",
+                        column: x => x.ExamRoomStudentId0,
+                        principalTable: "Exam_Room_Students",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_Exam_Room_Student_AnswerHistories_TestQuestionAnswers_TestQuestionAnswerId",
+                        column: x => x.TestQuestionAnswerId,
+                        principalTable: "TestQuestionAnswers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateIndex(
@@ -900,6 +907,11 @@ namespace DataBase.Migrations
                 column: "TestsId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Tests_ClassesId",
+                table: "Tests",
+                column: "ClassesId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Tests_PointTypeId",
                 table: "Tests",
                 column: "PointTypeId");
@@ -964,9 +976,6 @@ namespace DataBase.Migrations
                 name: "Notifications");
 
             migrationBuilder.DropTable(
-                name: "Classes");
-
-            migrationBuilder.DropTable(
                 name: "TestCodes");
 
             migrationBuilder.DropTable(
@@ -977,9 +986,6 @@ namespace DataBase.Migrations
 
             migrationBuilder.DropTable(
                 name: "Students");
-
-            migrationBuilder.DropTable(
-                name: "Grades");
 
             migrationBuilder.DropTable(
                 name: "Exam_Rooms");
@@ -994,13 +1000,19 @@ namespace DataBase.Migrations
                 name: "Rooms");
 
             migrationBuilder.DropTable(
-                name: "Teachers");
+                name: "Classes");
 
             migrationBuilder.DropTable(
                 name: "PointTypes");
 
             migrationBuilder.DropTable(
                 name: "Subjects");
+
+            migrationBuilder.DropTable(
+                name: "Grades");
+
+            migrationBuilder.DropTable(
+                name: "Teachers");
 
             migrationBuilder.DropTable(
                 name: "Users");

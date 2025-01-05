@@ -10,7 +10,7 @@ namespace DataBase.DTOs
     {
         public Guid Id { get; set; }
         public string? Name { get; set; }
-        public int Code { get; set; }
+        public string? Code { get; set; }
         public int? Minute { get; set; }
         public DateTime CreationTime { get; set; }
         public int Status { get; set; }

@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DataBase.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20241225131805_Data_Valide_202412252010")]
-    partial class DataValide202412252010
+    [Migration("20250103073240_datacontext")]
+    partial class datacontext
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -43,8 +43,8 @@ namespace DataBase.Migrations
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
+                        .HasMaxLength(3)
+                        .HasColumnType("nvarchar(3)");
 
                     b.Property<int>("Status")
                         .HasColumnType("int");
@@ -216,6 +216,11 @@ namespace DataBase.Migrations
                     b.Property<DateTime>("CreationTime")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
@@ -236,7 +241,7 @@ namespace DataBase.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<int>("Name")
-                        .HasMaxLength(30)
+                        .HasMaxLength(2)
                         .HasColumnType("int");
 
                     b.Property<int>("Status")
@@ -384,7 +389,8 @@ namespace DataBase.Migrations
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
 
                     b.HasKey("Id");
 
@@ -399,8 +405,8 @@ namespace DataBase.Migrations
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
 
                     b.Property<int>("Status")
                         .HasColumnType("int");
@@ -579,8 +585,8 @@ namespace DataBase.Migrations
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
 
                     b.Property<int>("Status")
                         .HasColumnType("int");
@@ -598,8 +604,8 @@ namespace DataBase.Migrations
 
                     b.Property<string>("Email")
                         .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                        .HasMaxLength(254)
+                        .HasColumnType("nvarchar(254)");
 
                     b.Property<bool>("IsViewed")
                         .HasColumnType("bit");
@@ -786,8 +792,12 @@ namespace DataBase.Migrations
                     b.Property<Guid>("ClassId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<int>("Code")
-                        .HasColumnType("int");
+                    b.Property<Guid?>("ClassesId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("CreationTime")
                         .HasColumnType("datetime2");
@@ -800,7 +810,8 @@ namespace DataBase.Migrations
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
 
                     b.Property<Guid>("PointTypeId")
                         .HasColumnType("uniqueidentifier");
@@ -812,6 +823,8 @@ namespace DataBase.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ClassesId");
 
                     b.HasIndex("PointTypeId");
 
@@ -1219,6 +1232,10 @@ namespace DataBase.Migrations
 
             modelBuilder.Entity("DataBase.Models.Tests", b =>
                 {
+                    b.HasOne("DataBase.Models.Classes", "Classes")
+                        .WithMany()
+                        .HasForeignKey("ClassesId");
+
                     b.HasOne("DataBase.Models.PointTypes", "PointType")
                         .WithMany("tests")
                         .HasForeignKey("PointTypeId")
@@ -1230,6 +1247,8 @@ namespace DataBase.Migrations
                         .HasForeignKey("SubjectId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Classes");
 
                     b.Navigation("PointType");
 
