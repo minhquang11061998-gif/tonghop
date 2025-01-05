@@ -338,7 +338,7 @@
                         @if(CurrentModalTypeclass==ModalTypeClass.Edit){
                             <option value="@classcreateandupdate.TeacherId" hidden>@classcreateandupdate.NameTeacher</option>
                         }else{
-                            <option value="@Guid.Empty" hidden>--chọn giáo viên--</option>
+                            <option value="@Guid.Empty" hidden>--Chọn giáo viên--</option>
                         }
                         @foreach (var teacher in teacherDTOs)
                         {
@@ -511,7 +511,7 @@
             }
             else
             {
-                await jsruntime.InvokeVoidAsync("alert", "chưa chọn lớp học");
+                await jsruntime.InvokeVoidAsync("alert", "Chưa chọn lớp học");
 
             }
             var response = await client.PostAsync($"https://localhost:7046/api/User/import-excel?id={idclass}", content);

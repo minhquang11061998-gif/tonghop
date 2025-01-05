@@ -91,7 +91,7 @@ namespace API.Controllers
 
             if (data == null)
             {
-                return NotFound("Danh sach trong");
+                return NotFound("Danh sách trống");
             }
 
             var exam = data.Select(s => new ExamDTO
@@ -112,7 +112,7 @@ namespace API.Controllers
 
             if (data == null)
             {
-                return NotFound("Khong co id nay");
+                return NotFound("Không tồn tại dữ liệu");
             }
 
             var exam = new ExamDTO
@@ -144,7 +144,7 @@ namespace API.Controllers
                 {
                     return NotFound("Không để trống môn học.");
                 }
-                existingExam.Name = "Bài kiểm môn " + subj.Name;
+                existingExam.Name = "Bài kiểm tra môn  " + subj.Name;
                 existingExam.Status = dto.Status;
                 existingExam.SubjectId = dto.idsubject;
                 existingExam.CreationTime = DateTime.Now; // Nếu cần cập nhật thời gian tạo
@@ -164,7 +164,7 @@ namespace API.Controllers
                 _db.Exam_Rooms.Update(existingExamRoom);
                 await _db.SaveChangesAsync();
 
-                return Ok("Cập nhật thành công.");
+                return Ok("Cập nhật dữ liệu thành công.");
             }
             catch (Exception ex)
             {
@@ -183,7 +183,7 @@ namespace API.Controllers
                     return NotFound("Không để trống môn học");
                 }
 
-                string ExamName = "Bài kiểm tra" + Subj.Name;
+                string ExamName = "Bài kiểm tra " + Subj.Name;
                 var data = new Exams
                 {
                     Id = Guid.NewGuid(),
@@ -211,12 +211,12 @@ namespace API.Controllers
                 await _db.Exam_Rooms.AddAsync(ExamRoom);
                 await _db.SaveChangesAsync(true);
 
-                return Ok("Them thanh cong");
+                return Ok("Thêm thành công");
 
             }
             catch (Exception ex)
             {
-                return BadRequest($"Lỗi: {ex.ToString()}");
+                return BadRequest($"Đã xảy ra lỗi: {ex.ToString()}");
             }
         }
 
@@ -231,10 +231,10 @@ namespace API.Controllers
                 _db.Exams.Remove(data);
                 _db.SaveChanges();
 
-                return Ok("Delete thanh cong");
+                return Ok("Xóa thành công");
             }
 
-            return BadRequest("Loi");
+            return BadRequest("Đã xảy ra lỗi");
         }
     }
 }

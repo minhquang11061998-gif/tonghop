@@ -28,7 +28,7 @@ namespace API.Controllers
 
                 if (data == null)
                 {
-                    return NotFound("Danh sach trong");
+                    return NotFound("Danh sach trống");
                 }
 
                 var role = data.Select(s => new RoleDTO
@@ -42,7 +42,7 @@ namespace API.Controllers
             }
             catch (Exception)
             {
-                return BadRequest("Loi");
+                return BadRequest("Đã xảy ra lỗi");
             }
         }
 
@@ -55,7 +55,7 @@ namespace API.Controllers
 
                 if (data == null)
                 {
-                    return NotFound("Khong co Id nay");
+                    return NotFound("Không tồn tại Id này trong CSDL");
                 }
 
                 var role = new RoleDTO
@@ -69,7 +69,7 @@ namespace API.Controllers
             }
             catch (Exception)
             {
-                return BadRequest("Loi");
+                return BadRequest("Đã xảy ra lỗi");
             }
         }
 
@@ -88,11 +88,11 @@ namespace API.Controllers
                 await _db.Roles.AddAsync(role);
                 await _db.SaveChangesAsync();
 
-                return Ok("Them thanh cong");
+                return Ok("Thêm thành công");
             }
             catch (Exception)
             {
-                return BadRequest("Loi");
+                return BadRequest("Đã xảy ra lỗi");
             }
         }
 
@@ -109,10 +109,10 @@ namespace API.Controllers
                 _db.Roles.Update(data);
                 await _db.SaveChangesAsync();
 
-                return Ok("Update thanh cong");
+                return Ok("Cập nhật thành công");
             }
 
-            return BadRequest("Khong co Id nay");
+            return BadRequest("Không tồn tại ID này trong CSDL");
         }
 
         [HttpDelete("delete-role")]
@@ -124,10 +124,10 @@ namespace API.Controllers
                 _db.Roles.Remove(data);
                 await _db.SaveChangesAsync();
 
-                return Ok("Xoa thanh cong");
+                return Ok("Xóa thành công");
             }
 
-            return BadRequest("Loi");
+            return BadRequest("Đã xảy ra lỗi");
         }
     }
 }

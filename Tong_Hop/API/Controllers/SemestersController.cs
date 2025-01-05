@@ -24,7 +24,7 @@ namespace API.Controllers
 
             if (data == null)
             {
-                return NotFound("Danh sach trong");
+                return NotFound("Danh sách trống");
             }
 
             var dto = data.Select(x => new SemesterDTO
@@ -45,7 +45,7 @@ namespace API.Controllers
 
             if (data == null)
             {
-                return NotFound("Khong co Id nay");
+                return NotFound("Không tồn tại ID này trong CSDL");
             }
 
             var dto = new SemesterDTO
@@ -75,11 +75,11 @@ namespace API.Controllers
                 await _db.Semesters.AddAsync(data);
                 _db.SaveChanges();
 
-                return Ok("Them thnah cong");
+                return Ok("Thêm thành công");
             }
             catch (Exception)
             {
-                return BadRequest("Loi");
+                return BadRequest("Đã xảy ra lỗi");
             }
         }
 
@@ -92,7 +92,7 @@ namespace API.Controllers
 
                 if (data == null)
                 {
-                    return NotFound("Khong co id nay");
+                    return NotFound("Không tồn tại ID này trong CSDL");
                 }
 
                 data.Name = dto.Name;
@@ -102,11 +102,11 @@ namespace API.Controllers
                 _db.Semesters.Update(data);
                 _db.SaveChanges();
 
-                return Ok("Update thanh cong");
+                return Ok("Cập nhật thành công");
             }
             catch (Exception)
             {
-                return BadRequest("Loi");
+                return BadRequest("Đã xảy ra lỗi");
             }
         }
 
@@ -120,10 +120,10 @@ namespace API.Controllers
                 _db.Semesters.Remove(data);
                 _db.SaveChanges();
 
-                return Ok("Xoa thanh cong");
+                return Ok("Xóa thành công");
             }
 
-            return BadRequest("Loi");
+            return BadRequest("Đã xảy ra lỗi");
         }
         
     }

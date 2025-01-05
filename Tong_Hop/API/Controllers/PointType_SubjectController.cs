@@ -45,7 +45,7 @@ namespace API.Controllers
 
             if (data == null)
             {
-                return NotFound("Không có Id này");
+                return NotFound("Không tồn tại Id này trong CSDL");
             }
 
             var PTS = new PointType_SubjectDTO
@@ -81,7 +81,7 @@ namespace API.Controllers
         {
             var data = await _db.PointType_Subjects.FirstOrDefaultAsync(x => x.Id == dto.Id);
 
-            if (data == null) { return NotFound("Không có Id này"); }
+            if (data == null) { return NotFound("Không tồn tại Id này trong CSDL"); }
 
             data.SubjectId = dto.SubjectId;
             data.PointTypeId = dto.PointTypeId;
@@ -90,7 +90,7 @@ namespace API.Controllers
             _db.PointType_Subjects.Update(data);
             await _db.SaveChangesAsync();
 
-            return Ok("Update thành công");
+            return Ok("Cập nhật thành công");
         }
 
         [HttpDelete("Delete_point_Subject")]
@@ -98,12 +98,12 @@ namespace API.Controllers
         {
             var data = await _db.PointType_Subjects.FirstOrDefaultAsync(x => x.Id == id);
 
-            if (data == null) { return NotFound("Không có Id này"); }
+            if (data == null) { return NotFound("Không tồn tại Id này trong CSDL"); }
 
             _db.PointType_Subjects.Remove(data);
             await _db.SaveChangesAsync();
 
-            return Ok("Đã xóa");
+            return Ok("Xóa thành công");
         }
 
         [HttpGet("get_dau_diem")]
@@ -128,7 +128,7 @@ namespace API.Controllers
             catch (Exception ex)
             {
                 // Xử lý lỗi nếu có
-                return StatusCode(500, $"Internal server error: {ex.Message}");
+                return StatusCode(500, $"Đã xảy ra lỗi: {ex.Message}");
             }
         }
 

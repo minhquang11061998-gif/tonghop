@@ -27,7 +27,7 @@ namespace API.Controllers
 
                 if (data == null)
                 {
-                    return BadRequest("Danh sach null");
+                    return BadRequest("Danh sách trống");
                 }
                 var gradto = data.Select(x => new GradeDTO
                 {
@@ -41,7 +41,7 @@ namespace API.Controllers
             }
             catch (Exception)
             {
-                return BadRequest("Loi");
+                return BadRequest("Đã xảy ra lỗi");
             }
         }
 
@@ -54,7 +54,7 @@ namespace API.Controllers
 
                 if (data == null)
                 {
-                    return BadRequest("KO co Id nay");
+                    return BadRequest("Không tồn tại ID này");
                 }
 
                 var gardto = new GradeDTO
@@ -68,7 +68,7 @@ namespace API.Controllers
             }
             catch (Exception)
             {
-                return BadRequest("Loi");
+                return BadRequest("Đã xảy ra lỗi");
             }
         }
 
@@ -87,11 +87,11 @@ namespace API.Controllers
                 await _db.Grades.AddAsync(data);
                 await _db.SaveChangesAsync();
 
-                return Ok("Them Thanh Cong");
+                return Ok("Thêm thành công");
             }
             catch (Exception)
             {
-                return BadRequest("Loi");
+                return BadRequest("Đã xảy ra lỗi");
             }
         }
 
@@ -107,10 +107,10 @@ namespace API.Controllers
                 _db.Grades.Update(data);
                 await _db.SaveChangesAsync();
 
-                return Ok("Update thanh cong");
+                return Ok("Cập nhật dữ liệu thành công");
             };
 
-            return BadRequest("Ko co Id nay");
+            return BadRequest("Không tồn tại ID này");
         }
 
         [HttpDelete("delete-grade")]
@@ -123,10 +123,10 @@ namespace API.Controllers
                 _db.Grades.Remove(data);
                 await _db.SaveChangesAsync();
 
-                return Ok("Xoa Thanh cong");
+                return Ok("Xóa thành công");
             }
 
-            return BadRequest("Loi");
+            return BadRequest("Đã xảy ra lỗi");
         }
 
         [HttpGet("get-classid")]

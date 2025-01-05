@@ -45,7 +45,7 @@ namespace API.Controllers
 
                 if (data == null)
                 {
-                    return BadRequest("Ko co Id nay");
+                    return BadRequest("Không tồn tại ID này trong CSDL");
                 }
 
                 var sysdto = new SystemConfigDTO
@@ -64,7 +64,7 @@ namespace API.Controllers
             }
             catch (Exception)
             {
-                return BadRequest("Loi");
+                return BadRequest("Đã xảy ra lỗi");
             }
         }
 
@@ -88,11 +88,11 @@ namespace API.Controllers
                 await _db.SystemConfigs.AddAsync(sys);
                 await _db.SaveChangesAsync();
 
-                return Ok("Them thanh cong");
+                return Ok("Thêm thành công");
             }
             catch (Exception)
             {
-                return BadRequest("Loi");
+                return BadRequest("Đã xảy ra lỗi");
             }
         }
 
@@ -113,10 +113,10 @@ namespace API.Controllers
                 _db.SystemConfigs.Update(data);
                 await _db.SaveChangesAsync();
 
-                return Ok("Update thanh cong");
+                return Ok("Cập nhật thành công");
             }
 
-            return BadRequest("Loi");
+            return BadRequest("Đã xảy ra lỗi");
         }
 
         [HttpDelete("delete-system")]
@@ -128,10 +128,10 @@ namespace API.Controllers
                 _db.SystemConfigs.Remove(data);
                 await _db.SaveChangesAsync();
 
-                return Ok("Delete thanh cong");
+                return Ok("Xóa thành công");
             }
 
-            return BadRequest("Khong co Id nay");
+            return BadRequest("Không tồn tại ID này trong CSDL");
         }
 
         [HttpPost("mark-as-viewed/{id}")]

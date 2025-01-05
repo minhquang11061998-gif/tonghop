@@ -41,7 +41,7 @@ namespace API.Controllers
 
             if (data == null)
             {
-                return NotFound("Danh sach trong");
+                return NotFound("Danh sách trống");
             }
 
             var room = data.Select(x => new RoomDTO
@@ -62,7 +62,7 @@ namespace API.Controllers
 
             if (data == null)
             {
-                return NotFound("Khong co id nay");
+                return NotFound("Không tồn tại ID này trong CSDL");
             }
 
             var room = new RoomDTO
@@ -92,11 +92,11 @@ namespace API.Controllers
                 await _db.AddAsync(data);
                 _db.SaveChanges();
 
-                return Ok("Them thanh cong");
+                return Ok("Thêm thành công");
             }
             catch (Exception)
             {
-                return BadRequest("Loi");
+                return BadRequest("Đã xảy ra lỗi");
             }
         }
 
@@ -110,7 +110,7 @@ namespace API.Controllers
 
                 if (data == null)
                 {
-                    return NotFound("Khong co id nay");
+                    return NotFound("Không tồn tại ID này trong CSDL");
                 }
 
                 data.Name = dto.Name;
@@ -119,11 +119,11 @@ namespace API.Controllers
                 _db.Rooms.Update(data);
                 _db.SaveChanges();
 
-                return Ok("Update thanh cong");
+                return Ok("Cập nhật thành công");
             }
             catch (Exception)
             {
-                return BadRequest("Loi");
+                return BadRequest("Đã xảy ra lỗi");
             }
         }
     }

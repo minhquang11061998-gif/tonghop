@@ -26,7 +26,7 @@ namespace API.Controllers
 
             if (data == null)
             {
-                return NotFound("Danh sach trong");
+                return NotFound("Danh sách trống");
             }
 
             var listScore = data.Select(x => new Scores
@@ -49,7 +49,7 @@ namespace API.Controllers
 
             if (data == null)
             {
-                return NotFound("Danh sach trong");
+                return NotFound("Danh sách trống");
             }
             var listScoreStudent = data.Select(x => new Scores
             {

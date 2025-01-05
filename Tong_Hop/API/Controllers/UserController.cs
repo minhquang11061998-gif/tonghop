@@ -82,7 +82,7 @@ namespace API.Controllers
 
                 if (data == null)
                 {
-                    return NotFound("Danh sach trong");
+                    return NotFound("Danh sách trống");
                 }
 
                 var UserDTO = data.Select(x => new UserDTO
@@ -109,7 +109,7 @@ namespace API.Controllers
             }
             catch (Exception)
             {
-                return BadRequest("Loi");
+                return BadRequest("Đã xảy ra lỗi");
             }
         }
         [HttpGet("get-user-teacher")]
@@ -324,7 +324,7 @@ namespace API.Controllers
                     }
                 }
 
-                return Ok("Them thanh cong");
+                return Ok("Thêm thành công");
             }
             catch (Exception ex)
             {
@@ -724,7 +724,7 @@ namespace API.Controllers
                 // Nếu thông tin đăng nhập đúng, tạo token JWT
 
             }
-            return Unauthorized("tên đăng nhập mật khẩu không đúng");
+            return Unauthorized("Tên đăng nhập hoặc mật khẩu không đúng");
         }
         [HttpPost("logout")]
         public IActionResult Logout()

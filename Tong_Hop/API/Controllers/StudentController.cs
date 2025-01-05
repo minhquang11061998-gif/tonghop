@@ -69,7 +69,7 @@ namespace API.Controllers
                                    // Kiểm tra trạng thái
                                    RegistrationStatus = registrationStatuses.ContainsKey(c.Id)
                                                ? registrationStatuses[c.Id]
-                                               : "chưa đăng kí"
+                                               : "Chưa đăng kí"
                                }).ToList();
 
             return Ok(listStudent);
@@ -92,7 +92,7 @@ namespace API.Controllers
                 if (Guid.TryParse(userIdStr, out var userId))
                 {
                     // Gắn trạng thái "đã đăng ký" nếu UserId tồn tại trong XML
-                    registrationStatuses[userId] = "đã đăng kí";
+                    registrationStatuses[userId] = "Đã đăng kí";
                 }
             }
 

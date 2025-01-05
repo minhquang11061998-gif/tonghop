@@ -108,11 +108,11 @@ namespace API.Controllers
                     }
                 }
 
-                return Ok("Them thanh cong");
+                return Ok("Thêm thành công");
             }
             catch (Exception ex)
             {
-                return BadRequest($"Loi khi them thong bao: {ex.Message}");
+                return BadRequest($"Đã xảy ra lỗi: {ex.Message}");
             }
         }
 
@@ -140,11 +140,11 @@ namespace API.Controllers
                 // Trả về danh sách các lớp liên quan để hiển thị trên giao diện nếu cần
                 return Ok(new
                 {
-                    message = "Update thành công",
+                    message = "Cập nhật thành công",
                     classIds = classIds // Trả về danh sách lớp liên quan
                 });
             }
-            return BadRequest("Lỗi");
+            return BadRequest("Đã xảy ra lỗi");
         }
 
         [HttpDelete("delete-notification")]

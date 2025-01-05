@@ -65,7 +65,7 @@ namespace API.Controllers
                 // Train và ghi model nếu cần
                 _faceRecognizer.Train(new[] { grayFace.Mat }, new[] { 1 });
 
-                return Ok("Đữ liệu khuôn mặt đã được lưu thành công.");
+                return Ok("Dữ liệu khuôn mặt đã được lưu thành công.");
             }
             catch (Exception ex)
             {
@@ -415,7 +415,7 @@ namespace API.Controllers
                                 {
                                     if (item_data.IdStudent.ToString() == studentIdFromToken)
                                     {
-                                        return BadRequest("Bạn đã là bài thi rồi");
+                                        return BadRequest("Bạn đã làm bài thi rồi");
                                     }
                                     else
                                     {
@@ -430,7 +430,7 @@ namespace API.Controllers
 
                                         _db.Exam_Room_Students.Add(examRoomStudentEntity);
                                         _db.SaveChanges();
-                                        return Ok("thành công ");
+                                        return Ok("Thành công ");
                                     }
                                 }
                                 

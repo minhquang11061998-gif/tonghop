@@ -105,7 +105,7 @@ namespace API.Controllers
 			}
 			catch (Exception ex)
 			{
-				return BadRequest($"Lỗi truy vấn: {ex.Message}");
+				return BadRequest($"Đã xảy ra lỗi: {ex.Message}");
 			}
 		}
 

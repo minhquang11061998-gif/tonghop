@@ -180,16 +180,16 @@
         var resrpon = await client.DeleteAsync($"https://localhost:7046/api/FaceId/remove-face?userId={id}");
         if (resrpon.IsSuccessStatusCode)
         {
-            await jsruntime.InvokeVoidAsync("alert", "xóa dữ liệu thành công");
+            await jsruntime.InvokeVoidAsync("alert", "Xóa dữ liệu thành công");
         }
-        else { await jsruntime.InvokeVoidAsync("alert", "xóa dữ liệu thất bại"); }
+        else { await jsruntime.InvokeVoidAsync("alert", "Xóa dữ liệu thất bại"); }
 
     }
     private async Task RegisterFaceAsync(string userId)
     {
         if (string.IsNullOrWhiteSpace(userId))
         {
-            await jsruntime.InvokeVoidAsync("alert", "vui lòng nhập ID user");
+            await jsruntime.InvokeVoidAsync("alert", "Vui lòng nhập ID user");
             return;
         }
 
@@ -199,7 +199,7 @@
             if (response.IsSuccessStatusCode)
             {
 
-                await jsruntime.InvokeVoidAsync("alert", "thêm dữ liệu  thành công");
+                await jsruntime.InvokeVoidAsync("alert", "Thêm dữ liệu thành công");
                 await jsruntime.InvokeVoidAsync("reloadCameraFeed");
                 showfaceid = false;
 
@@ -208,13 +208,13 @@
             else
             {
                 var errorResponse = await response.Content.ReadAsStringAsync();
-                await jsruntime.InvokeVoidAsync("alert", "thêm dữ liệu không thành công");
+                await jsruntime.InvokeVoidAsync("alert", "Thêm dữ liệu không thành công");
                 await jsruntime.InvokeVoidAsync("reloadCameraFeed");
             }
         }
         catch (Exception)
         {
-            await jsruntime.InvokeVoidAsync("alert", "thêm dữ liệu không thành công");
+            await jsruntime.InvokeVoidAsync("alert", "Thêm dữ liệu không thành công");
             await jsruntime.InvokeVoidAsync("reloadCameraFeed");
         }
     }

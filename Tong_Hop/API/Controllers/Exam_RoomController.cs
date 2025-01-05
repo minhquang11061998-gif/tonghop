@@ -24,7 +24,7 @@ namespace API.Controllers
 
             if (data == null)
             {
-                return NotFound("Danh sach trong");
+                return NotFound("Dang sách trống");
             }
 
             var dto = data.Select(x => new Exam_RoomDTO
@@ -50,7 +50,7 @@ namespace API.Controllers
 
             if (data == null)
             {
-                return NotFound("Khong cos id nay");
+                return NotFound("Không tồn tại ID này trong CSDL");
             }
 
             var dto = new Exam_RoomDTO 
@@ -107,7 +107,7 @@ namespace API.Controllers
 
                 if (data == null)
                 {
-                    return NotFound("Khong co id nay");
+                    return NotFound("Không tồn tại ID này");
                 }
 
                 data.Status = dto.Status;
@@ -121,11 +121,11 @@ namespace API.Controllers
                 _db.Exam_Rooms.Update(data);
                 _db.SaveChanges();
 
-                return Ok("Update thanh cong");
+                return Ok("Cập nhật dữ liệu thành công");
             }
             catch (Exception)
             {
-                return BadRequest("Loi");
+                return BadRequest("Đã xảy ra lỗi");
             }
         }
 
@@ -139,10 +139,10 @@ namespace API.Controllers
                 _db.Exam_Rooms.Remove(data);
                 _db.SaveChanges();
 
-                return Ok("Xoa thanh cong");
+                return Ok("Xóa dữ liệu thành công");
             }
 
-            return BadRequest("Loi");
+            return BadRequest("Đã xảy ra lỗi");
         }
     }
 }

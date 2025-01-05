@@ -1,64 +1,102 @@
 ﻿@page "/"
 @layout MainLayout
 @inject IJSRuntime JSRuntime
-<PageTitle>Index</PageTitle>
-<div class="row">
-    <div id="carouselExampleInterval" class="carousel slide" data-bs-ride="carousel">
+<PageTitle>Trang Chủ</PageTitle>
+
+<div class="container-fluid">
+    <!-- Carousel Section -->
+    <div id="carouselExampleInterval" class="carousel slide mb-5" data-bs-ride="carousel">
         <div class="carousel-inner">
             <div class="carousel-item active">
-                <img src="img/Screenshot 2024-09-23 092038.png" class="d-block w-100" alt="...">
+                <img src="img/Screenshot 2024-09-23 092038.png" class="d-block w-100" alt="Hình ảnh 1">
             </div>
             <div class="carousel-item">
-                <img src="img/Screenshot 2024-09-22 225300.png" class="d-block w-100" alt="...">
+                <img src="img/Screenshot 2024-09-22 225300.png" class="d-block w-100" alt="Hình ảnh 2">
             </div>
             <div class="carousel-item">
-                <img src="img/Screenshot 2024-09-23 094210.png" class="d-block w-100" alt="...">
+                <img src="img/Screenshot 2024-09-23 094210.png" class="d-block w-100" alt="Hình ảnh 3">
             </div>
         </div>
         <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleInterval" data-bs-slide="prev">
             <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-            <span class="visually-hidden">Previous</span>
+            <span class="visually-hidden">Trước</span>
         </button>
         <button class="carousel-control-next" type="button" data-bs-target="#carouselExampleInterval" data-bs-slide="next">
             <span class="carousel-control-next-icon" aria-hidden="true"></span>
-            <span class="visually-hidden">Next</span>
+            <span class="visually-hidden">Tiếp</span>
         </button>
     </div>
-</div>
 
-<div style=" background-color: #f9f9f9;
-        font-family: Arial, sans-serif">
-    <div class="row py-3">
-        <div class="bg-light">
-            <div class="container-fluid d-flex">
-                <div class="col-6">
-                    <div class="p-5">
-                        <div class="d-flex justify-content-center">
-                            <img class="img-thumbnail w-75" src="img/online.jpeg" alt="Hình ảnh thi online" />
-                        </div>
-                        <div class="d-flex justify-content-center" style="margin-top: -100px;margin-left:200px">
-                            <img class="img-thumbnail w-75" src="img/top-10-phan-mem-thi-online-tot-nhat-2021.jpg" alt="Hình ảnh phần mềm" />
-                        </div>
+    <!-- Introduction Section -->
+    <div class="bg-light py-5">
+        <div class="row align-items-center">
+            <div class="col-lg-6 mb-4">
+                <div class="position-relative">
+                    <img class="img-thumbnail w-100" src="img/online.jpeg" alt="Hình ảnh thi online">
+                    <img class="img-thumbnail position-absolute top-50 start-50 translate-middle w-75 border border-white shadow" src="img/top-10-phan-mem-thi-online-tot-nhat-2021.jpg" alt="Hình ảnh phần mềm">
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="text-center text-lg-start px-lg-4">
+                    <h1 class="mb-4 text-primary">Lời Giới Thiệu</h1>
+                    <p class="fs-5">
+                        Chào mừng bạn đến với <strong class="text-info">SMART SCHOOL</strong> – giải pháp thi online hoàn hảo cho giáo dục hiện đại!
+                    </p>
+                    <p class="fs-6">
+                        Trong bối cảnh giáo dục ngày càng phát triển và công nghệ ngày càng phổ biến, việc tổ chức các kỳ thi một cách hiệu quả, tiện lợi và an toàn đã trở thành một nhu cầu thiết yếu.
+                        Phần mềm thi online của chúng tôi được thiết kế đặc biệt để đáp ứng những yêu cầu này, giúp các trường học, tổ chức và cá nhân có thể tổ chức thi một cách nhanh chóng và chuyên nghiệp.
+                    </p>
+                    <p class="fs-6">
+                        Với giao diện thân thiện, tính năng đa dạng và khả năng bảo mật cao, <strong class="text-info">SMART SCHOOL</strong> không chỉ tiết kiệm thời gian mà còn nâng cao trải nghiệm của cả giảng viên và học viên.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Features Section -->
+    <div class="container py-5">
+        <h2 class="text-center mb-4 text-secondary">Tính Năng Nổi Bật</h2>
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="card shadow border-0">
+                    <img src="img/top-10-phan-mem-thi-online-tot-nhat-2021.jpg" class="card-img-top" alt="Tính năng 1">
+                    <div class="card-body">
+                        <h5 class="card-title">Bảo mật cao</h5>
+                        <p class="card-text">Đảm bảo an toàn dữ liệu và chống gian lận trong các kỳ thi online.</p>
                     </div>
                 </div>
-                <div class="col-6">
-                    <div class="p-3">
-                        <h1>Lời Giới Thiệu</h1>
-                        <p>
-                            Chào mừng bạn đến với <strong class="text-info">SMART SCHOOL</strong> – giải pháp thi online hoàn hảo cho giáo dục hiện đại!
-                        </p>
-                        <p>
-                            Trong bối cảnh giáo dục ngày càng phát triển và công nghệ ngày càng phổ biến, việc tổ chức các kỳ thi một cách hiệu quả, tiện lợi và an toàn đã trở thành một nhu cầu thiết yếu.
-                            Phần mềm thi online của chúng tôi được thiết kế đặc biệt để đáp ứng những yêu cầu này, giúp các trường học, tổ chức và cá nhân có thể tổ chức thi một cách nhanh chóng và chuyên nghiệp.
-                        </p>
-                        <p>
-                            Với giao diện thân thiện, tính năng đa dạng và khả năng bảo mật cao, <strong class="text-info">SMART SCHOOL</strong> không chỉ tiết kiệm thời gian mà còn nâng cao trải nghiệm của cả giảng viên và học viên.
-                            Hãy cùng chúng tôi khám phá thế giới thi online và nâng tầm chất lượng giáo dục của bạn!
-                        </p>
+            </div>
+            <div class="col-md-4">
+                <div class="card shadow border-0">
+                    <img src="img/top-10-phan-mem-thi-online-tot-nhat-2021.jpg" class="card-img-top" alt="Tính năng 2">
+                    <div class="card-body">
+                        <h5 class="card-title">Giao diện thân thiện</h5>
+                        <p class="card-text">Thiết kế đơn giản, dễ sử dụng cho cả học sinh và giáo viên.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card shadow border-0">
+                    <img src="img/top-10-phan-mem-thi-online-tot-nhat-2021.jpg" class="card-img-top" alt="Tính năng 3">
+                    <div class="card-body">
+                        <h5 class="card-title">Tùy chỉnh linh hoạt</h5>
+                        <p class="card-text">Hỗ trợ nhiều loại hình thi và cấu hình phù hợp với từng nhu cầu.</p>
                     </div>
                 </div>
             </div>
         </div>
+    </div>
+
+    <!-- Benefits Section -->
+    <div class="container py-5">
+        <h2 class="text-center mb-4 text-secondary">Lợi Ích Khi Sử Dụng SMART SCHOOL</h2>
+        <ul class="list-group list-group-flush">
+            <li class="list-group-item">Tiết kiệm thời gian và chi phí tổ chức thi.</li>
+            <li class="list-group-item">Cải thiện chất lượng giáo dục nhờ vào việc áp dụng công nghệ hiện đại.</li>
+            <li class="list-group-item">Tăng cường tính minh bạch và chính xác trong đánh giá.</li>
+            <li class="list-group-item">Dễ dàng quản lý và theo dõi tiến độ học tập của học viên.</li>
+        </ul>
     </div>
 </div>
 <script>
@@ -66,13 +104,13 @@
         var myCarousel = document.querySelector('#carouselExampleInterval');
         if (myCarousel) {
             var carousel = new bootstrap.Carousel(myCarousel, {
-                interval: 2000,
+                interval: 3000,
                 ride: 'carousel'
             });
         }
     };
-
 </script>
+
 @code {
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {

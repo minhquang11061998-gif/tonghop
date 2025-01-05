@@ -42,7 +42,7 @@ namespace API.Controllers
 
             if (data == null)
             {
-                return NotFound("Danh sach trong");
+                return NotFound("Danh sách trống");
             }
             return Ok(data);
         }
@@ -70,7 +70,7 @@ namespace API.Controllers
 
             if (data == null)
             {
-                return NotFound("Danh sach trong");
+                return NotFound("Danh sách trống");
             }
             return Ok(data);
         }
@@ -91,7 +91,7 @@ namespace API.Controllers
 
             if (questions == null || !questions.Any())
             {
-                return NotFound(new { message = "Không có câu hỏi nào cho test này." });
+                return NotFound(new { message = "Không có câu hỏi nào cho bài kiểm tra này." });
             }
 
             return Ok(questions);
@@ -140,7 +140,7 @@ namespace API.Controllers
 
             if (data == null)
             {
-                return NotFound("Khong co bai thi nay");
+                return NotFound("Không có dữ liệu về bài thi");
             }
 
             var testdto = new TestDTO
@@ -391,7 +391,7 @@ namespace API.Controllers
         public async Task<IActionResult> Delete_test(Guid id)
         {
             var test = await _db.Tests.FirstOrDefaultAsync(x => x.Id == id);
-            if (test == null) return NotFound("Test không tồn tại.");
+            if (test == null) return NotFound("Bài kiểm tra không tồn tại.");
             var testCodes = await _db.TestCodes.Where(x => x.TestId == id).ToListAsync();
             var testQuestions = await _db.TestQuestions.Where(x => x.TestId == id).ToListAsync();
             if (testQuestions.Any()) _db.TestQuestions.RemoveRange(testQuestions);

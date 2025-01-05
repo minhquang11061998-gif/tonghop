@@ -78,7 +78,7 @@ namespace API.Controllers
 
             if (data == null)
             {
-                return NotFound("Danh sach trong");
+                return NotFound("Danh sách trống");
             }
 
             var dto = data.Select(x => new TestQuestion_AnswersDTO
@@ -108,7 +108,7 @@ namespace API.Controllers
 
             if (data == null)
             {
-                return NotFound("Khong co cau hoi nay");
+                return NotFound("Không có câu hỏi này");
             }
 
             var dtoquestion = new TestQuestion_AnswersDTO
@@ -126,7 +126,7 @@ namespace API.Controllers
 
             if (answer == null)
             {
-                return NotFound("Loi");
+                return NotFound("Đã xảy ra lỗi");
             }
 
             var dtoanswer = new TestQuestion_AnswersDTO
@@ -286,7 +286,7 @@ namespace API.Controllers
 
             _db.SaveChanges();
 
-            return Ok("thêm câu hỏi thành công");
+            return Ok("Thêm câu hỏi thành công");
         }
 
         #region làm lại
@@ -533,7 +533,7 @@ namespace API.Controllers
                 }
 
 
-                var questionTypeList = new List<string> { "Trắc nghiệm 1 Đáp án", "Trắc nghiệm nhiều đáp án", "Đúng/sai", "Điền vào chỗ trống" };
+                var questionTypeList = new List<string> { "Trắc nghiệm 1 đáp án", "Trắc nghiệm nhiều đáp án", "Đúng/Sai", "Điền vào chỗ trống" };
                 CreateDropdownList(worksheet, questionTypeList, 2, 2, 100, 2); // Áp dụng cho cột 2 (Kiểu câu hỏi)
 
                 // Tạo dropdown list cho "Mức độ tư duy"
@@ -607,10 +607,10 @@ namespace API.Controllers
                         {
                             switch (typetext.ToLower())
                             {
-                                case "trắc nghiệm 1 đáp án": return 1;
-                                case "trắc nghiệm nhiều đáp án": return 2;
-                                case "đúng/sai": return 3;
-                                case "điền vào chỗ trống": return 4;
+                                case "Trắc nghiệm 1 đáp án": return 1;
+                                case "Trắc nghiệm nhiều đáp án": return 2;
+                                case "Đúng/sai": return 3;
+                                case "Điền vào chỗ trống": return 4;
                                 default:
                                     errorMessages.Add($"Giá trị type không hợp lệ ở hàng {row}: {typetext}");
                                     return -1;
@@ -621,10 +621,10 @@ namespace API.Controllers
                         {
                             switch (levelText.ToLower())
                             {
-                                case "dễ": return 1;
-                                case "trung bình": return 2;
-                                case "khó": return 3;
-                                case "rất khó": return 4;
+                                case "Dễ": return 1;
+                                case "Trung bình": return 2;
+                                case "Khó": return 3;
+                                case "Rất khó": return 4;
                                 default:
                                     errorMessages.Add($"Giá trị Level không hợp lệ ở hàng {row}: {levelText}");
                                     return -1;

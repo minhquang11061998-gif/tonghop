@@ -24,7 +24,7 @@ namespace API.Controllers
 
             if (data == null)
             {
-                return BadRequest("Danh sách null");
+                return BadRequest("Danh sách trống");
             }
 
             var Point = data.Select(x => new PointTypeDTO
@@ -44,7 +44,7 @@ namespace API.Controllers
 
             if (data == null)
             {
-                return BadRequest("Không có id này");
+                return BadRequest("Không tồn tại ID này trong CSDL");
             }
 
             var poit = new PointTypeDTO
@@ -79,7 +79,7 @@ namespace API.Controllers
 
             if (data == null)
             {
-                return BadRequest("Không có Id này");
+                return BadRequest("Không tồn tại Id này trong CSDL");
             }
 
             data.Name = pointTypeDTO.Name;
@@ -87,7 +87,7 @@ namespace API.Controllers
             _db.PointTypes.Update(data);
             await _db.SaveChangesAsync();
 
-            return Ok("Update poit thành công");
+            return Ok("Cập nhật pointype thành công");
         }
 
         [HttpDelete("delete-poitype")]
@@ -97,7 +97,7 @@ namespace API.Controllers
 
             if (data == null)
             {
-                return BadRequest("Không có Id này");
+                return BadRequest("Không tồn tại Id này trong CSDL");
             }
 
             _db.Remove(data);

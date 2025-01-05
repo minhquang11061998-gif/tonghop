@@ -62,7 +62,7 @@ namespace API.Controllers
 
                 if (data == null)
                 {
-                    return NotFound("Danh sach trong");
+                    return NotFound("Danh sách trống");
                 }
 
                 var subjectdto = data.Select(x => new SubjectDTO
@@ -79,7 +79,7 @@ namespace API.Controllers
             }
             catch (Exception)
             {
-                return BadRequest("Loi");
+                return BadRequest("Đã xảy ra lỗi");
             }
         }
 
@@ -92,7 +92,7 @@ namespace API.Controllers
 
                 if (data == null)
                 {
-                    return NotFound("Ko co mon nay");
+                    return NotFound("Không tồn tại ID này trong CSDL");
                 }
 
                 var subjectdto = new SubjectDTO
@@ -108,7 +108,7 @@ namespace API.Controllers
             }
             catch (Exception)
             {
-                return BadRequest("Loi");
+                return BadRequest("Đã xảy ra lỗi");
             }
         }
 
@@ -194,7 +194,7 @@ namespace API.Controllers
 			catch (Exception ex)
 			{
 				// Log lỗi nếu cần
-				return BadRequest("Lỗi: " + ex.Message);
+				return BadRequest("Đã xảy ra lỗi: " + ex.Message);
 			}
 
 		}
@@ -280,10 +280,10 @@ namespace API.Controllers
 				_db.Subjects.Remove(data);
 				await _db.SaveChangesAsync();
 
-                return Ok("Xoa thanh cong");
+                return Ok("Xóa thành công");
             }
 
-            return BadRequest("Loi");
+            return BadRequest("Đã xảy ra lỗi");
         }
     }
 }

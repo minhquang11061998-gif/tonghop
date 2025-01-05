@@ -129,7 +129,7 @@ namespace API.Controllers
             {
                 // Ghi log lỗi để kiểm tra
                 Console.WriteLine($"Error: {ex.Message}");
-                return BadRequest("Lỗi");
+                return BadRequest("Đã xảy ra lỗi");
             }
         }
 
@@ -163,7 +163,7 @@ namespace API.Controllers
         
             catch (Exception)
             {
-                return BadRequest("Loi");
+                return BadRequest("Đã xảy ra lỗi");
             }
         }
 
@@ -178,7 +178,7 @@ namespace API.Controllers
 
                 if (grade == null || tea == null)
                 {
-                    return BadRequest("Lỗi");
+                    return BadRequest("Đã xảy ra lỗi");
                 }
 
                 var teaClass = await _db.Classes.FirstOrDefaultAsync(x => x.TeacherId == tea.Id);
@@ -215,12 +215,12 @@ namespace API.Controllers
                     Console.WriteLine("Chuỗi không hợp lệ. Vui lòng chỉ nhập chữ cái.");
                 }
 
-                return Ok("Them thanh cong");
+                return Ok("Thêm thành công");
 
             }
             catch (Exception)
             {
-                return BadRequest("Loi");
+                return BadRequest("Đã xảy ra lỗi");
             }
         }
 
@@ -228,12 +228,12 @@ namespace API.Controllers
         {
             if (input.Length != 1)
             {
-                return "Tên lớp không hợp lệ(ko đc để trống, chỉ nhập 1 ký tự)";
+                return "Tên lớp không hợp lệ (không đc để trống, chỉ nhập 1 ký tự)";
             }
 
             if (!char.IsLetter(input[0]))
             {
-                return "Tến lớp chỉ nhận chữ";
+                return "Tên lớp chỉ nhập chữ cái";
             }
             
             return input.ToUpper();
@@ -286,10 +286,10 @@ namespace API.Controllers
                 await _db.SaveChangesAsync();
                 await transaction.CommitAsync();
 
-                return Ok("Da xoa");
+                return Ok("Xóa thành công");
             }
 
-            return BadRequest("Khong co lop nay");
+            return BadRequest("Không có lớp này");
         }
 
         //[HttpPut("update-class")]

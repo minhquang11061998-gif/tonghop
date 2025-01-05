@@ -85,7 +85,7 @@
                                     <td class="text-center">@detail.PhoneNumber</td>
                                     <td class="text-center">@detail.RegistrationStatus</td>
                                     <td class="text-center">
-                                        <button class="btn btn-success" @onclick="()=>showdata(detail.idstudent)">đăng kí</button>
+                                        <button class="btn btn-success" @onclick="()=>showdata(detail.idstudent)">Đăng kí</button>
                                         <button class="btn btn-sm btn-danger rounded-pill px-3" @onclick="() => delete(detail.idstudent.ToString())">
                                             Xóa
                                         </button>
@@ -184,16 +184,16 @@
         var resrpon = await Http.DeleteAsync($"https://localhost:7046/api/FaceId/remove-face?userId={id}");
         if (resrpon.IsSuccessStatusCode)
         {
-            await JS.InvokeVoidAsync("alert", "xóa dữ liệu thành công");
+            await JS.InvokeVoidAsync("alert", "Xóa dữ liệu thành công");
         }
-        else { await JS.InvokeVoidAsync("alert", "xóa dữ liệu thất bại"); }
+        else { await JS.InvokeVoidAsync("alert", "Xóa dữ liệu thất bại"); }
 
     }
     private async Task RegisterFaceAsync(string userId)
     {
         if (string.IsNullOrWhiteSpace(userId))
         {
-            await JS.InvokeVoidAsync("alert", "vui lòng nhập ID user");
+            await JS.InvokeVoidAsync("alert", "Vui lòng nhập ID user");
             return;
         }
 
@@ -203,7 +203,7 @@
             if (response.IsSuccessStatusCode)
             {
                
-                await JS.InvokeVoidAsync("alert", "thêm dữ liệu  thành công");
+                await JS.InvokeVoidAsync("alert", "Thêm dữ liệu  thành công");
                 await JS.InvokeVoidAsync("reloadCameraFeed");
                 showfaceid = false;
 
@@ -212,13 +212,13 @@
             else
             {
                 var errorResponse = await response.Content.ReadAsStringAsync();
-                await JS.InvokeVoidAsync("alert", "thêm dữ liệu không thành công");
+                await JS.InvokeVoidAsync("alert", "Thêm dữ liệu không thành công");
                 await JS.InvokeVoidAsync("reloadCameraFeed");
             }
         }
         catch (Exception)
         {
-            await JS.InvokeVoidAsync("alert", "thêm dữ liệu không thành công");
+            await JS.InvokeVoidAsync("alert", "Thêm dữ liệu không thành công");
             await JS.InvokeVoidAsync("reloadCameraFeed");
         }
     }
