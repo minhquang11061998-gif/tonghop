@@ -20,12 +20,12 @@ namespace API.Controllers
         }
 
         [HttpGet("get-all-test")]
-        public async Task<ActionResult<List<TestDTO>>> GetAll(Guid idexam)
+        public async Task<ActionResult<List<TestDTO>>> GetAll(Guid id)
         {
             var data = await (from test in _db.Tests
                               join examtestcode in _db.Exam_Room_TestCodes on test.Id equals examtestcode.TestId
                               join examroom in _db.Exam_Rooms on examtestcode.ExamRoomId equals examroom.Id
-                              where examroom.Id == idexam select new TestDTO
+                              where examroom.Id == id select new TestDTO
                               {
                                   Id = test.Id,
                                   Name = test.Name,
