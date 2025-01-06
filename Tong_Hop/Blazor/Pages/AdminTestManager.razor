@@ -446,12 +446,12 @@
                         <table class="table table-hover table-striped align-middle text-center">
                             <thead class="table-primary">
                                 <tr>
-                                    <th scope="col" class="py-3">STT</th>
-                                    <th scope="col">Nội dung</th>
-                                    <th scope="col">Đáp án</th>
-                                    <th scope="col">Đáp án đúng</th>
-                                    <th scope="col">Mức độ</th>
-                                    <th scope="col" style="width: 100px;">Thao tác</th>
+                                  <th scope="col" class="py-3" style="width: 5%;">STT</th> <!-- Điều chỉnh chiều rộng cột STT -->
+                                    <th scope="col" style="width: 20%;">Nội dung</th> <!-- Điều chỉnh chiều rộng cột Nội dung -->
+                                    <th scope="col" style="width: 25%;">Đáp án</th> <!-- Điều chỉnh chiều rộng cột Đáp án -->
+                                    <th scope="col" style="width: 20%;">Đáp án đúng</th> <!-- Điều chỉnh chiều rộng cột Đáp án đúng -->
+                                    <th scope="col" style="width: 15%;">Mức độ</th> <!-- Điều chỉnh chiều rộng cột Mức độ -->
+                                    <th scope="col" style="width: 20%;">Thao tác</th> 
                                 </tr>
                             </thead>
                             <tbody>
@@ -461,7 +461,7 @@
                                     {
                                         <tr class="align-middle">
                                             <td class="fw-bold">@(filteredQuestions.IndexOf(question) + 1)</td>
-                                            <td class="text-start">@question.QuestionName</td>
+                                            <td class="">@question.QuestionName</td>
                                             <td>
                                                 @foreach (var answer in question.Answers.Select((a, index) => $"{(char)('A' + index)}. {a.Answer}"))
                                                 {
