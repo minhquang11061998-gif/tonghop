@@ -18,7 +18,33 @@ namespace API.Controllers
         {
             _db = db;
         }
+        [HttpGet("get-all-test-CATHI")]
+        public async Task<ActionResult<List<TestDTO>>> GetAllCATHI()
+        {
+            var data = await (from test in _db.Tests
+                              join examtestcode in _db.Exam_Room_TestCodes on test.Id equals examtestcode.TestId
+                              join examroom in _db.Exam_Rooms on examtestcode.ExamRoomId equals examroom.Id
+                              select new TestDTO
+                              {
+                                  Id = test.Id,
+                                  Name = test.Name,
+                                  Code = test.Code,
+                                  CreationTime = test.CreationTime,
+                                  Minute = test.Minute,
+                                  Maxstudent = test.MaxStudent,
+                                  Status = test.Status,
+                                  ClassId = test.ClassId,
+                                  SubjectId = test.SubjectId,
+                                  PointTypeId = test.PointTypeId,
+                                  ExamRoomId = examroom.Id,
+                              }).ToListAsync();
 
+            if (data == null)
+            {
+                return NotFound("Danh sach trong");
+            }
+            return Ok(data);
+        }
         [HttpGet("get-all-test")]
         public async Task<ActionResult<List<TestDTO>>> GetAll(Guid id)
         {
