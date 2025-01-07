@@ -240,8 +240,50 @@ namespace API.Controllers
 
             _db.Exam_Rooms.Remove(examRoom);
             _db.Exams.Remove(data);
-            await  _db.SaveChangesAsync();
+            await _db.SaveChangesAsync();
             return BadRequest("Loi");
+        }
+
+        [HttpGet("get-all-exam-cathi")]
+        public async Task<ActionResult<GetAllExamCaThiDTO>> GetAllEXAM_Cathi()
+        {
+            var data = await (from subject in _db.Subjects
+                              join exam in _db.Exams on subject.Id equals exam.SubjectId
+                              join examRoom in _db.Exam_Rooms on exam.Id equals examRoom.ExamId
+                              join teacher1 in _db.Teachers on examRoom.TeacherId1 equals teacher1.Id
+                              join teacher2 in _db.Teachers on examRoom.TeacherId2 equals teacher2.Id
+                              join user1 in _db.Users on teacher1.UserId equals user1.Id
+                              join user2 in _db.Users on teacher2.UserId equals user2.Id
+                              join room in _db.Rooms on examRoom.RoomId equals room.Id
+                              join examRoomTestCode in _db.Exam_Room_TestCodes on examRoom.Id equals examRoomTestCode.ExamRoomId
+                              join Test in _db.Tests on examRoomTestCode.TestId equals Test.Id
+                              select new GetAllExamCaThiDTO
+                              {
+                                  Id = exam.Id,
+                                  Name = exam.Name,
+                                  Status = exam.Status,
+                                  NameTeacher1 = user1.FullName,
+                                  idteacher1 = examRoom.TeacherId1,
+                                  NameTeacher2 = user2.FullName,
+                                  idteacher2 = examRoom.TeacherId2,
+                                  Nameroom = room.Name,
+                                  idrom = examRoom.RoomId,
+                                  NameSubject = subject.Name,
+                                  idsubject = exam.SubjectId,
+                                  CreationTime = exam.CreationTime,
+                                  StartTime = examRoom.StartTime,
+                                  EndTime = examRoom.EndTime,
+                                  IdEaxmRoom = examRoom.Id,
+                                  IdTest = Test.Id,
+                                  CodeTest = Test.Code
+                              }).ToListAsync();
+
+            if (!data.Any())
+            {
+                return NotFound("Danh sách trống");
+            }
+
+            return Ok(data);
         }
     }
 }

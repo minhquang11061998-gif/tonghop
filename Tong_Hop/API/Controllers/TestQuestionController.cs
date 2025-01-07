@@ -104,44 +104,46 @@ namespace API.Controllers
         [HttpGet("get-by-id-question-answer")]
         public async Task<ActionResult<TestQuestion_AnswersDTO>> GetById(Guid id)
         {
-            var data = await _db.TestQuestions.FirstOrDefaultAsync(x => x.Id == id);
+            // Tìm câu hỏi trong bảng TestQuestions
+            var data = await _db.TestQuestions
+                                .Where(x => x.Id == id)
+                                .FirstOrDefaultAsync();  // Sử dụng FirstOrDefaultAsync để lấy câu hỏi
 
             if (data == null)
             {
-                return NotFound("Khong co cau hoi nay");
+                return NotFound("Không có câu hỏi này");
             }
 
-            var dtoquestion = new TestQuestion_AnswersDTO
+            // Tạo đối tượng DTO cho câu hỏi
+            var dtoQuestion = new TestQuestion_AnswersDTO
             {
                 Id = data.Id,
                 QuestionName = data.QuestionName,
                 QuestionType = data.Type,
                 Level = data.Level,
-                CorrectAnswers = data.RightAnswer.Split(",").ToList(),
                 CreatedByName = data.CreatedByName,
-                TestId = data.TestId ?? Guid.Empty,
+                TestId = data.TestId ?? Guid.Empty, // Nếu TestId là null thì gán giá trị Guid.Empty
+                CorrectAnswers = data.RightAnswer.Split(",").ToList(), // Tách các đáp án đúng nếu có
             };
 
-            var answer = await _db.TestQuestionAnswers.FirstOrDefaultAsync(x => x.TestQuestionId == id);
+            // Tìm các đáp án cho câu hỏi này trong bảng TestQuestionAnswers
+            var answers = await _db.TestQuestionAnswers
+                                    .Where(x => x.TestQuestionId == id)
+                                    .ToListAsync(); // Lấy danh sách các đáp án
 
-            if (answer == null)
+            // Nếu không có đáp án nào, trả về lỗi
+            if (!answers.Any())
             {
-                return NotFound("Loi");
+                return NotFound("Không có đáp án cho câu hỏi này");
             }
 
-            var dtoanswer = new TestQuestion_AnswersDTO
-            {
-                Answers = answer.Answer.Split(",").ToList(),
-            };
+            // Tạo danh sách đáp án từ bảng TestQuestionAnswers
+            dtoQuestion.Answers = answers.Select(x => x.Answer).ToList();
 
-            var list = new ResponseModel
-            {
-                DtoQuestion = dtoquestion,
-                DtoAnswer = dtoanswer,
-            };
-
-            return Ok(list);
+            // Trả về đối tượng DTO chứa thông tin câu hỏi và đáp án
+            return Ok(dtoQuestion);
         }
+
 
         [HttpPost("create_question_answwer")]
         public async Task<IActionResult> QuestionWithAnswers(TestQuestion_AnswersDTO dto)
