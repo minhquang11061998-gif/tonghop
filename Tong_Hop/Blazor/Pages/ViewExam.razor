@@ -311,7 +311,7 @@ else
 		try
 		{
 			var score = await client.GetAsync($"api/ViewExam/Exam_results_storage?CodeTest={CodeTest}&ExamResultStorage={STFDto.TotalScore}&IdStudent={isdtudent}");
-			var examhistory = await client.GetAsync($"api/ViewExam/Exam_Histories?ExamResultStorage={STFDto.TotalScore}&examRoomStudentId={isdtudent}");
+			var examhistory = await client.PostAsync($"api/ViewExam/Exam_Histories?CodeTest={CodeTest}&ExamResultStorage={STFDto.TotalScore}&IdStudent={isdtudent}", null);
 		}
 		catch (Exception)
 		{
