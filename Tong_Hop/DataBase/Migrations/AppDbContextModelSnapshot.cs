@@ -215,8 +215,8 @@ namespace DataBase.Migrations
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<int>("Status")
                         .HasColumnType("int");
@@ -279,7 +279,7 @@ namespace DataBase.Migrations
                     b.Property<double>("Point_Summary")
                         .HasColumnType("float");
 
-                    b.Property<Guid>("SemesterID")
+                    b.Property<Guid?>("SemesterID")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("StudentId")
@@ -1020,9 +1020,7 @@ namespace DataBase.Migrations
 
                     b.HasOne("DataBase.Models.Semesters", "Semester")
                         .WithMany("Learning_Summarys")
-                        .HasForeignKey("SemesterID")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("SemesterID");
 
                     b.HasOne("DataBase.Models.Students", "Student")
                         .WithMany("Learning_Summaries")
