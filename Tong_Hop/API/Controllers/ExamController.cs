@@ -17,9 +17,10 @@ namespace API.Controllers
             _db = db;
         }
         [HttpGet("get-all-exam-new")]
-        public async Task<ActionResult<GetAllExamDTO>> GetAllEXAM()
+        public async Task<ActionResult<GetAllExamCaThiDTO>> GetAllEXAM()
         {
             var data = await (from subject in _db.Subjects
+                              join test in _db.Tests on subject.Id equals test.SubjectId
                               join exam in _db.Exams on subject.Id equals exam.SubjectId
                               join examRoom in _db.Exam_Rooms on exam.Id equals examRoom.ExamId
                               join teacher1 in _db.Teachers on examRoom.TeacherId1 equals teacher1.Id
@@ -27,9 +28,10 @@ namespace API.Controllers
                               join user1 in _db.Users on teacher1.UserId equals user1.Id
                               join user2 in _db.Users on teacher2.UserId equals user2.Id
                               join room in _db.Rooms on examRoom.RoomId equals room.Id
-                              select new GetAllExamDTO
+                              select new GetAllExamCaThiDTO
                               {
                                   Id = exam.Id,
+                                  IdTest=test.Id,
                                   Name = exam.Name,
                                   NameTeacher1 = user1.FullName,
                                   idteacher1 = examRoom.TeacherId1,

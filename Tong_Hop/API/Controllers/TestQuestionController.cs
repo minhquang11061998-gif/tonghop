@@ -293,7 +293,7 @@ namespace API.Controllers
 
         #region làm lại
         [HttpPost("randomize-questions-for-test-codes")]
-        public async Task<IActionResult> RandomizeQuestionsForTestCodes(Guid testId, int easyCount, int mediumCount, int hardCount, int veryHardCount)
+        public async Task<IActionResult> RandomizeQuestionsForTestCodes(Guid testId, int easyCount, int mediumCount, int hardCount, int veryHardCount, string start, string end)
         {
             // Lấy tất cả các TestCode liên quan đến TestId
             var allTestCodes = await _db.TestCodes
@@ -391,10 +391,27 @@ namespace API.Controllers
 
                     _db.TestCode_TestQuestion.Add(testCodeQuestion);
                 }
+                var examRoom = await (from tet in _db.Tests
+                                      join examtestcode in _db.Exam_Room_TestCodes on tet.Id equals examtestcode.TestId
+                                      join exmroom in _db.Exam_Rooms on examtestcode.ExamRoomId equals exmroom.Id
+                                      where tet.Id == testId
+                                      select exmroom).FirstOrDefaultAsync();
+
+                if (examRoom != null)
+                {
+                    TimeSpan startTime = TimeSpan.Parse(start);  // Ví dụ: "11:30"
+                    TimeSpan endTime = TimeSpan.Parse(end);      // Ví dụ: "14:00"
+
+                    // Tạo DateTime từ TimeSpan và ngày hiện tại
+                    examRoom.StartTime = DateTime.Today.Add(startTime);
+                    examRoom.EndTime = DateTime.Today.Add(endTime);
+
+                }
+
+                await _db.SaveChangesAsync();
+
+                
             }
-
-            await _db.SaveChangesAsync();
-
             return Ok("THÀNH CÔNG");
         }
         #endregion

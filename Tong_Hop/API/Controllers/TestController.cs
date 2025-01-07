@@ -1,4 +1,6 @@
-﻿using Data.DTOs;
+﻿using System.Net.Mail;
+using System.Net;
+using Data.DTOs;
 using DataBase.Data;
 using DataBase.DTOs;
 using DataBase.Models;
@@ -426,8 +428,72 @@ namespace API.Controllers
             await _db.SaveChangesAsync();
             return Ok("Đã xóa thành công.");
         }
+        [HttpPost("send")]
+        public async Task<IActionResult> SendEmail(string email,string code)
+        {
+            // Email gửi và cấu hình SMTP
+            string fromEmail = "quangnmph31777@fpt.edu.vn"; // Thay bằng email của bạn
+            string password = "giek lgsw jheu wbqj"; // Thay bằng mật khẩu của bạn
 
+            try
+            {
+                // Sinh mã xác nhận ngẫu nhiên (6 ký tự)
+               
+               
 
+                // Tiêu đề và nội dung email
+                string subject = "Xác nhận mã code";
+                string body = $@"
+                    Chào bạn,  
+
+                        Mã xác nhận đăng nhập bài thi của bạn là: **{code}**  
+
+                        Vui lòng nhập mã này để truy cập bài thi. Mã xác nhận được cung cấp bởi hệ thông thi online SmartSchool nhằm đảm bảo tính bảo mật và chính xác trong quá trình làm bài.  
+
+                        Nếu bạn gặp bất kỳ vấn đề nào, vui lòng liên hệ với bộ phận hỗ trợ kỹ thuật của SmartSchool.  
+
+                        Trân trọng,  
+                        Đội ngũ SmartSchool  
+                        ";
+
+                // Cấu hình SMTP client
+                using (var smtpClient = new SmtpClient("smtp.gmail.com")
+                {
+                    Port = 587,
+                    Credentials = new NetworkCredential(fromEmail, password),
+                    EnableSsl = true
+                })
+                {
+                    // Tạo email
+                    var mailMessage = new MailMessage
+                    {
+                        From = new MailAddress(fromEmail),
+                        Subject = subject,
+                        Body = body,
+                        IsBodyHtml = false // Đặt false vì nội dung chỉ là text
+                    };
+                    mailMessage.To.Add(email); // Gửi tới địa chỉ email từ body
+
+                    // Gửi email
+                    await smtpClient.SendMailAsync(mailMessage);
+                }
+
+                // Trả về kết quả thành công
+                return Ok(new
+                {
+                    Message = "Email đã được gửi thành công!",
+                    VerificationCode = code // Trả về mã xác nhận nếu cần
+                });
+            }
+            catch (Exception ex)
+            {
+                // Xử lý lỗi
+                return StatusCode(500, $"Đã có lỗi xảy ra khi gửi email: {ex.Message}");
+            }
+        }
 
     }
+
+
 }
+

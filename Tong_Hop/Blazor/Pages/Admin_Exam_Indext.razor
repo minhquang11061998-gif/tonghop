@@ -13,30 +13,29 @@
 
 <div class="container-fluid mt-3">
     <!-- Header Section -->
-    @*  <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-3">
-    <h2 class="text-primary">Quản lý phòng thi</h2>
-    <div>
-    <button class="btn btn-primary me-2" @onclick="()=>showRoom(ModalTypeRoom.Add)">
-    <i class="bi bi-plus-circle"></i> Tạo mới
-    </button>
-    <button class="btn btn-warning me-2" @onclick="()=>showRoom(ModalTypeRoom.Edit)" disabled="@(selectedRoomId == Guid.Empty)">
-    <i class="bi bi-pencil"></i> Chỉnh sửa
-    </button>
-    <button class="btn btn-danger" @onclick="deleteRoom" disabled="@(selectedRoomId == Guid.Empty)">
-    <i class="bi bi-trash"></i> Xóa
-    </button>
+    <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-3">
+        <div>
+            <button class="btn btn-primary me-2" @onclick="OpenCreateExamModal">
+                <i class="bi bi-plus-circle"></i> Tạo ca thi
+            </button>
+            <button class="btn btn-warning me-2">
+                <i class="bi bi-pencil"></i> Chỉnh sửa
+            </button>
+            <button class="btn btn-danger">
+                <i class="bi bi-trash"></i> Xóa
+            </button>
+        </div>
     </div>
-    </div> *@
 
     <!-- Folder Structure -->
-    <div class="border d-flex">
+    <div class="border rounded shadow-sm p-3">
         <!-- Rooms Table -->
         <div class="table-responsive">
-            <table class="table table-hover align-middle">
-                <thead class="table-primary">
+            <table class="table table-hover table-bordered align-middle">
+                <thead class="table-primary text-center">
                     <tr>
                         <th style="width: 50px;">
-                            <input type="checkbox" @onchange="ToggleSelectAll">
+                            <input type="checkbox" @onchange="ToggleSelectAll" title="Chọn tất cả">
                         </th>
                         <th>Tên bài thi</th>
                         <th>Mã vào thi</th>
@@ -44,10 +43,10 @@
                         <th>Môn</th>
                         <th>Thời gian bắt đầu</th>
                         <th>Thời gian kết thúc</th>
-                        <th>Giáo viên coi thi 1</th
+                        <th>Giáo viên coi thi 1</th>
                         <th>Giáo viên coi thi 2</th>
                         <th>Trạng thái</th>
-                        <th>Hành động</th>
+                        <th style="width: 150px;">Hành động</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -56,24 +55,28 @@
                         @foreach (var examroom in filteredExamRooms)
                         {
                             <tr class="@(selectedRoomExamId == examroom.Id ? "table-info" : "")">
-                                <td>
-                                    <input type="checkbox" checked="@(selectedRoomExamId == examroom.Id)" @onchange="() => SelectExamRoom(examroom.Id)">
+                                <td class="text-center">
+                                    <input type="checkbox"
+                                    checked="@(selectedRoomExamId == examroom.Id)"
+                                    @onchange="() => SelectExamRoom(examroom.Id)"
+                                    title="Chọn phòng thi này">
                                 </td>
                                 <td>@examroom.Name</td>
                                 <td>@examroom.CodeTest</td>
                                 <td>@examroom.Nameroom</td>
                                 <td>@examroom.NameSubject</td>
-                                <td>@examroom.StartTime</td>
-                                <td>@examroom.EndTime</td>
+                                <td>@examroom.StartTime.ToString(" HH:mm")</td>
+                                <td>@examroom.EndTime.ToString("HH:mm")</td>
                                 <td>@examroom.NameTeacher1</td>
                                 <td>@examroom.NameTeacher2</td>
-                                <td>@examroom.Status</td>
-                                <td>
-                                    <button class="btn btn-info btn-sm" @onclick="()=>OpenCreateExamModal()">
-                                        <i class="bi bi-eye"></i> Tạo ca thi
-                                    </button>
-                                          <button class="btn btn-info btn-sm" @onclick="()=>OpenDetailExamModal(idtest)">
-                                        <i class="bi bi-eye"></i> Xem chi tiết
+                                <td class="text-center">
+                                    <span class="badge @(examroom.Status == 1 ? "bg-success" : "bg-secondary")">
+                                        @examroom.Status
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                    <button class="btn btn-info btn-sm" @onclick="() => OpenDetailExamModal(examroom.IdTest)" title="Xem chi tiết">
+                                        <i class="bi bi-eye"></i> Xem
                                     </button>
                                 </td>
                             </tr>
@@ -82,24 +85,14 @@
                     else
                     {
                         <tr>
-                            <td colspan="5" class="text-center text-muted">Không tìm thấy phòng thi nào</td>
+                            <td colspan="11" class="text-center text-muted">Không tìm thấy phòng thi nào</td>
                         </tr>
                     }
                 </tbody>
             </table>
         </div>
-
-        <!-- Pagination -->
-        <div class="d-flex justify-content-between align-items-center mt-3">
-            <button class="btn btn-secondary" @onclick="PreviousPage" disabled="@(!CanGoPrevious)">
-                <i class="bi bi-arrow-left"></i> Trước
-            </button>
-            <span>Trang @CurrentPage / @TotalPages</span>
-            <button class="btn btn-secondary" @onclick="NextPage" disabled="@(!CanGoNext)">
-                <i class="bi bi-arrow-right"></i> Sau
-            </button>
-        </div>
     </div>
+
 
 </div>
 
@@ -113,108 +106,137 @@
                 <button type="button" class="btn-close" @onclick="CloseCreateExamModal"></button>
             </div>
             <div class="modal-body">
-                
-                        <div>
-                                 <div >
-                                     <select class="form-select" @bind="idtest">
-                                         <option value="@Guid.Empty">Chọn bài thi</option>
+                <!-- Phần chọn bài thi -->
+                <div class="form-group">
+                    <label for="idtest">Chọn bài thi:</label>
+                    <select class="form-select" @bind="idtest">
+                        <option value="@Guid.Empty">Chọn bài thi</option>
+                        @foreach (var item in testList)
+                        {
+                            <option value="@item.Id">@item.Name</option>
+                        }
+                    </select>
+                </div>
 
-                                            @foreach (var item in testList)
-                                            {
-                                                 <option value="@item.Id">@item.Name</option>
-                                            }
-                           
-                                     </select>
-                                 </div>
-                                <div class="mt-2">
-                                    <label for="easyCount">Số câu dễ:</label>
-                                    <input type="number" id="easyCount" @bind="easyCount" min="0" class="form-control mb-2" />
-
-                                    <label for="mediumCount">Số câu trung bình:</label>
-                                    <input type="number" id="mediumCount" @bind="mediumCount" min="0" class="form-control mb-2" />
-
-                                    <label for="hardCount">Số câu khó:</label>
-                                    <input type="number" id="hardCount" @bind="hardCount" min="0" class="form-control mb-2" />
-
-                                    <label for="veryHardCount">Số câu nâng cao:</label>
-                                    <input type="number" id="veryHardCount" @bind="veryHardCount" min="0" class="form-control mb-2" />
-
-                                    <button class="btn btn-primary mt-2" @onclick="CreateExam"> Tạo ca thi</button>
-                            
-                                </div>
-                                
+                <!-- Chia hai hàng với tỷ lệ 4-3 -->
+                <div class="row mt-3">
+                    <!-- Cột 1: 4 cột -->
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label for="easyCount">Số câu dễ:</label>
+                            <input type="number" id="easyCount" @bind="easyCount" min="0" class="form-control" />
                         </div>
-                    
+                        <div class="form-group">
+                            <label for="mediumCount" class="mt-2">Số câu trung bình:</label>
+                            <input type="number" id="mediumCount" @bind="mediumCount" min="0" class="form-control" />
+                        </div>
+                        <div class="form-group">
+                            <label for="hardCount" class="mt-2">Số câu khó:</label>
+                            <input type="number" id="hardCount" @bind="hardCount" min="0" class="form-control" />
+                        </div>
+                    </div>
+
+                    <!-- Cột 2: 3 cột -->
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label for="veryHardCount" class="mt-2">Số câu nâng cao:</label>
+                            <input type="number" id="veryHardCount" @bind="veryHardCount" min="0" class="form-control" />
+                        </div>
+                    </div>
+
+                    <!-- Cột 3: 3 cột -->
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label for="start" class="mt-2">Thời gian bắt đầu:</label>
+                            <input type="time" id="start"   @bind="start" class="form-control" />
+                        </div>
+                        <div class="form-group">
+                            <label for="end" class="mt-2">Thời gian kết thúc:</label>
+                            <input type="time" id="end"  @bind="end" class="form-control" />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Nút tạo ca thi -->
+
             </div>
             <div class="modal-footer">
-                <button class="btn btn-secondary" @onclick="CloseCreateExamModal">Đóng</button>
+                <div class="form-group mt-3">
+                    <button class="btn btn-primary w-100" @onclick="CreateExam">Tạo ca thi</button>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
 
-
 <!-- Modal for Viewing Details -->
 <div class="modal fade @(isDetailModalVisible ? "show" : "")" tabindex="-1" style="display:@(isDetailModalVisible ? "block" : "none");">
-    <div class="modal-dialog modal-lg">
+    <div class="modal-dialog modal-lg modal-dialog-centered" style="width:1000px">
         <div class="modal-content">
-            <div class="modal-header">
+            <div class="modal-header bg-primary text-white">
                 <h5 class="modal-title">Chi tiết bài thi</h5>
-                <button type="button" class="btn-close" @onclick="CloseDtailExamModal"></button>
+                <button type="button" class="btn-close text-white" @onclick="CloseDtailExamModal"></button>
             </div>
             <div class="modal-body">
-                            @foreach (var item in detailDTOs)
-                            {
-                                <h2 class="title">SỞ GD & ĐT THANH HÓA</h2>
-                                <h3 class="school-name">TRƯỜNG THPT NGUYỄN TRÃI</h3>
-                                <h4 class="year">NĂM HỌC 2017 - 2018</h4>
-
-                                <h4 class="subject">MÔN: @item.NameSubject</h4>
-                                <h5 class="time">Thời gian làm bài: @item.time phút</h5>
-                                <h6 class="code">Mã đề thi: @item.CodeTescode</h6>
-
-                                <div class="student-info">
-                                    <span>Họ, tên sinh viên: ............................................</span><br />
-                                    <span>Số báo danh: .................................................</span>
-                                </div>
-                                <div class="content">
-                                    @foreach (var question in item.NameQuestion)
-                                    {
-                                        <h5>Câu @(item.NameQuestion.IndexOf(question) + 1): @question.QuestionName</h5>
-                                        <ol type="A" class="d-flex justify-content-md-evenly p-2">
+                <div class="overflow-auto p-4 bg-light rounded shadow-lg" style="max-height: 80vh; border: 1px solid #ddd;">
+                    @foreach (var item in detailDTOs)
+                    {
+                        <div class="mb-4">
+                            <br />
+                            <h4 class="text-primary text-center fw-bold">Đề số: @(detailDTOs.IndexOf(item) + 1)</h4>
+                            <h5 class="text-info">Mã đề thi: <span class="fw-bold">@item.CodeTescode</span></h5>
+                            <hr class="my-3" />
+                            <div class="content">
+                                @foreach (var question in item.NameQuestion)
+                                {
+                                    <div class="mb-3">
+                                      
+                                        <h6 class="text-secondary">Câu @(item.NameQuestion.IndexOf(question) + 1): <span class="fw-bold">@question.QuestionName</span></h6>
+                                        <ol class="list-group" style="list-style-type: upper-alpha;">
                                             @if (question.Type == 1 || question.Type == 2)
                                             {
+                                                int index = 0; // Biến để đếm số thứ tự đáp án
                                                 foreach (var answer in question.Answers)
                                                 {
-                                                    <li>@answer.Answer</li>
+                                                    <li class="list-group-item list-group-item-light">
+                                                        <strong>@((char)('A' + index))</strong>. @answer.Answer
+                                                    </li>
+                                                    index++;
                                                 }
                                             }
                                             else if (question.Type == 3)
                                             {
-                                                <li>Đúng</li>
-                                                <li>Sai</li>
+                                                <li class="list-group-item list-group-item-light"><strong>A</strong>. Đúng</li>
+                                                <li class="list-group-item list-group-item-light"><strong>B</strong>. Sai</li>
                                             }
                                             else if (question.Type == 4)
                                             {
-                                                @foreach (var answer in question.Answers)
+                                                int index = 0; // Biến để đếm số thứ tự đáp án
+                                                foreach (var answer in question.Answers)
                                                 {
-                                                    <p><strong>Đáp án:</strong> @answer.Answer</p>
+                                                    <li class="list-group-item list-group-item-light">
+                                                        <strong>@((char)('A' + index))</strong>. <strong>Đáp án:</strong> @answer.Answer
+                                                    </li>
+                                                    index++;
                                                 }
                                             }
                                         </ol>
-                                    }
-
-                                </div>
-                            }
-                        
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
             </div>
+
             <div class="modal-footer">
                 <button class="btn btn-secondary" @onclick="CloseDtailExamModal">Đóng</button>
             </div>
         </div>
     </div>
 </div>
+
 @code {
     private string searchRoom { get; set; } = string.Empty;
     private int CurrentPage { get; set; } = 1;
@@ -231,10 +253,12 @@
     private Guid? selectedTestId = null;
     private bool isLoading = false;
     private Guid idtest;
-    private int easyCount;
-    private int mediumCount;
-    private int hardCount;
-    private int veryHardCount;
+    private int? easyCount;
+    private int? mediumCount;
+    private int? hardCount;
+    private int? veryHardCount;
+    private DateTime start;
+    private DateTime end;
 
     private IEnumerable<GetAllExamCaThiDTO> filteredExamRooms => ListExamroomDTOs
        .Where(r => string.IsNullOrEmpty(searchRoom) || r.Name.Contains(searchRoom, StringComparison.OrdinalIgnoreCase))
@@ -247,16 +271,19 @@
     private bool isCreateExamModalVisible = false;
     private bool isDetailModalVisible = false;
 
-    // Phương thức xử lý sự kiện nhấn nút "Tạo ca thi"
     private async Task CreateExam()
     {
         isLoading = true; // Bắt đầu tải
         try
         {
 
-            // Gửi yêu cầu tạo câu hỏi ngẫu nhiên
-
-            var response = await client.PostAsJsonAsync($"https://localhost:7046/api/TestQuestion/randomize-questions-for-test-codes?testId={idtest}&easyCount={easyCount}&mediumCount={mediumCount}&hardCount={hardCount}&veryHardCount={veryHardCount}", selectedQuestions);
+            var a=  start.ToString(@"HH:mm");
+            var b=  end.ToString(@"HH:mm");
+            if(a==b){
+                await Jsruntime.InvokeVoidAsync("alert", $"Thời gian kết thúc không được trùng với thời gian bắt đầu");
+                return;
+            }
+            var response = await client.PostAsJsonAsync($"https://localhost:7046/api/TestQuestion/randomize-questions-for-test-codes?testId={idtest}&easyCount={easyCount}&mediumCount={mediumCount}&hardCount={hardCount}&veryHardCount={veryHardCount}&start={a}&end={b}", selectedQuestions);
 
             if (response.IsSuccessStatusCode)
             {
@@ -370,8 +397,9 @@
     {
         isCreateExamModalVisible = false;
     }
-    private void OpenDetailExamModal(Guid id)
+    private async Task OpenDetailExamModal(Guid id)
     {
+        await LoadDetailTest(id);
         id = idtest;
         isDetailModalVisible = true;
     }
