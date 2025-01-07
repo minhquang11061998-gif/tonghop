@@ -292,7 +292,10 @@ namespace API.Controllers
                     {
                         var updateScore = new Scores
                         {
-                            Score = ExamResultStorage
+                            Score = ExamResultStorage,
+                            StudentId = IdStudent,
+                            PointTypeId = item.PointTypeId,
+                            SubjectId = item.SubjectId,
                         };
 
                         _db.Scores.Update(updateScore);
@@ -302,7 +305,18 @@ namespace API.Controllers
                     break;
                 }
 
-                return Ok("Update điểm thành công");
+				var data = new ExamHistorys
+				{
+					Id = Guid.NewGuid(),
+					Score = ExamResultStorage,
+					CreationTime = DateTime.Now,
+					ExamRoomStudentId = IdStudent
+				};
+
+				_db.ExamHistorys.Add(data);
+				await _db.SaveChangesAsync();
+
+				return Ok("Update điểm thành công");
             }
             catch (Exception ex)
             {
@@ -319,38 +333,38 @@ namespace API.Controllers
             public Guid ExamRoomStudentId { get; set; }
         }
 
-        [HttpGet("Exam_Histories")]
-        public async Task<ActionResult> ExamHistories(string CodeTesst, double ExamResultStorage, Guid IdStudent)
-        {
-            try
-            {
-                var examroomstudent = await (from a in _db.Tests
-                                             join b in _db.Exam_Room_TestCodes on a.Id equals b.TestId
-                                             join c in _db.Exam_Room_Students on b.Id equals c.ExamRoomTestCodeId
-                                             where a.Code == CodeTesst && c.StudentId == IdStudent
-                                             select new
-                                             {
-                                                 c.Id
-                                             }).FirstOrDefaultAsync();
+        //[HttpPost("Exam_Histories")]
+        //public async Task<ActionResult> ExamHistories(string CodeTesst, double ExamResultStorage, Guid IdStudent)
+        //{
+        //    try
+        //    {
+        //        var examroomstudent = await (from a in _db.Tests
+        //                                     join b in _db.Exam_Room_TestCodes on a.Id equals b.TestId
+        //                                     join c in _db.Exam_Room_Students on b.Id equals c.ExamRoomTestCodeId
+        //                                     where a.Code == CodeTesst && c.StudentId == IdStudent
+        //                                     select new
+        //                                     {
+        //                                         c.Id
+        //                                     }).FirstOrDefaultAsync();
 
-                var data = new ExamHistorys
-                {
-                    Id = Guid.NewGuid(),
-                    Score = ExamResultStorage,
-                    CreationTime = DateTime.Now,
-                    ExamRoomStudentId = examroomstudent.Id
-                };
+        //        var data = new ExamHistorys
+        //        {
+        //            Id = Guid.NewGuid(),
+        //            Score = ExamResultStorage,
+        //            CreationTime = DateTime.Now,
+        //            ExamRoomStudentId = IdStudent
+        //        };
 
-                _db.ExamHistorys.Add(data);
-                await _db.SaveChangesAsync();
+        //        _db.ExamHistorys.Add(data);
+        //        await _db.SaveChangesAsync();
 
-                return Ok(data);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new { message = ex.Message });
-            }
-        }
+        //        return Ok(data);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        return BadRequest(new { message = ex.Message });
+        //    }
+        //}
         #endregion
     }
 }

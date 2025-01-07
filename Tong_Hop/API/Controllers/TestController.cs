@@ -37,8 +37,7 @@ namespace API.Controllers
                                   Status = test.Status,
                                   ClassId = test.ClassId,
                                   SubjectId = test.SubjectId,
-                                  PointTypeId = test.PointTypeId,
-                                  ExamRoomId = examroom.Id,
+                                  PointTypeId = test.PointTypeId
                               }).ToListAsync();
 
             if (data == null)
@@ -65,7 +64,6 @@ namespace API.Controllers
                                   ClassId = test.ClassId,
                                   SubjectId = test.SubjectId,
                                   PointTypeId = test.PointTypeId,
-                                  ExamRoomId=examroom.Id,
                               }).ToListAsync();
 
             if (data == null)
@@ -92,8 +90,7 @@ namespace API.Controllers
                                   Status = test.Status,
                                   ClassId = test.ClassId,
                                   SubjectId = test.SubjectId,
-                                  PointTypeId = test.PointTypeId,
-                                  ExamRoomId = examroom.Id,
+                                  PointTypeId = test.PointTypeId
                               }).FirstOrDefaultAsync();
 
             if (data == null)
@@ -233,7 +230,7 @@ namespace API.Controllers
             return ClassEntity.MaxStudent;
         }
 
-        [HttpPost("create-test-testcode-examroomtestcode")]
+		[HttpPost("create-test-testcode-examroomtestcode")]
         public async Task<IActionResult> CreateTest_Testcode(TestDTO testDTO)
         {
             try
@@ -304,11 +301,26 @@ namespace API.Controllers
 						await _db.TestCodes.AddAsync(newTestCode);
 					}
 
+					var ExamRoom = new Exam_Room
+					{
+						Id = Guid.NewGuid(),
+						StartTime = testDTO.StartTime,
+						EndTime = testDTO.EndTime,
+						Status = 1,
+						ExamId = testDTO.ExamId,
+						RoomId = testDTO.RoomId,
+						TeacherId1 = testDTO.TeacherId1,
+						TeacherId2 = testDTO.TeacherId2
+					};
+
+					_db.Exam_Rooms.Add(ExamRoom);
+					await _db.SaveChangesAsync();
+
 					var ExamRoomTest = new Exam_Room_TestCode
 					{
 						Id = Guid.NewGuid(),
 						TestId = newTest.Id,
-						ExamRoomId = testDTO.ExamRoomId,
+						ExamRoomId = ExamRoom.Id,
 					};
 
 					_db.Exam_Room_TestCodes.Add(ExamRoomTest);
@@ -333,6 +345,7 @@ namespace API.Controllers
                 return BadRequest($"Lỗi khi tạo bài kiểm tra: {ex.Message}");
             }
         }
+
         [HttpPut("update-test-testcode")]
         public async Task<IActionResult> UpdateTest_Testcode( TestDTO testDTO)
         {

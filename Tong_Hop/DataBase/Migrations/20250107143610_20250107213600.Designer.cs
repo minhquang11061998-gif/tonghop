@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DataBase.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250103073240_datacontext")]
-    partial class datacontext
+    [Migration("20250107143610_20250107213600")]
+    partial class _20250107213600
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -218,8 +218,8 @@ namespace DataBase.Migrations
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<int>("Status")
                         .HasColumnType("int");
@@ -282,7 +282,7 @@ namespace DataBase.Migrations
                     b.Property<double>("Point_Summary")
                         .HasColumnType("float");
 
-                    b.Property<Guid>("SemesterID")
+                    b.Property<Guid?>("SemesterID")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("StudentId")
@@ -1023,9 +1023,7 @@ namespace DataBase.Migrations
 
                     b.HasOne("DataBase.Models.Semesters", "Semester")
                         .WithMany("Learning_Summarys")
-                        .HasForeignKey("SemesterID")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("SemesterID");
 
                     b.HasOne("DataBase.Models.Students", "Student")
                         .WithMany("Learning_Summaries")

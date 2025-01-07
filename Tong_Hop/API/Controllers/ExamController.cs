@@ -185,7 +185,7 @@ namespace API.Controllers
                     return NotFound("Không để trống môn học");
                 }
 
-                string ExamName = "Bài kiểm tra" + Subj.Name;
+                string ExamName = "Bài kiểm tra " + Subj.Name;
                 var data = new Exams
                 {
                     Id = Guid.NewGuid(),
@@ -197,21 +197,6 @@ namespace API.Controllers
 
                 await _db.Exams.AddAsync(data);
                 await _db.SaveChangesAsync();
-
-                var ExamRoom = new Exam_Room
-                {
-                    Id = Guid.NewGuid(),
-                    StartTime = dto.StartTime,
-                    EndTime = dto.EndTime,
-                    Status = 1,
-                    ExamId = data.Id,
-                    RoomId = dto.idrom,
-                    TeacherId1 = dto.idteacher1,
-                    TeacherId2 = dto.idteacher2,
-                };
-
-                await _db.Exam_Rooms.AddAsync(ExamRoom);
-                await _db.SaveChangesAsync(true);
 
                 return Ok("Them thanh cong");
 
