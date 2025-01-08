@@ -52,7 +52,8 @@ namespace API.Controllers
             var data = await (from test in _db.Tests
                               join examtestcode in _db.Exam_Room_TestCodes on test.Id equals examtestcode.TestId
                               join examroom in _db.Exam_Rooms on examtestcode.ExamRoomId equals examroom.Id
-                              where examroom.Id == id select new TestDTO
+                              join exam in _db.Exams on examroom.ExamId equals exam.Id
+                              where exam.Id == id select new TestDTO
                               {
                                   Id = test.Id,
                                   Name = test.Name,
@@ -75,22 +76,37 @@ namespace API.Controllers
         [HttpGet("get-ByID-test")]
         public async Task<ActionResult<List<TestDTO>>> GetByid(Guid id)
         {
-            var data = await (from test in _db.Tests
-                              join examtestcode in _db.Exam_Room_TestCodes on test.Id equals examtestcode.TestId
-                              join examroom in _db.Exam_Rooms on examtestcode.ExamRoomId equals examroom.Id
-                              where test.Id == id
+            var data = await (from subject in _db.Subjects
+                              join exam in _db.Exams on subject.Id equals exam.SubjectId
+                              join examRoom in _db.Exam_Rooms on exam.Id equals examRoom.ExamId
+                              join teacher1 in _db.Teachers on examRoom.TeacherId1 equals teacher1.Id
+                              join teacher2 in _db.Teachers on examRoom.TeacherId2 equals teacher2.Id
+                              join user1 in _db.Users on teacher1.UserId equals user1.Id
+                              join user2 in _db.Users on teacher2.UserId equals user2.Id
+                              join room in _db.Rooms on examRoom.RoomId equals room.Id
+                              join examRoomTestCode in _db.Exam_Room_TestCodes on examRoom.Id equals examRoomTestCode.ExamRoomId
+                              join Test in _db.Tests on examRoomTestCode.TestId equals Test.Id
+                              where Test.Id == id
                               select new TestDTO
                               {
-                                  Id = test.Id,
-                                  Name = test.Name,
-                                  Code = test.Code,
-                                  CreationTime = test.CreationTime,
-                                  Minute = test.Minute,
-                                  Maxstudent = test.MaxStudent,
-                                  Status = test.Status,
-                                  ClassId = test.ClassId,
-                                  SubjectId = test.SubjectId,
-                                  PointTypeId = test.PointTypeId
+                                  Id = Test.Id,
+                                  Name = Test.Name,
+                                  Code = Test.Code,
+                                  CreationTime = Test.CreationTime,
+                                  Minute = Test.Minute,
+                                  Maxstudent = Test.MaxStudent,
+                                  Status = Test.Status,
+                                  ClassId = Test.ClassId,
+                                  SubjectId = Test.SubjectId,
+                                  PointTypeId = Test.PointTypeId,
+                                  RoomId=room.Id,
+                                  TeacherId1=teacher1.Id, 
+                                  nameTeacherId1=user1.FullName,
+                                  TeacherId2=teacher2.Id,
+                                  nameTeacherId2=user2.FullName,
+                                  StartTime=examRoom.StartTime,
+                                  EndTime=examRoom.EndTime,
+                                  ExamRoomId=examRoom.Id,
                               }).FirstOrDefaultAsync();
 
             if (data == null)
@@ -304,9 +320,9 @@ namespace API.Controllers
 					var ExamRoom = new Exam_Room
 					{
 						Id = Guid.NewGuid(),
-						StartTime = testDTO.StartTime,
-						EndTime = testDTO.EndTime,
-						Status = 1,
+                        StartTime = DateTime.Today.AddHours(testDTO.StartTime.Hour).AddMinutes(testDTO.StartTime.Minute),
+                        EndTime = DateTime.Today.AddHours(testDTO.EndTime.Hour).AddMinutes(testDTO.EndTime.Minute),
+                        Status = 1,
 						ExamId = testDTO.ExamId,
 						RoomId = testDTO.RoomId,
 						TeacherId1 = testDTO.TeacherId1,
@@ -347,7 +363,7 @@ namespace API.Controllers
         }
 
         [HttpPut("update-test-testcode")]
-        public async Task<IActionResult> UpdateTest_Testcode( TestDTO testDTO)
+        public async Task<IActionResult> UpdateTest_Testcode(TestDTO testDTO)
         {
             try
             {
@@ -383,7 +399,7 @@ namespace API.Controllers
                             Status = 1,
                             TestId = testDTO.Id,
                         };
-                        await _db.TestCodes.AddAsync(newTestCode);
+                        await _db.TestCodes.AddAsync(newTestCode);  // Sử dụng await để đảm bảo thêm đồng bộ
                     }
                 }
                 else if (currentCount > maxStudents)
@@ -401,7 +417,7 @@ namespace API.Controllers
                 }
                 else if (testDTO.ExamRoomId != null)
                 {
-                    // Nếu không tồn tại, tạo mới
+                    // Nếu không tồn tại, tạo mới Exam_Room_TestCode
                     var newExamRoomTestCode = new Exam_Room_TestCode
                     {
                         Id = Guid.NewGuid(),
@@ -409,6 +425,22 @@ namespace API.Controllers
                         ExamRoomId = testDTO.ExamRoomId,
                     };
                     await _db.Exam_Room_TestCodes.AddAsync(newExamRoomTestCode);
+                }
+
+                // Cập nhật thông tin phòng thi (Exam_Room)
+                var examRoom = await _db.Exam_Rooms.FirstOrDefaultAsync(exam => exam.Id == testDTO.ExamRoomId);
+                if (examRoom != null)
+                {
+                    examRoom.TeacherId1 = testDTO.TeacherId1;
+                    examRoom.TeacherId2 = testDTO.TeacherId2;
+                    examRoom.RoomId = testDTO.RoomId;
+                    examRoom.StartTime = testDTO.StartTime;
+                    examRoom.EndTime = testDTO.EndTime;
+                    _db.Exam_Rooms.Update(examRoom);  // Cập nhật phòng thi
+                }
+                else
+                {
+                    return BadRequest("Không tìm thấy phòng thi.");
                 }
 
                 // Lưu thay đổi vào cơ sở dữ liệu
@@ -423,7 +455,6 @@ namespace API.Controllers
                     return BadRequest($"Lỗi khi cập nhật bài kiểm tra: {ex.InnerException.Message}");
                 }
 
-                // Bắt lỗi cụ thể và trả về phản hồi lỗi chi tiết
                 return BadRequest($"Lỗi khi cập nhật bài kiểm tra: {ex.Message}");
             }
         }

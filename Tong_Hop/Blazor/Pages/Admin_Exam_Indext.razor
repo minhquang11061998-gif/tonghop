@@ -12,23 +12,15 @@
 
 
 <div class="container-fluid mt-3">
-    <!-- Header Section -->
-    <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-3">
-        <div>
-            <button class="btn btn-primary me-2" @onclick="OpenCreateExamModal">
-                <i class="bi bi-plus-circle"></i> Tạo ca thi
-            </button>
-            <button class="btn btn-warning me-2">
-                <i class="bi bi-pencil"></i> Chỉnh sửa
-            </button>
-            <button class="btn btn-danger">
-                <i class="bi bi-trash"></i> Xóa
-            </button>
-        </div>
-    </div>
-
     <!-- Folder Structure -->
     <div class="border rounded shadow-sm p-3">
+        <!-- Tạo đề thi -->
+        <div class="d-flex justify-content-start mb-3">
+            <button class="btn btn-warning btn-sm" @onclick="OpenCreateExamModal"  title="Tạo đề thi" disabled="@(idtest==Guid.Empty)">
+                <i class="bi bi-file-earmark"></i> Tạo đề thi
+            </button>
+        </div>
+
         <!-- Rooms Table -->
         <div class="table-responsive">
             <table class="table table-hover table-bordered align-middle">
@@ -38,7 +30,6 @@
                             <input type="checkbox" @onchange="ToggleSelectAll" title="Chọn tất cả">
                         </th>
                         <th>Tên bài thi</th>
-                        <th>Mã vào thi</th>
                         <th>Phòng thi</th>
                         <th>Môn</th>
                         <th>Thời gian bắt đầu</th>
@@ -46,7 +37,7 @@
                         <th>Giáo viên coi thi 1</th>
                         <th>Giáo viên coi thi 2</th>
                         <th>Trạng thái</th>
-                        <th style="width: 150px;">Hành động</th>
+                        <th style="width: 300px;">Hành động</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -54,19 +45,18 @@
                     {
                         @foreach (var examroom in filteredExamRooms)
                         {
-                            <tr class="@(selectedRoomExamId == examroom.Id ? "table-info" : "")">
+                            <tr class="@(idtest == examroom.IdTest ? "table-info" : "")">
                                 <td class="text-center">
                                     <input type="checkbox"
-                                    checked="@(selectedRoomExamId == examroom.Id)"
-                                    @onchange="() => SelectExamRoom(examroom.Id)"
+                                    checked="@(idtest == examroom.IdTest)"
+                                    @onchange="() => SelectExamRoom(examroom.IdTest)"
                                     title="Chọn phòng thi này">
                                 </td>
                                 <td>@examroom.Name</td>
-                                <td>@examroom.CodeTest</td>
                                 <td>@examroom.Nameroom</td>
                                 <td>@examroom.NameSubject</td>
-                                <td>@examroom.StartTime.ToString(" HH:mm")</td>
-                                <td>@examroom.EndTime.ToString("HH:mm")</td>
+                                <td>@examroom.StartTime.ToString(" HH:mm tt")</td>
+                                <td>@examroom.EndTime.ToString("HH:mm tt")</td>
                                 <td>@examroom.NameTeacher1</td>
                                 <td>@examroom.NameTeacher2</td>
                                 <td class="text-center">
@@ -75,8 +65,13 @@
                                     </span>
                                 </td>
                                 <td class="text-center">
+                                    <!-- Xem chi tiết -->
                                     <button class="btn btn-info btn-sm" @onclick="() => OpenDetailExamModal(examroom.IdTest)" title="Xem chi tiết">
                                         <i class="bi bi-eye"></i> Xem
+                                    </button>
+                                    <!-- Gửi email -->
+                                    <button class="btn btn-primary btn-sm ms-2" @onclick="()=>sentemail(examroom.CodeTest)" title="Gửi email thông báo">
+                                        <i class="bi bi-envelope"></i> Gửi mã code
                                     </button>
                                 </td>
                             </tr>
@@ -92,10 +87,7 @@
             </table>
         </div>
     </div>
-
-
 </div>
-
 
 <!-- Modal for Creating Exam Session -->
 <div class="modal fade @(isCreateExamModalVisible ? "show" : "")" tabindex="-1" style="display:@(isCreateExamModalVisible ? "block" : "none");">
@@ -108,8 +100,8 @@
             <div class="modal-body">
                 <!-- Phần chọn bài thi -->
                 <div class="form-group">
-                    <label for="idtest">Chọn bài thi:</label>
-                    <select class="form-select" @bind="idtest">
+                    <label for="idtest">Gói đề:</label>
+                    <select class="form-select" @bind="idtest" disabled>
                         <option value="@Guid.Empty">Chọn bài thi</option>
                         @foreach (var item in testList)
                         {
@@ -141,18 +133,6 @@
                         <div class="form-group">
                             <label for="veryHardCount" class="mt-2">Số câu nâng cao:</label>
                             <input type="number" id="veryHardCount" @bind="veryHardCount" min="0" class="form-control" />
-                        </div>
-                    </div>
-
-                    <!-- Cột 3: 3 cột -->
-                    <div class="col-md-3">
-                        <div class="form-group">
-                            <label for="start" class="mt-2">Thời gian bắt đầu:</label>
-                            <input type="time" id="start"   @bind="start" class="form-control" />
-                        </div>
-                        <div class="form-group">
-                            <label for="end" class="mt-2">Thời gian kết thúc:</label>
-                            <input type="time" id="end"  @bind="end" class="form-control" />
                         </div>
                     </div>
                 </div>
@@ -191,7 +171,7 @@
                                 @foreach (var question in item.NameQuestion)
                                 {
                                     <div class="mb-3">
-                                      
+
                                         <h6 class="text-secondary">Câu @(item.NameQuestion.IndexOf(question) + 1): <span class="fw-bold">@question.QuestionName</span></h6>
                                         <ol class="list-group" style="list-style-type: upper-alpha;">
                                             @if (question.Type == 1 || question.Type == 2)
@@ -277,13 +257,7 @@
         try
         {
 
-            var a=  start.ToString(@"HH:mm");
-            var b=  end.ToString(@"HH:mm");
-            if(a==b){
-                await Jsruntime.InvokeVoidAsync("alert", $"Thời gian kết thúc không được trùng với thời gian bắt đầu");
-                return;
-            }
-            var response = await client.PostAsJsonAsync($"https://localhost:7046/api/TestQuestion/randomize-questions-for-test-codes?testId={idtest}&easyCount={easyCount}&mediumCount={mediumCount}&hardCount={hardCount}&veryHardCount={veryHardCount}&start={a}&end={b}", selectedQuestions);
+            var response = await client.PostAsJsonAsync($"https://localhost:7046/api/TestQuestion/randomize-questions-for-test-codes?testId={idtest}&easyCount={easyCount}&mediumCount={mediumCount}&hardCount={hardCount}&veryHardCount={veryHardCount}", selectedQuestions);
 
             if (response.IsSuccessStatusCode)
             {
@@ -307,8 +281,34 @@
             isLoading = false; // Kết thúc tải
         }
     }
+    private TokenResponse tokenResponse;
+    private string Email;
 
-    // Các phương thức khác vẫn giữ nguyên như bạn đã viết
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var token = await Jsruntime.InvokeAsync<string>("localStorage.getItem", "YourSuperSecretKeyHere");
+
+            if (!string.IsNullOrEmpty(token))
+            {
+                tokenResponse = new TokenResponse { Token = token };
+                var handler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
+                var jsonToken = handler.ReadToken(token) as System.IdentityModel.Tokens.Jwt.JwtSecurityToken;
+                Email = jsonToken?.Claims.FirstOrDefault(c => c.Type == "email")?.Value;
+                StateHasChanged();
+            }
+        }
+    }
+    private async Task sentemail(string code){
+        var email = Email;
+        var respon = await client.PostAsJsonAsync($"https://localhost:7046/api/Test/send?email={email}&code={code}",new { });
+        if(respon.IsSuccessStatusCode){
+            await Jsruntime.InvokeVoidAsync("alert", "Gửi mã code thành công hãy kiểm tra email của bạn!");
+        }else{
+            await Jsruntime.InvokeVoidAsync("alert", "Gửi mã code Thất bại");
+        }
+    }
     protected override async Task OnInitializedAsync()
     {
         await LoadExamRooms();
@@ -361,9 +361,9 @@
         selectedRoomExamId = isChecked ? ListExamroomDTOs.FirstOrDefault()?.Id ?? Guid.Empty : Guid.Empty;
     }
 
-    private void SelectExamRoom(Guid roomId)
+    private void SelectExamRoom(Guid id)
     {
-        selectedRoomExamId = selectedRoomExamId == roomId ? Guid.Empty : roomId;
+        idtest = idtest == id ? Guid.Empty : id;
     }
 
 

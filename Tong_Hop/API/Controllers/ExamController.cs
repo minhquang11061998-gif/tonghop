@@ -20,31 +20,14 @@ namespace API.Controllers
         public async Task<ActionResult<GetAllExamCaThiDTO>> GetAllEXAM()
         {
             var data = await (from subject in _db.Subjects
-                              join test in _db.Tests on subject.Id equals test.SubjectId
                               join exam in _db.Exams on subject.Id equals exam.SubjectId
-                              join examRoom in _db.Exam_Rooms on exam.Id equals examRoom.ExamId
-                              join teacher1 in _db.Teachers on examRoom.TeacherId1 equals teacher1.Id
-                              join teacher2 in _db.Teachers on examRoom.TeacherId2 equals teacher2.Id
-                              join user1 in _db.Users on teacher1.UserId equals user1.Id
-                              join user2 in _db.Users on teacher2.UserId equals user2.Id
-                              join room in _db.Rooms on examRoom.RoomId equals room.Id
                               select new GetAllExamCaThiDTO
                               {
                                   Id = exam.Id,
-                                  IdTest=test.Id,
                                   Name = exam.Name,
-                                  NameTeacher1 = user1.FullName,
-                                  idteacher1 = examRoom.TeacherId1,
-                                  NameTeacher2 = user2.FullName,
-                                  idteacher2 = examRoom.TeacherId2,
-                                  Nameroom = room.Name,
-                                  idrom = examRoom.RoomId,
                                   NameSubject = subject.Name,
                                   idsubject = exam.SubjectId,
-                                  CreationTime = exam.CreationTime,
-                                  StartTime = examRoom.StartTime,
-                                  EndTime = examRoom.EndTime,
-                                  IdEaxmRoom = examRoom.Id,
+                                
                               }).ToListAsync();
 
             if (!data.Any())
@@ -160,10 +143,17 @@ namespace API.Controllers
                 existingExamRoom.RoomId = dto.idrom;
                 existingExamRoom.TeacherId1 = dto.idteacher1;
                 existingExamRoom.TeacherId2 = dto.idteacher2;
+                var examtestcode = await _db.Exam_Room_TestCodes.FirstOrDefaultAsync(s => s.ExamRoomId == existingExamRoom.Id);
+                var test = await _db.Tests.FirstOrDefaultAsync(x => x.Id == examtestcode.TestId);
+                if (test == null)
+                {
+                    return NotFound("không tìm thấy gói đề");
+                }
+                test.SubjectId = dto.idsubject;
 
-                // Lưu thay đổi
                 _db.Exams.Update(existingExam);
                 _db.Exam_Rooms.Update(existingExamRoom);
+                _db.Tests.Update(test);
                 await _db.SaveChangesAsync();
 
                 return Ok("Cập nhật thành công.");
