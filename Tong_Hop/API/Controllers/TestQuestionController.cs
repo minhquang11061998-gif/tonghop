@@ -391,10 +391,10 @@ namespace API.Controllers
 
                     _db.TestCode_TestQuestion.Add(testCodeQuestion);
                 }
+                await _db.SaveChangesAsync();
+
+                
             }
-
-            await _db.SaveChangesAsync();
-
             return Ok("THÀNH CÔNG");
         }
         #endregion
