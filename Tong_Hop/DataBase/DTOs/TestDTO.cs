@@ -28,6 +28,8 @@ namespace DataBase.DTOs
 		public Guid RoomId { get; set; }
 		public Guid ExamId { get; set; }
 		public Guid TeacherId1 { get; set; }
+		public string? nameTeacherId1 { get; set; }
+		public string? nameTeacherId2 { get; set; }
 		public Guid TeacherId2 { get; set; }
 	}
 
