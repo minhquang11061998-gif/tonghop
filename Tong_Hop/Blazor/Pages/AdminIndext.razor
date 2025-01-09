@@ -157,41 +157,49 @@
 <div class="modal fade @(isCreateNoticeModalVisible ? "show" : "")" tabindex="-1" style="display:@(isCreateNoticeModalVisible ? "block" : "none")">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
-            <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title">Tạo Thông Báo</h5>
-                <button type="button" class="btn-close" @onclick="HideCreateNoticeModal"></button>
+            <div class="modal-header bg-gradient-primary text-white">
+                <h5 class="modal-title">📢 Tạo Thông Báo</h5>
+                <button type="button" class="btn-close text-white" @onclick="HideCreateNoticeModal"></button>
             </div>
             <div class="modal-body">
-                <div class="mb-3">
-                    <label for="title" class="form-label">Tiêu đề thông báo:</label>
-                    <input type="text" id="title" class="form-control" @bind="notificationDTO.Title" placeholder="Nhập tiêu đề" />
+                <div class="row mb-3">
+                    <div class="col-md-12">
+                        <label for="title" class="form-label">✏️ Tiêu đề thông báo:</label>
+                        <input type="text" id="title" class="form-control" @bind="notificationDTO.Title" placeholder="Nhập tiêu đề" />
+                    </div>
                 </div>
-                <div class="mb-3">
-                    <label for="content" class="form-label">Nội dung thông báo:</label>
-                    <textarea id="content" class="form-control" @bind="notificationDTO.Content" placeholder="Nhập nội dung"></textarea>
+                <div class="row mb-3">
+                    <div class="col-md-12">
+                        <label for="content" class="form-label">📝 Nội dung thông báo:</label>
+                        <textarea id="content" class="form-control" @bind="notificationDTO.Content" placeholder="Nhập nội dung"></textarea>
+                    </div>
                 </div>
-                <div class="mb-3">
-                    <label for="creationTime" class="form-label">Thời gian tạo thông báo:</label>
-                    <input type="datetime-local" id="creationTime" class="form-control" @bind="notificationDTO.CreationTime" />
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="creationTime" class="form-label">🕒 Thời gian tạo:</label>
+                        <input type="datetime-local" id="creationTime" class="form-control" @bind="notificationDTO.CreationTime" />
+                    </div>
+                    <div class="col-md-6">
+                        <label for="status" class="form-label">📊 Trạng thái:</label>
+                        <input type="text" id="status" class="form-control" @bind="notificationDTO.Status" placeholder="Nhập trạng thái" />
+                    </div>
                 </div>
-                <div class="mb-3">
-                    <label for="status" class="form-label">Trạng thái:</label>
-                    <input type="text" id="status" class="form-control" @bind="notificationDTO.Status" placeholder="Nhập trạng thái" />
+                <div class="row mb-3">
+                    <div class="col-md-12">
+                        <label for="type" class="form-label">📌 Loại thông báo:</label>
+                        <select id="type" class="form-control" @bind="notificationDTO.type">
+                            <option value="0">Thông báo cho tất cả</option>
+                            <option value="1">Thông báo cho 1 hoặc nhiều lớp nhất định</option>
+                        </select>
+                    </div>
                 </div>
-                <div class="mb-3">
-                    <label for="type" class="form-label">Loại thông báo:</label>
-                    <select id="type" class="form-control" @bind="notificationDTO.type">
-                        <option value="0">Thông báo cho tất cả</option>
-                        <option value="1">Thông báo cho 1 hoặc nhiều lớp nhất định</option>
-                    </select>
-                </div>
-
                 @if (notificationDTO.type == 1)
                 {
-                    <div class="mt-3">
-                        <button type="button" class="btn btn-primary" @onclick="ShowClassSelectionModal">Chọn lớp</button>
-
-                        <div class="mt-3">
+                    <div class="row mt-3">
+                        <div class="col-md-12">
+                            <button type="button" class="btn btn-outline-primary" @onclick="ShowClassSelectionModal">🎓 Chọn lớp</button>
+                        </div>
+                        <div class="col-md-12 mt-3">
                             <label>Các lớp đã chọn:</label>
                             <ul class="list-group">
                                 @foreach (var className in selectedClassNames)
@@ -202,15 +210,15 @@
                         </div>
                     </div>
                 }
-
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" @onclick="HideCreateNoticeModal">Đóng</button>
-                <button type="button" class="btn btn-primary" @onclick="SubmitNotice">Lưu Thông Báo</button>
+                <button type="button" class="btn btn-secondary" @onclick="HideCreateNoticeModal">❌ Đóng</button>
+                <button type="button" class="btn btn-primary" @onclick="SubmitNotice">💾 Lưu Thông Báo</button>
             </div>
         </div>
     </div>
 </div>
+
 @if (isClassSelectionModalVisible)
 {
     <div class="modal fade show" tabindex="-1" style="display:block;">
@@ -238,6 +246,7 @@
         </div>
     </div>
 }
+
 
 @code {
     private bool isCreateNoticeModalVisible = false;

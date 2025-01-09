@@ -84,7 +84,11 @@ namespace API.Controllers
 									 {
 										 Id = examHistory.Id,
 										 Score = examHistory.Score,
-										CreationTime = examHistory.CreationTime,
+                                         CreationTime = examHistory.CreationTime.ToString("MM/dd/yyyy HH:mm"), // Format datetime
+                                         CheckTime = examRoomStudent.ChenkTime.ToString("MM/dd/yyyy HH:mm"),  // Format datetime
+                                         ElapsedTime = (examRoomStudent.ChenkTime != DateTime.MinValue && examHistory.CreationTime != DateTime.MinValue)
+                             ? ((int)(examHistory.CreationTime - examRoomStudent.ChenkTime).TotalMinutes).ToString() + " phút" // Tính phút
+                             : "N/A",
                                          StudentCode = student != null ? student.Code : "N/A",
 										 StudentName = student != null ? student.User.FullName : "N/A",
 										 TestName = test != null ? test.Name : "N/A",
@@ -233,7 +237,11 @@ namespace API.Controllers
 									 {
 										 Id = examHistory.Id,
 										 Score = examHistory.Score,
-                                         CreationTime = examHistory.CreationTime,
+                                         CreationTime = examHistory.CreationTime.ToString("MM/dd/yyyy HH:mm"), // Format datetime
+                                         CheckTime = examRoomStudent.ChenkTime.ToString("MM/dd/yyyy HH:mm"),  // Format datetime
+                                         ElapsedTime = (examRoomStudent.ChenkTime != DateTime.MinValue && examHistory.CreationTime != DateTime.MinValue)
+                             ? ((int)(examHistory.CreationTime - examRoomStudent.ChenkTime).TotalMinutes).ToString() + " phút" // Tính phút
+                             : "N/A",
                                          StudentCode = student != null ? student.Code : "N/A",
 										 StudentName = student != null ? student.User.FullName : "N/A",
 										 TestName = test != null ? test.Name : "N/A",

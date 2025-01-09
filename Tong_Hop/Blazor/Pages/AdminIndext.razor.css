@@ -50,30 +50,101 @@ body {
     padding-left: 10px; /* Khoảng cách nhỏ với cột trái */
 }
 
-
-
-
-.modal-header {
-    background-color: #007bff;
-    color: white;
-    border-bottom: 1px solid #e5e5e5;
+.modal.fade.show {
+    display: flex !important;
+    justify-content: center;
+    align-items: center;
+    background-color: rgba(0, 0, 0, 0.6);
+    padding: 20px;
 }
 
-.modal-title {
-    font-weight: bold;
-    font-size: 1.25rem;
+.modal-dialog {
+    margin: 20px auto;
+    max-width: 900px; /* Tăng chiều rộng tối đa */
+    width: 100%;
+    border-radius: 12px; /* Bo góc nhẹ */
+    background: linear-gradient(to bottom right, #ffffff, #f9f9f9);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2); /* Làm bóng mượt */
+}
+
+.modal-content {
+    border-radius: 12px; /* Bo góc nhẹ */
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); /* Làm bóng tinh tế */
+}
+
+.modal-header {
+    padding: 15px 20px; /* Tăng khoảng cách bên trong header */
+    background: linear-gradient(to right, #0056b3, #007bff); /* Gradient header */
+    color: white;
+    border-bottom: 1px solid #ddd;
+}
+
+.modal-body {
+    padding: 25px 30px; /* Tăng khoảng cách bên trong body */
+    background: #fefefe; /* Màu nền sáng tinh tế */
 }
 
 .modal-footer {
-    background-color: #f1f1f1;
-    border-top: 1px solid #e5e5e5;
+    padding: 15px 20px;
+    background: #f9f9f9;
+    border-top: 1px solid #ddd;
+    justify-content: space-between;
 }
 
-.btn-close {
-    background-color: transparent;
-    border: none;
-    font-size: 1.25rem;
+input.form-control, textarea.form-control, select.form-control {
+    border: 1px solid #ccc;
+    border-radius: 5px; /* Bo góc nhẹ */
+    padding: 12px;
+    font-size: 1rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    transition: border-color 0.3s ease-in-out;
 }
+
+    input.form-control:focus, textarea.form-control:focus, select.form-control:focus {
+        border-color: #007bff;
+        box-shadow: 0 0 8px rgba(0, 123, 255, 0.25);
+    }
+
+button.btn {
+    font-size: 1rem;
+    padding: 10px 15px;
+    border-radius: 5px; /* Bo góc nhẹ */
+    transition: all 0.3s ease-in-out;
+}
+
+    button.btn:hover {
+        opacity: 0.9;
+        transform: scale(1.05);
+    }
+
+button.btn-outline-primary {
+    color: #007bff;
+    border: 1px solid #007bff;
+    background: transparent;
+    transition: background 0.3s ease-in-out, color 0.3s ease-in-out;
+}
+
+    button.btn-outline-primary:hover {
+        background: #007bff;
+        color: white;
+    }
+
+label.form-label {
+    font-weight: bold;
+    color: #333;
+}
+
+.list-group-item {
+    font-size: 0.9rem;
+    padding: 10px 15px;
+    border-radius: 5px; /* Bo góc nhẹ */
+    transition: background 0.3s ease-in-out;
+}
+
+    .list-group-item:hover {
+        background: #f0f0f0;
+    }
 
 .form-label {
     font-weight: bold;
