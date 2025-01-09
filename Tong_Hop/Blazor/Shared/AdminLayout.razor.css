@@ -9,13 +9,11 @@
 }
 
 
-/* Cố định sidebar bên trái */
-
-
 /* Đảm bảo nội dung bên dưới navbar không bị che khuất */
 article {
     margin-top: 60px; /* Thêm khoảng cách để tránh đè lên navbar */
 }
+
 main {
     background-image: url('/img/Untitled-1.png');
     background-size: cover; /* Ảnh sẽ tự động phóng to hoặc thu nhỏ để bao phủ toàn bộ vùng */
@@ -25,8 +23,129 @@ main {
     width: 100%; /* Chiều rộng chiếm toàn bộ chiều rộng */
 }
 
+.sidebar {
+    max-height: 100vh; /* Chiều cao tối đa của sidebar */
+    overflow-y: auto; /* Kích hoạt cuộn dọc khi cần */
+    direction: rtl; /* Đặt thanh cuộn ở bên trái */
+    scrollbar-width: thin; /* Tùy chọn: làm mỏng thanh cuộn trên Firefox */
+    scrollbar-color: #ccc #f1f1f1; /* Tùy chọn: màu thanh cuộn trên Firefox */
+}
+
+    .sidebar * {
+        direction: ltr; /* Nội dung bên trong vẫn đọc từ trái sang phải */
+    }
+
+    /* Tùy chọn: Tùy chỉnh thanh cuộn trên Webkit (Chrome, Edge) */
+    .sidebar::-webkit-scrollbar {
+        width: 8px; /* Độ rộng của thanh cuộn */
+    }
+
+    .sidebar::-webkit-scrollbar-thumb {
+        background: #ccc; /* Màu của thanh kéo */
+        border-radius: 4px;
+    }
+
+        .sidebar::-webkit-scrollbar-thumb:hover {
+            background: #aaa; /* Màu thanh kéo khi hover */
+        }
+/* Sidebar container */
+.sidebar-container {
+    min-width: 300px; /* Chiều rộng tối thiểu của sidebar */
+    max-width: 350px; /* Chiều rộng tối đa */
+}
+
+footer {
+    position: relative; /* Đảm bảo footer nằm trong flow của tài liệu */
+    width: 100%; /* Chiều rộng bằng phần tử cha */
+    margin-top: 20px; /* Thêm khoảng cách giữa footer và nội dung phía trên */
+    background-color: #f8f9fa; /* Màu nền (tùy chỉnh nếu cần) */
+    z-index: 1; /* Đảm bảo không đè lên các thành phần khác */
+    text-align: center; /* Canh giữa nội dung */
+    padding: 10px 0; /* Padding trên dưới */
+}
+
+.body-container {
+    min-height: calc(100vh - 60px); /* Chiều cao tối thiểu trừ đi chiều cao của footer */
+    display: flex;
+    flex-direction: column; /* Đảm bảo nội dung được xếp theo cột */
+    justify-content: space-between; /* Chừa chỗ cho footer ở cuối */
+}
+
+.row.fixed-bottom {
+    margin-left: auto; /* Đảm bảo footer không ảnh hưởng đến sidebar */
+    margin-right: auto;
+    width: calc(100% - var(--bs-gutter-x, 0)); /* Điều chỉnh chiều rộng để khớp với layout */
+    left: 0;
+    right: 0;
+}
 
 
+/* Logo và chữ "Quản lý hệ thống" */
+.navbar-brand {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 10px; /* Giảm padding */
+    white-space: nowrap; /* Đảm bảo chữ không xuống dòng */
+    overflow: hidden; /* Ngăn tràn nội dung */
+    text-overflow: clip; /* Cắt nội dung nếu cần mà không hiển thị "..." */
+}
 
+.logo-img {
+    height: 40px; /* Thu nhỏ logo */
+    margin-right: 5px; /* Giảm khoảng cách giữa logo và chữ */
+}
 
+.navbar-text {
+    font-size: 1rem; /* Giảm kích thước chữ */
+    line-height: 1; /* Giảm khoảng cách dòng */
+    font-weight: 600; /* Tăng độ dày để chữ dễ nhìn hơn */
+    white-space: nowrap; /* Giữ chữ trên một dòng */
+    overflow: hidden; /* Ngăn tràn nội dung */
+    text-overflow: clip; /* Không hiển thị "..." khi bị cắt */
+}
 
+/*/* Responsive: Điều chỉnh cho màn hình nhỏ */
+@media (max-width: 1600px) {
+    .sidebar-container {
+        min-width: 250px;
+    }
+
+    .navbar-text {
+        font-size: 1rem;
+    }
+}
+
+@media (max-width: 1200px) {
+    .sidebar-container {
+        min-width: 220px;
+    }
+
+    .navbar-brand {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+
+    .logo-img {
+        margin-bottom: 5px;
+    }
+
+    .navbar-text {
+        font-size: 0.9rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .navbar-brand {
+        padding: 8px; /* Giảm thêm khoảng cách */
+    }
+
+    .logo-img {
+        height: 35px; /* Giảm kích thước logo hơn nữa */
+    }
+
+    .navbar-text {
+        font-size: 0.9rem; /* Giảm kích thước chữ để vừa khít */
+    }
+}
