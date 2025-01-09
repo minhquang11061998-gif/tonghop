@@ -84,8 +84,8 @@ namespace API.Controllers
 									 {
 										 Id = examHistory.Id,
 										 Score = examHistory.Score,
-										 CreationTime = examHistory.CreationTime,
-										 StudentCode = student != null ? student.Code : "N/A",
+										CreationTime = examHistory.CreationTime,
+                                         StudentCode = student != null ? student.Code : "N/A",
 										 StudentName = student != null ? student.User.FullName : "N/A",
 										 TestName = test != null ? test.Name : "N/A",
 										 TestCode = testcode != null ? testcode.Code : "N/A",
@@ -207,6 +207,10 @@ namespace API.Controllers
 										 on examRoomTestCode.ExamRoomId equals examRoom.Id into examRoomGroup
 									 from examRoom in examRoomGroup.DefaultIfEmpty()
 
+									join exam in _db.Exams
+										on examRoom.ExamId equals exam.Id into examGroup
+									from exam in examGroup.DefaultIfEmpty()
+
 									 join student in _db.Students
 										 on examRoomStudent.StudentId equals student.Id into studentGroup
 									 from student in studentGroup.DefaultIfEmpty()
@@ -229,8 +233,8 @@ namespace API.Controllers
 									 {
 										 Id = examHistory.Id,
 										 Score = examHistory.Score,
-										 CreationTime = examHistory.CreationTime,
-										 StudentCode = student != null ? student.Code : "N/A",
+                                         CreationTime = examHistory.CreationTime,
+                                         StudentCode = student != null ? student.Code : "N/A",
 										 StudentName = student != null ? student.User.FullName : "N/A",
 										 TestName = test != null ? test.Name : "N/A",
 										 TestCode = testcode != null ? testcode.Code : "N/A",

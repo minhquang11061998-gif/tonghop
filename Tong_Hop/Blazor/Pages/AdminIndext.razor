@@ -6,25 +6,51 @@
 @inject HttpClient client
 @inject IJSRuntime jsRuntime
 @inject NavigationManager nav
-<div class="container-fluid">
-        <div class="col-md-9 col-lg-10">
-            <div class="chart-container py-4">
-                <div class="row">
-                    <div class="col-md-4">
-                        <canvas id="studentsPieChart"></canvas>
+<div class="main-content">
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Phần bên trái: Biểu đồ và lời chào mừng -->
+            <div class="col-8 left-section">
+                <!-- Biểu đồ -->
+                <div class="chart-container">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="chart-wrapper">
+                                <canvas id="studentsPieChart"></canvas>
+                            </div>
+                            <p class="chart-description text-center">Số lượng học sinh</p>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="chart-wrapper">
+                                <canvas id="classesPieChart"></canvas>
+                            </div>
+                            <p class="chart-description text-center">Số lượng lớp</p>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="chart-wrapper">
+                                <canvas id="teachersPieChart"></canvas>
+                            </div>
+                            <p class="chart-description text-center">Số lượng giáo viên</p>
+                        </div>
                     </div>
-                    <div class="col-md-4">
-                        <canvas id="classesPieChart"></canvas>
-                    </div>
-                    <div class="col-md-4">
-                        <canvas id="teachersPieChart"></canvas>
+                </div>
+
+                <!-- Lời chào mừng -->
+                <div class="welcome-message-section mt-4">
+                    <div class="welcome-message">
+                        <h2>
+                            <span class="welcome-icon">👋</span> Chào mừng bạn đến với
+                            <span class="highlight">Hệ thống Quản lý!</span>
+                        </h2>
+                        <p>🌟 Chúc bạn một ngày làm việc hiệu quả và thành công!</p>
                     </div>
                 </div>
             </div>
 
-            <div class="notification-section mt-4">
-                <div class="border p-4 rounded shadow-sm">
-                    <h2 class="text-center mb-4">Bảng thông báo</h2>
+            <!-- Phần bên phải: Bảng thông báo -->
+            <div class="col-4 right-section">
+                <div class="notification-section mt-4">
+                    <h2 class="text-center">Bảng thông báo</h2>
                     <button class="btn btn-primary mb-3 w-100" @onclick="ShowCreateNoticeModal">Tạo Thông Báo</button>
                     <div class="notification-list">
                         @if (notifications != null && notifications.Count > 0)
@@ -54,6 +80,9 @@
             </div>
         </div>
     </div>
+
+
+</div>
 
 @code {
     private List<ChartDTO> chartData = new List<ChartDTO>();
@@ -96,7 +125,7 @@
                 chartData = await httpClient.GetFromJsonAsync<List<ChartDTO>>(url);
                 if (chartData != null && chartData.Any())
                 {
-                    var gradeNames = new[] { 1, 2, 3, 4 };
+                    var gradeNames = new[] { 6, 7, 8, 9 };
                     var studentCounts = gradeNames.Select(name => chartData.FirstOrDefault(d => d.GradeName == name)?.TotalStudents ?? 0).ToArray();
                     var classCounts = gradeNames.Select(name => chartData.FirstOrDefault(d => d.GradeName == name)?.TotalClasses ?? 0).ToArray();
                     var teacherCounts = gradeNames.Select(name => chartData.FirstOrDefault(d => d.GradeName == name)?.TotalTeachers ?? 0).ToArray();
@@ -340,9 +369,6 @@
         }
     }
 
-
-
-
     private void HideCreateNoticeModal()
     {
         isCreateNoticeModalVisible = false;
@@ -368,4 +394,3 @@
         isClassSelectionModalVisible = false;
     }
 }
- 
