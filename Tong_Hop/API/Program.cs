@@ -1,4 +1,5 @@
-﻿using CloudinaryDotNet;
+﻿using API;
+using CloudinaryDotNet;
 using DataBase.Data;
 using DataBase.DTOs;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -45,13 +46,13 @@ builder.Services.AddSingleton(sp =>
     return new Cloudinary(account);
 });
 builder.Services.AddDbContext<AppDbContext>(option => option.UseSqlServer(builder.Configuration.GetConnectionString("Default")));
-
 builder.Services.AddCors(option =>
 {
     option.AddPolicy(name: m, policy => policy.AllowAnyOrigin()
                                               .AllowAnyMethod()
                                               .AllowAnyHeader());
 });
+builder.Services.AddHostedService<Checktime>();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -64,7 +65,6 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
-
 app.UseCors(m);
 
 app.MapControllers();

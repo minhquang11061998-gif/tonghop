@@ -238,7 +238,7 @@ namespace API.Controllers
                               {
                                   Id = exam.Id,
                                   Name = exam.Name,
-                                  Status = exam.Status,
+                                  Status = examRoom.Status,
                                   NameTeacher1 = user1.FullName,
                                   idteacher1 = examRoom.TeacherId1,
                                   NameTeacher2 = user2.FullName,

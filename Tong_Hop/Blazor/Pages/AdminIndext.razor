@@ -17,32 +17,44 @@
                         <div class="col-md-4">
                             <div class="chart-wrapper">
                                 <canvas id="studentsPieChart"></canvas>
+                                <p class="chart-description text-center">Số lượng học sinh</p>
                             </div>
-                            <p class="chart-description text-center">Số lượng học sinh</p>
+
                         </div>
                         <div class="col-md-4">
                             <div class="chart-wrapper">
                                 <canvas id="classesPieChart"></canvas>
+                                <p class="chart-description text-center">Số lượng lớp</p>
                             </div>
-                            <p class="chart-description text-center">Số lượng lớp</p>
+
                         </div>
                         <div class="col-md-4">
                             <div class="chart-wrapper">
                                 <canvas id="teachersPieChart"></canvas>
+                                <p class="chart-description text-center">Số lượng giáo viên</p>
                             </div>
-                            <p class="chart-description text-center">Số lượng giáo viên</p>
+
                         </div>
                     </div>
                 </div>
 
                 <!-- Lời chào mừng -->
-                <div class="welcome-message-section mt-4">
-                    <div class="welcome-message">
-                        <h2>
-                            <span class="welcome-icon">👋</span> Chào mừng bạn đến với
-                            <span class="highlight">Hệ thống Quản lý!</span>
-                        </h2>
-                        <p>🌟 Chúc bạn một ngày làm việc hiệu quả và thành công!</p>
+                <div class="  container ">
+                    <div class="welcome-message-section row justify-content-center align-items-center">
+                        <!-- Phần chào mừng -->
+                        <div class="welcome-message col-md-6 text-center mb-4 mb-md-0">
+                            <h1 class="text-white fs-1">
+                                <span class="welcome-icon">👋</span> Chào mừng bạn đến với
+                                <br />
+                                <span class="highlight fs-2">Hệ thống thi online SmartSchool!</span>
+                            </h1>
+                            <p class="text-white fs-4">🌟 Chúc bạn một ngày làm việc hiệu quả và thành công!</p>
+                        </div>
+
+                        <!-- Phần Lottie Animation -->
+                        <div class="col-md-6 d-flex justify-content-center">
+                            <div id="lottie-container" style="width: 100%; max-width: 500px; height: 500px;"></div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -113,7 +125,14 @@
         }
 
     }
+    private async Task LoadLottieFromJson()
+    {
+        // Đường dẫn đến tệp JSON Lottie trong wwwroot
+        string jsonUrl = "Main Scene.json"; // Đảm bảo đường dẫn đúng
 
+        // Gọi phương thức JavaScript Interop để tải Lottie từ JSON
+        await jsRuntime.InvokeVoidAsync("loadLottieFromJson", "lottie-container", jsonUrl);
+    }
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
@@ -142,6 +161,7 @@
 
                     isDataLoaded = true;
                 }
+               await LoadLottieFromJson();
             }
             catch (Exception ex)
             {
