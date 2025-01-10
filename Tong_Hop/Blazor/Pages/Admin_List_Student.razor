@@ -110,7 +110,9 @@
                         <td class="text-center">@item.RegistrationStatus</td>
                         <td>
                             <td class="text-center">
-                                <button class="btn btn-success" @onclick="()=>showdata(item.idstudent)">đăng kí</button>
+                            <button class="btn btn-sm btn-success rounded-pill px-3 py-2" @onclick="()=>showdata(item.idstudent)">
+                                Đăng ký
+                            </button>
                                 <button class="btn btn-sm btn-danger rounded-pill px-3" @onclick="() => delete(item.idstudent.ToString())">
                                     Xóa
                                 </button>
