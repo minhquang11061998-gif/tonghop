@@ -191,18 +191,39 @@
                                 <label class="form-label">Họ và tên</label>
                                 <input type="text" class="form-control" placeholder="Nhập họ và tên" @bind="user.FullName"
                                 disabled="@(CurrentModalType == ModalType.Detail)" />
+                                @if (string.IsNullOrWhiteSpace(user.FullName))
+                                {
+                                    <span class="text-danger">Vui lòng nhập họ và tên.</span>
+                                }
+                                @if (!string.IsNullOrWhiteSpace(user.FullName) && user.FullName.Any(char.IsDigit))
+                                {
+                                    <span class="text-danger">Họ và tên không được chứa số.</span>
+                                }
                             </div>
                             <!-- Email -->
                             <div class="col-md-6">
                                 <label class="form-label">Email</label>
                                 <input type="email"  class="form-control" placeholder="Nhập email" @bind="user.Email"
                                 disabled="@(CurrentModalType == ModalType.Detail)" />
+                                @if (!string.IsNullOrWhiteSpace(user.Email) &&
+                               !new System.ComponentModel.DataAnnotations.EmailAddressAttribute().IsValid(user.Email))
+                                {
+                                    <span class="text-danger">Email không hợp lệ.</span>
+                                }
                             </div>
                             <!-- Số điện thoại -->
                             <div class="col-md-6">
                                 <label class="form-label">Số điện thoại</label>
-                                <input type="text" class="form-control" placeholder="Nhập số điện thoại" @bind="user.PhoneNumber"
-                                disabled="@(CurrentModalType == ModalType.Detail)" />
+                                <input type="number"
+                                       class="form-control"
+                                       placeholder="Nhập số điện thoại"
+                                       @bind="user.PhoneNumber"
+                                       disabled="@(CurrentModalType == ModalType.Detail)"
+                                       oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10);" />
+                                @if (string.IsNullOrWhiteSpace(user.PhoneNumber))
+                                {
+                                    <span class="text-danger">Vui lòng nhập số điện thoại.</span>
+                                }
                             </div>
                             <!-- Tên Đăng Nhập -->
                             <div class="col-md-6">
@@ -217,12 +238,17 @@
                                 <input type="text" class="form-control" placeholder="Nhập mật khẩu" @bind="user.PasswordHash"
                                 disabled="@(CurrentModalType == ModalType.Detail)" />
                             </div>
-
+                        
                             <!-- Ngày Sinh -->
                             <div class="col-md-6">
                                 <label class="form-label">Ngày sinh</label>
                                 <input type="date" class="form-control" @bind="user.DateOfBirth"
                                 disabled="@(CurrentModalType == ModalType.Detail)" />
+                                @if (!user.DateOfBirth.HasValue)
+                                {
+                                    <span class="text-danger">Vui lòng chọn ngày sinh.</span>
+                                }
+
                             </div>
                             <!-- Hình Ảnh -->
                             <div class="col-md-6">
@@ -535,15 +561,15 @@
     {
         user.IsLocked = true;
         var content = new MultipartFormDataContent();
-        content.Add(new StringContent(user.FullName), "FullName");
-        content.Add(new StringContent(user.Email), "Email");
-        content.Add(new StringContent(user.UserName), "UserName");
-        content.Add(new StringContent(user.PasswordHash), "PasswordHash");
-        content.Add(new StringContent(user.PhoneNumber), "PhoneNumber");
+        content.Add(new StringContent(user.FullName ?? ""), "FullName");
+        content.Add(new StringContent(user.Email ?? ""), "Email");
+        content.Add(new StringContent(user.UserName ?? ""), "UserName");
+        content.Add(new StringContent(user.PasswordHash ?? ""), "PasswordHash");
+        content.Add(new StringContent(user.PhoneNumber ?? ""), "PhoneNumber");
         content.Add(new StringContent(user.IsLocked.ToString()), "IsLocked");
         content.Add(new StringContent(user.RoleId.ToString()), "RoleId");
-        content.Add(new StringContent(user.Status.ToString()), "status");
-        content.Add(new StringContent(user.DateOfBirth.ToString()), "dateOfBirth");
+        content.Add(new StringContent(user.Status.ToString()), "Status");
+        content.Add(new StringContent(user.DateOfBirth?.ToString("yyyy-MM-dd") ?? ""), "DateOfBirth");
 
         // Thêm file avatar vào content
         if (avatarFile != null)
@@ -564,15 +590,37 @@
             user = new Users();
             avatarFile = null;
             await getallstudent(idclass);
-
+            CloseModal();
         }
         else
         {
-            await jsruntime.InvokeVoidAsync("alert", "Thêm học sinh thất bại");
+            // Lấy nội dung lỗi trả về từ API
+            var errorResponse = await response.Content.ReadAsStringAsync();
+
+            // Hiển thị thông báo lỗi cụ thể qua alert
+            if (errorResponse.Contains("UserName đã tồn tại"))
+            {
+                await jsruntime.InvokeVoidAsync("alert", "Lỗi: Tên đăng nhập đã tồn tại!");
+            }
+            else if (errorResponse.Contains("Email đã tồn tại"))
+            {
+                await jsruntime.InvokeVoidAsync("alert", "Lỗi: Email đã tồn tại!");
+            }   
+            else if (errorResponse.Contains("PhoneNumber đã tồn tại"))
+            {
+                await jsruntime.InvokeVoidAsync("alert", "Lỗi: Số điện thoại đã tồn tại!");
+            }
+            else if (errorResponse.Contains("PasswordHash đã tồn tại"))
+            {
+                await jsruntime.InvokeVoidAsync("alert", "Lỗi: Mật khẩu này đã được sử dụng!");
+            }
+            else
+            {
+                await jsruntime.InvokeVoidAsync("alert", "Thêm học sinh thất bại! Vui lòng kiểm tra lại thông tin.");
+            }
+
+            StateHasChanged(); // Cập nhật giao diện
         }
-
-
-        CloseModal();
     }
     private async Task updatestudent(){
         var content = new MultipartFormDataContent();
@@ -612,13 +660,37 @@
         {
             await getallstudent(idclass);
             await jsruntime.InvokeVoidAsync("alert", "Cập nhật học sinh thành công");
+            CloseModal();
         }
         else
         {
+            // Lấy nội dung lỗi trả về từ API
             var errorResponse = await respon.Content.ReadAsStringAsync();
-            await jsruntime.InvokeVoidAsync("alert", $"Cập nhật học sinh không thành công");
+
+            // Hiển thị thông báo lỗi cụ thể qua alert
+            if (errorResponse.Contains("UserName đã tồn tại"))
+            {
+                await jsruntime.InvokeVoidAsync("alert", "Lỗi: Tên đăng nhập đã tồn tại!");
+            }
+            else if (errorResponse.Contains("Email đã tồn tại"))
+            {
+                await jsruntime.InvokeVoidAsync("alert", "Lỗi: Email đã tồn tại!");
+            }
+            else if (errorResponse.Contains("PhoneNumber đã tồn tại"))
+            {
+                await jsruntime.InvokeVoidAsync("alert", "Lỗi: Số điện thoại đã tồn tại!");
+            }
+            else if (errorResponse.Contains("PasswordHash đã tồn tại"))
+            {
+                await jsruntime.InvokeVoidAsync("alert", "Lỗi: Mật khẩu này đã được sử dụng!");
+            }
+            else
+            {
+                await jsruntime.InvokeVoidAsync("alert", "Cập nhật học sinh thất bại! Vui lòng kiểm tra lại thông tin.");
+            }
+
+            StateHasChanged(); // Cập nhật giao diện
         }
-        CloseModal();
     }
 
 

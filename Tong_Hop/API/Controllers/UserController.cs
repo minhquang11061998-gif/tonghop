@@ -232,6 +232,32 @@ namespace API.Controllers
         {
             try
             {
+
+                // Kiểm tra trùng lặp
+                var isDuplicateUserName = await _db.Users.AnyAsync(u => u.UserName == user.UserName);
+                if (isDuplicateUserName)
+                {
+                    return BadRequest("UserName đã tồn tại.");
+                }
+
+                var isDuplicateEmail = await _db.Users.AnyAsync(u => u.Email == user.Email);
+                if (isDuplicateEmail)
+                {
+                    return BadRequest("Email đã tồn tại.");
+                }
+
+                var isDuplicatePhoneNumber = await _db.Users.AnyAsync(u => u.PhoneNumber == user.PhoneNumber);
+                if (isDuplicatePhoneNumber)
+                {
+                    return BadRequest("PhoneNumber đã tồn tại.");
+                }
+
+                var isDuplicatePasswordHash = await _db.Users.AnyAsync(u => u.PasswordHash == user.PasswordHash);
+                if (isDuplicatePasswordHash)
+                {
+                    return BadRequest("PasswordHash đã tồn tại.");
+                }
+
                 var roleStudent = await _db.Roles.Where(x => x.Name == "Student").Select(x => x.Id).FirstOrDefaultAsync();
                 var userId = Guid.NewGuid();
                 string avatarPath = null;
@@ -1190,6 +1216,31 @@ namespace API.Controllers
         {
             try
             {
+                // Kiểm tra trùng lặp
+                var isDuplicateUserName = await _db.Users.AnyAsync(u => u.UserName == user.UserName);
+                if (isDuplicateUserName)
+                {
+                    return BadRequest("UserName đã tồn tại.");
+                }
+
+                var isDuplicateEmail = await _db.Users.AnyAsync(u => u.Email == user.Email);
+                if (isDuplicateEmail)
+                {
+                    return BadRequest("Email đã tồn tại.");
+                }
+
+                var isDuplicatePhoneNumber = await _db.Users.AnyAsync(u => u.PhoneNumber == user.PhoneNumber);
+                if (isDuplicatePhoneNumber)
+                {
+                    return BadRequest("PhoneNumber đã tồn tại.");
+                }
+
+                var isDuplicatePasswordHash = await _db.Users.AnyAsync(u => u.PasswordHash == user.PasswordHash);
+                if (isDuplicatePasswordHash)
+                {
+                    return BadRequest("PasswordHash đã tồn tại.");
+                }
+
                 var roleTeacher = await _db.Roles.Where(x => x.Name == "Teacher").Select(x => x.Id).FirstOrDefaultAsync();
                 var userId = Guid.NewGuid();
                 string avatarPath = null;
