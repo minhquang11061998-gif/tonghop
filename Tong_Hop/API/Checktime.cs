@@ -73,7 +73,5 @@ namespace API
                 await Task.Delay(_interval, stoppingToken);
             }
         }
-
-
-    }
+	}
 }
