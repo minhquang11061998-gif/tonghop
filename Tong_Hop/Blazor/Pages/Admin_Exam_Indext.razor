@@ -60,10 +60,16 @@
                                 <td>@examroom.NameTeacher1</td>
                                 <td>@examroom.NameTeacher2</td>
                                 <td class="text-center">
-                                    <span class="badge @(examroom.Status == 1 ? "bg-success" : "bg-secondary")">
-                                        @examroom.Status
+                                    <span class="badge @(examroom.Status == 1 ? "bg-success" :
+                                                        examroom.Status == 2 ? "bg-warning" : "bg-secondary")">
+                                        @(
+                                            examroom.Status == 1 ? "Đang thi" :
+                                            examroom.Status == 2 ? "Chưa đến giờ" :
+                                            "Quá thời gian"
+                                            )
                                     </span>
                                 </td>
+
                                 <td class="text-center">
                                     <!-- Xem chi tiết -->
                                     <button class="btn btn-info btn-sm" @onclick="() => OpenDetailExamModal(examroom.IdTest)" title="Xem chi tiết">
@@ -219,8 +225,6 @@
 
 @code {
     private string searchRoom { get; set; } = string.Empty;
-    private int CurrentPage { get; set; } = 1;
-    private int ItemsPerPage { get; set; } = 5;
     private Guid selectedRoomExamId;
     private bool isExamRoomModalVisible = false;
     private GetAllExamCaThiDTO ExamroomDTO = new GetAllExamCaThiDTO();
@@ -242,12 +246,9 @@
 
     private IEnumerable<GetAllExamCaThiDTO> filteredExamRooms => ListExamroomDTOs
        .Where(r => string.IsNullOrEmpty(searchRoom) || r.Name.Contains(searchRoom, StringComparison.OrdinalIgnoreCase))
-       .Skip((CurrentPage - 1) * ItemsPerPage)
-       .Take(ItemsPerPage);
+       .ToList();
 
-    private int TotalPages => (int)Math.Ceiling((double)filteredExamRooms.Count() / ItemsPerPage);
-    private bool CanGoPrevious => CurrentPage > 1;
-    private bool CanGoNext => CurrentPage < TotalPages;
+   
     private bool isCreateExamModalVisible = false;
     private bool isDetailModalVisible = false;
 
@@ -311,8 +312,13 @@
     }
     protected override async Task OnInitializedAsync()
     {
-        await LoadExamRooms();
-        await LoadTestList();
+        try{
+            await LoadExamRooms();
+            await LoadTestList();
+        }catch(Exception){
+
+        }
+        
     }
 
     private async Task LoadExamRooms()
@@ -339,21 +345,7 @@
         selectedTestId = selectedTestId == id ? null : id;
     }
 
-    private void PreviousPage()
-    {
-        if (CanGoPrevious)
-        {
-            CurrentPage--;
-        }
-    }
-
-    private void NextPage()
-    {
-        if (CanGoNext)
-        {
-            CurrentPage++;
-        }
-    }
+   
 
     private void ToggleSelectAll(ChangeEventArgs e)
     {
