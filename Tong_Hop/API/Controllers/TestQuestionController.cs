@@ -391,10 +391,10 @@ namespace API.Controllers
 
                     _db.TestCode_TestQuestion.Add(testCodeQuestion);
                 }
+                await _db.SaveChangesAsync();
+
+                
             }
-
-            await _db.SaveChangesAsync();
-
             return Ok("THÀNH CÔNG");
         }
         #endregion
@@ -535,13 +535,25 @@ namespace API.Controllers
                 }
 
 
-                var questionTypeList = new List<string> { "Trắc nghiệm 1 Đáp án", "Trắc nghiệm nhiều đáp án", "Đúng/sai", "Điền vào chỗ trống" };
+                var questionTypeList = new List<string> { "Trắc nghiệm 1 Đáp án", "Trắc nghiệm nhiều đáp án", "Đúng/sai"};
                 CreateDropdownList(worksheet, questionTypeList, 2, 2, 100, 2); // Áp dụng cho cột 2 (Kiểu câu hỏi)
 
                 // Tạo dropdown list cho "Mức độ tư duy"
                 var thinkingLevelList = new List<string> { "Dễ", "Trung bình", "Khó", "Rất khó" };
                 CreateDropdownList(worksheet, thinkingLevelList, 2, 4, 100, 4); // Áp dụng cho cột 4 (Mức độ tư duy)
-
+                worksheet.Cells.Style.Locked = true;
+                for (int col = 1; col <= 11; col++)
+                {
+                    worksheet.Cells[2, col, 1000, col].Style.Locked = false;
+                }
+                worksheet.Protection.IsProtected = true;
+                worksheet.Protection.AllowDeleteColumns = false;
+                worksheet.Protection.AllowInsertColumns = false;
+                worksheet.Protection.AllowDeleteRows = false;
+                worksheet.Protection.AllowInsertRows = true;
+                worksheet.Protection.AllowFormatRows = true;
+                worksheet.Protection.AllowSelectLockedCells = false;
+                worksheet.Protection.AllowSelectUnlockedCells = true;
                 // Lưu file vào MemoryStream
                 var stream = new MemoryStream();
                 package.SaveAs(stream);

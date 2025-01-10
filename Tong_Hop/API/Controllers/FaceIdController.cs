@@ -386,7 +386,19 @@ namespace API.Controllers
                 {
                     return BadRequest("ID sinh viên không hợp lệ.");
                 }
-
+                var status = await (from a in _db.Tests
+                                    join b in _db.Subjects on a.SubjectId equals b.Id
+                                    join c in _db.Exams on b.Id equals c.SubjectId
+                                    join d in _db.Exam_Rooms on c.Id equals d.ExamId
+                                    where a.Code==login.codelogin
+                                    select d.Status).FirstOrDefaultAsync();
+                if(status== 2)
+                {
+                    return BadRequest("Chưa đến giờ thi");
+                }else if(status== 0)
+                {
+                    return BadRequest("Mã code đã hết hạn");
+                }
                 // Kiểm tra xem học sinh có thuộc lớp của bài thi không
                 var isStudentInClass = _db.Student_Classes.Any(sc =>
                     sc.StudentId.ToString() == studentIdFromToken &&

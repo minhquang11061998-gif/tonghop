@@ -47,10 +47,10 @@
                 </tbody>
             </table>
         </div>
-        <div style="flex: 1; padding: 20px; border-left: 1px solid #ddd; background-color: #f9f9f9;">
+        <div style="flex: 1; padding: 20px; border-left: 1px solid #e0e0e0; background-color: #f0f9ff;">
             @if (selectedConfig != null)
             {
-                <h4>Chi tiết thông tin</h4>
+                <h4 class="details-title">Chi tiết thông tin</h4>
                 <div class="details">
                     <p><strong>Họ tên:</strong> @selectedConfig.Name</p>
                     <p><strong>SĐT:</strong> @selectedConfig.PhoneNumber</p>
@@ -61,82 +61,12 @@
             }
             else
             {
-                <p>Vui lòng chọn một giáo viên để xem chi tiết.</p>
+                <p class="no-selection">Vui lòng chọn một giáo viên để xem chi tiết.</p>
             }
         </div>
     </div>
 </div>
 
-
-<style>
-    .table-fixed {
-        width: 100%;
-        border-collapse: collapse;
-        overflow-y: scroll;
-    }
-
-        .table-fixed thead {
-            background-color: #343a40;
-            color: #ffffff;
-        }
-
-        .table-fixed th, .table-fixed td {
-            padding: 12px;
-            text-align: left;
-            border-bottom: 1px solid #ddd;
-        }
-
-
-
-    .status {
-        font-weight: bold;
-    }
-
-        .status.viewed {
-            color: green;
-        }
-
-        .status.not-viewed {
-            color: orange;
-        }
-
-    .btn-view, .btn-delete {
-        padding: 8px 12px;
-        margin: 0 5px;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-    }
-
-    .btn-view {
-        background-color: #007bff;
-        color: white;
-    }
-
-    .btn-delete {
-        background-color: #dc3545;
-        color: white;
-    }
-
-    .btn-view:hover {
-        background-color: #0056b3;
-    }
-
-    .btn-delete:hover {
-        background-color: #c82333;
-    }
-
-    .details {
-        background-color: #ffffff;
-        padding: 15px;
-        border-radius: 8px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    }
-
-        .details p {
-            margin: 5px 0;
-        }
-</style>
 
 @code {
     private List<SystemConfigs> systemConfigs = new List<SystemConfigs>();

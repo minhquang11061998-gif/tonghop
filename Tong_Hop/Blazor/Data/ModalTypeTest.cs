@@ -3,6 +3,7 @@
     public enum ModalTypeTest
     {
         Add,
-        Edit
+        Edit,
+        Detail
     }
 }

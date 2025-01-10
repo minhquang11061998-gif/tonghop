@@ -21,12 +21,13 @@ namespace DataBase.DTOs
 		public Guid Id { get; set; }
 		public double Score { get; set; }
 		public string? Note { get; set; }
-		public DateTime CreationTime { get; set; }
-		public Guid ExamRoomStudentId { get; set; }
+        public string CheckTime { get; set; }
+        public string CreationTime { get; set; }
+        public string ElapsedTime { get; set; }
+        public Guid ExamRoomStudentId { get; set; }
 		public string StudentCode { get; set; }
 		public string StudentName { get; set; }
 		public string ClassName { get; set; }
-		public int GradeName { get; set; }
 		public string SubjectName { get; set; }
 		public string TestName { get; set; }
 		public string TestCode { get; set; }

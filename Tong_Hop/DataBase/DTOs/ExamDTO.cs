@@ -22,6 +22,7 @@ namespace DataBase.DTOs
     public class GetAllExamDTO
     {
         public Guid Id { get; set; }
+        
         public string? Name { get; set; }
         public int Status { get; set; }
         public string?  NameSubject { get; set; }
@@ -70,6 +71,6 @@ namespace DataBase.DTOs
         public DateTime CreationTime { get; set; }
         public Guid IdEaxmRoom { get; set; }
         public Guid IdTest { get; set; }
-        public string CodeTest { get; set; }
+        public string? CodeTest { get; set; }
     }
 }

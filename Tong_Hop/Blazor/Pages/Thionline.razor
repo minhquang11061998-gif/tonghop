@@ -5,158 +5,116 @@
 @inject IJSRuntime jsruntime
 @inject HttpClient Http
 @inject NavigationManager navigate
+
 @if (!isLoginFormVisible)
 {
-    <div class="row mt-5">
-        <form class="d-flex justify-content-center">
-            <div class="rounded-3 bg-light shadow-lg" style="height: auto; width: 700px; padding: 20px;">
-                <div class="d-flex justify-content-center">
-                    <img style="height: 170px;" src="img/Rectangle89.png" alt="Alternate Text" />
-                </div>
-                <div class="d-flex justify-content-center mt-3">
-                    <img id="cameraImage" src="https://localhost:7046/api/FaceId/camera-stream"
-                         alt="Alternate Text"
-                         style="width: 50%; max-height: 300px; object-fit: cover; border-radius: 10px; border-color:blue" />
-                </div>
-                <div class="d-flex justify-content-center py-3">
-                    @if (isLoading)
-                    {
-                        <p>Đang quét khuôn mặt, vui lòng đợi...</p>
-                    }
-                    else
-                    {
-                        <button class="btn btn-primary mt-3 w-50" id="submitBtn" @onclick="ScanFace" type="button" style="height: 50px;">Xác nhận khuôn mặt</button>
-                    }
-                </div>
+    <div class="row mt-5 d-flex justify-content-center">
+        <div class="rounded-3 bg-light shadow-lg p-4" style="width: 700px;">
+            <div class="d-flex justify-content-center">
+                <img style="height: 170px;" src="img/Rectangle89.png" alt="Logo" />
             </div>
-        </form>
+            <div class="d-flex justify-content-center mt-3">
+                <img id="cameraImage" src="https://localhost:7046/api/FaceId/camera-stream"
+                     alt="Camera Feed"
+                     class="rounded border border-primary"
+                     style="width: 50%; max-height: 300px; object-fit: cover;" />
+            </div>
+            <div class="d-flex justify-content-center py-3">
+                @if (isLoading)
+                {
+                    <p class="text-muted">Đang quét khuôn mặt, vui lòng đợi...</p>
+                }
+                else
+                {
+                    <button class="btn btn-primary w-50" id="submitBtn" @onclick="ScanFace" type="button">Xác nhận khuôn mặt</button>
+                }
+            </div>
+        </div>
     </div>
 }
+
 @if (isLoginFormVisible && !isFaceScanComplete)
 {
-    <div class="row mt-5">
-        <form class="d-flex justify-content-center" @onsubmit="HandleSubmit">
-            <div class="rounded-3 bg-light shadow-lg" style="height:450px;width:700px">
-                <div class="d-flex justify-content-center">
-                    <img style="height:200px" src="img/Rectangle89.png" alt="Alternate Text" />
-                </div>
-                <label class="fs-4 px-3 text-black-50">Nhập mã dự thi:</label>
-                <div class="d-flex justify-content-center py-2">
-                    <input type="text" class="input-box text-center fw-bold" maxlength="1" oninput="moveToNext(this, 'box2')" id="box1">
-                    <input type="text" class="input-box text-center fw-bold" maxlength="1" oninput="moveToNext(this, 'box3')" id="box2">
-                    <input type="text" class="input-box text-center fw-bold" maxlength="1" oninput="moveToNext(this, 'box4')" id="box3">
-                    <input type="text" class="input-box text-center fw-bold" maxlength="1" oninput="moveToNext(this, 'box5')" id="box4">
-                    <input type="text" class="input-box text-center fw-bold" maxlength="1" oninput="moveToNext(this, 'box6')" id="box5">
-                    <input type="text" class="input-box text-center fw-bold" maxlength="1" oninput="moveToNext(this, 'submitBtn')" id="box6">
-                </div>
-                <div class="d-flex justify-content-center py-3">
-                    <button id="submitBtn" @onclick="HandleSubmit" class="btn btn-primary mt-3 w-25" type="button" style="height:50px" disabled="@isSubmitDisabled">Tiếp Theo</button>
-                    <div id="message" class="mt-3"></div>
-                </div>
+    <div class="row mt-5 d-flex justify-content-center">
+        <div class="rounded-3 bg-light shadow-lg p-4" style="width: 700px;">
+            <div class="d-flex justify-content-center">
+                <img style="height: 170px;" src="img/Rectangle89.png" alt="Logo" />
             </div>
-        </form>
+            <label class="fs-5 text-secondary mt-3">Nhập mã dự thi:</label>
+            <div class="d-flex justify-content-center py-2">
+                @for (int i = 1; i <= 6; i++)
+                {
+                    <input type="text" class="form-control text-center fw-bold mx-1"
+                           maxlength="1"
+                           style="width: 60px; height: 60px; border-radius: 10px;"
+                           oninput="moveToNext(this, 'box@((i == 6) ? "submitBtn" : $"box{(i + 1)}")')"
+                           id="box@(i)" />
+                }
+            </div>
+            <div class="d-flex justify-content-center py-3">
+                <button id="submitBtn" @onclick="HandleSubmit" class="btn btn-primary w-25" type="button" disabled="@isSubmitDisabled">Tiếp Theo</button>
+            </div>
+        </div>
     </div>
 }
 
 @if (isLoginFormVisible && isFaceScanComplete)
 {
-    <div class="row mt-5">
-        <form class="d-flex justify-content-center">
-            <div class="rounded-3 bg-light shadow-lg" style="height:450px;width:700px">
-                <div class="d-flex justify-content-center">
-                    <img style="height:170px" src="img/Rectangle89.png" alt="Alternate Text" />
-                </div>
-                <div class="py-1 px-4">
-                    <label>Họ và Tên:</label><br />
-                    <label>Email:</label><br />
-                    <label>Ngày Sinh:</label><br />
-                    <label>Mã học sinh:</label><br />
-                    <label>Môn Thi:</label><br />
-                    <label>Mã môn thi:</label><br />
-                    <label>Thời gian:</label>
-                </div>
-                <div class="d-flex justify-content-center py-3">
-                    <button class="btn btn-primary mt-3 w-25" style="height:50px">Bắt Đầu Làm Bài</button>
-                </div>
+    <div class="row mt-5 d-flex justify-content-center">
+        <div class="rounded-3 bg-light shadow-lg p-4" style="width: 700px;">
+            <div class="d-flex justify-content-center">
+                <img style="height: 170px;" src="img/Rectangle89.png" alt="Logo" />
             </div>
-        </form>
+            <div class="py-1 px-4">
+                <label class="fw-bold">Họ và Tên:</label><br />
+                <label class="fw-bold">Email:</label><br />
+                <label class="fw-bold">Ngày Sinh:</label><br />
+                <label class="fw-bold">Mã học sinh:</label><br />
+                <label class="fw-bold">Môn Thi:</label><br />
+                <label class="fw-bold">Mã môn thi:</label><br />
+                <label class="fw-bold">Thời gian:</label>
+            </div>
+            <div class="d-flex justify-content-center py-3">
+                <button class="btn btn-success w-25" style="height: 50px;">Bắt Đầu Làm Bài</button>
+            </div>
+        </div>
     </div>
 }
 
-@* <h3>Quét Khuôn Mặt</h3>
-
-<button @onclick="ScanFace" class="btn btn-primary">Quét Khuôn Mặt</button>
-
-
-@if (isLoading)
-{
-    <p>Đang quét khuôn mặt...</p>
-} *@
 @code {
     private bool isSubmitDisabled = true;
     private bool isLoginFormVisible = false;
     private bool isFaceScanComplete = false;
     private string code = "";
     private bool isLoading = false;
-    private string message;
 
     private async Task ScanFace()
     {
         isLoading = true;
-        message = string.Empty;
-
         try
         {
             var token = await GetTokenAsync();
-            if (string.IsNullOrEmpty(token))
-            {
-                message = "Không tìm thấy mã truy cập!";
-                await jsruntime.InvokeVoidAsync("alert", message);
-                return;
-            }
-
             Http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-            var response = await Http.PostAsync("https://localhost:7046/api/FaceId/check-face", null);
 
+            var response = await Http.PostAsync("https://localhost:7046/api/FaceId/check-face", null);
             if (response.IsSuccessStatusCode)
             {
-                var contentType = response.Content.Headers.ContentType?.MediaType;
-                if (contentType == "application/json")
+                var responseData = await response.Content.ReadFromJsonAsync<JsonElement>();
+                if (responseData.TryGetProperty("message", out JsonElement messageElement) &&
+                    messageElement.GetString() == "Face matched.")
                 {
-                    var responseData = await response.Content.ReadFromJsonAsync<JsonElement>();
-                    if (responseData.TryGetProperty("message", out JsonElement messageElement))
-                    {
-                        var message = messageElement.GetString();
-
-                        if (message == "Face matched.")
-                        {
-                            await jsruntime.InvokeVoidAsync("alert", "Nhận diện thành công!");
-                            isLoginFormVisible = true;
-
-
-                        }
-                    }
+                    await jsruntime.InvokeVoidAsync("alert", "Nhận diện thành công!");
+                    isLoginFormVisible = true;
                 }
                 else
                 {
-                    var errorContent = await response.Content.ReadAsStringAsync();
-                    await jsruntime.InvokeVoidAsync("alert", $"Dữ liệu phản hồi không hợp lệ: {errorContent}");
-                    await jsruntime.InvokeVoidAsync("reloadCameraFeed");
+                    await jsruntime.InvokeVoidAsync("alert", "Nhận diện không thành công. Thử lại!");
                 }
             }
-            else
-            {
-                var errorContent = await response.Content.ReadAsStringAsync();
-                await jsruntime.InvokeVoidAsync("alert", $"Dữ liệu phản hồi không hợp lệ: {errorContent}");
-                await jsruntime.InvokeVoidAsync("reloadCameraFeed");
-            }
         }
-        catch (Exception ex)
+        catch
         {
-            message = $"Đã xảy ra lỗi: {ex.Message}";
-            await jsruntime.InvokeVoidAsync("alert", message);
-            await jsruntime.InvokeVoidAsync("reloadCameraFeed");
-
+            await jsruntime.InvokeVoidAsync("alert", "Đã xảy ra lỗi trong quá trình quét khuôn mặt.");
         }
         finally
         {
@@ -164,33 +122,26 @@
         }
     }
 
-
-
     private async Task HandleSubmit()
     {
         code = await jsruntime.InvokeAsync<string>("getCode");
-
         if (!string.IsNullOrEmpty(code) && code.Length == 6 && await VerifyCode())
         {
-            // isFaceScanComplete = true;
             navigate.NavigateTo($"/exam/{code}");
-            await jsruntime.InvokeVoidAsync("enterExamMode");
         }
         else
         {
+            
             await jsruntime.InvokeVoidAsync("alert", "Mã không hợp lệ!");
         }
-
-        StateHasChanged();
     }
 
     private async Task<bool> VerifyCode()
     {
         var token = await GetTokenAsync();
-
         Http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        var response = await Http.PostAsJsonAsync("https://localhost:7046/api/FaceId/Login-exam", new { codelogin = code });
 
+        var response = await Http.PostAsJsonAsync("https://localhost:7046/api/FaceId/Login-exam", new { codelogin = code });
         return response.IsSuccessStatusCode;
     }
 
@@ -199,67 +150,3 @@
         return await jsruntime.InvokeAsync<string>("localStorage.getItem", "YourSuperSecretKeyHere");
     }
 }
-
-<style>
-    .row {
-        --bs-gutter-x: 0;
-    }
-
-    .input-box {
-        margin-left: 10px;
-        width: 80px;
-        border-radius: 20px;
-        box-shadow: 10px;
-        height: 80px;
-        border-color: dodgerblue;
-    }
-</style>
-<script>
-    async function enterExamMode() {
-    
-            await document.documentElement.requestFullscreen();
-            if (navigator.keyboard) {
-                await navigator.keyboard.lock();
-            }
-            document.addEventListener("contextmenu", (event) => {
-                event.preventDefault();
-            });
-    }
-    
-    function reloadCameraFeed() {
-        const cameraImage = document.querySelector("#cameraImage");
-        if (cameraImage) {
-            cameraImage.src = "https://localhost:7046/api/FaceId/camera-stream?" + new Date().getTime();
-        }
-    }
-    function getCode() {
-        let code = '';
-        for (let i = 1; i <= 6; i++) {
-            code += document.getElementById(`box${i}`).value;
-        }
-        return code;
-    }
-
-    function moveToNext(current, nextId) {
-        if (current.value.length >= 1) {
-            document.getElementById(nextId).focus();
-        } else {
-            const previousId = getPreviousId(current.id);
-            if (previousId) {
-                document.getElementById(previousId).focus();
-            }
-        }
-        validateCode();
-    }
-
-    function getPreviousId(currentId) {
-        const currentIndex = parseInt(currentId.replace('box', '')) - 1;
-        return currentIndex >= 1 ? `box${currentIndex}` : null;
-    }
-
-    function validateCode() {
-        const code = Array.from({ length: 6 }, (_, i) => document.getElementById(`box${i + 1}`).value).join('');
-        const submitBtn = document.getElementById('submitBtn');
-        submitBtn.disabled = code.length < 6;
-    }
-</script>
