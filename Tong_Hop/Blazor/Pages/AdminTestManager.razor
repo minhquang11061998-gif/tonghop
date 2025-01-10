@@ -1201,11 +1201,11 @@
             await Jsruntime.InvokeVoidAsync("alert", "Thời gian không băt đầu không được lớn hơn thời gian kết thúc!");
             return;
         }
-        else if (testDTO.StartTime.Hour < 8 || testDTO.StartTime.Hour >= 17 || testDTO.EndTime.Hour < 8 || testDTO.EndTime.Hour >= 17)
-        {
-            await Jsruntime.InvokeVoidAsync("alert", "Thời gian bài thi phải nằm trong giờ hành chính (8:00 - 17:00)!");
-            return;
-        }
+        // else if (testDTO.StartTime.Hour < 8 || testDTO.StartTime.Hour >= 17 || testDTO.EndTime.Hour < 8 || testDTO.EndTime.Hour >= 17)
+        // {
+        //     await Jsruntime.InvokeVoidAsync("alert", "Thời gian bài thi phải nằm trong giờ hành chính (8:00 - 17:00)!");
+        //     return;
+        // }
 
         var response = await client.PostAsJsonAsync<TestDTO>("https://localhost:7046/api/Test/create-test-testcode-examroomtestcode", testDTO);
         if (response.IsSuccessStatusCode)

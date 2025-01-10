@@ -25,14 +25,22 @@ function getCode() {
 
 function moveToNext(current, nextId) {
     if (current.value.length >= 1) {
-        document.getElementById(nextId).focus();
+        // Chuy?n sang ô ti?p theo n?u ô hi?n t?i ?ã có ký t?
+        const nextElement = document.getElementById(nextId);
+        if (nextElement) {
+            nextElement.focus();
+        }
     } else {
+        // Quay l?i ô tr??c n?u ng??i dùng xóa (n?u có ô tr??c ?ó)
         const previousId = getPreviousId(current.id);
         if (previousId) {
-            document.getElementById(previousId).focus();
+            const previousElement = document.getElementById(previousId);
+            if (previousElement) {
+                previousElement.focus();
+            }
         }
     }
-    validateCode();
+    validateCode(); // G?i hàm validate (n?u có logic thêm)
 }
 
 function getPreviousId(currentId) {
