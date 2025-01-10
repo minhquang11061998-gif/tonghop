@@ -8,7 +8,7 @@
 body {
     margin: 0;
     padding: 0;
-    background-color: #ffffff; /* Nền trắng */
+  
     width: 100vw; /* Chiều rộng 100% viewport */
     height: 100vh; /* Chiều cao 100% viewport */
     overflow-x: hidden; /* Loại bỏ cuộn ngang */
@@ -16,7 +16,7 @@ body {
 
 /* Đặt nền trắng cho phần chính */
 .main-content {
-    background-color: #ffffff; /* Nền màu trắng */
+   
     padding: 20px; /* Khoảng cách nội dung */
     width: 100%; /* Chiều rộng 100% */
     min-height: 86vh; /* Đảm bảo phủ toàn bộ chiều cao màn hình */
@@ -35,7 +35,7 @@ body {
     margin: 0;
     padding: 0;
     display: flex;
-    background: #ffffff; /* Nền trắng cho mỗi hàng */
+   /* Nền trắng cho mỗi hàng */
 }
 
 /* Cột bên trái */
@@ -171,6 +171,7 @@ label.form-label {
     justify-content: center; /* Căn ngang */
     align-items: center; /* Căn dọc */
     height: 250px; /* Chiều cao của ô biểu đồ */
+    margin:20px;
 }
 
     .chart-wrapper canvas {
@@ -227,7 +228,7 @@ label.form-label {
     }
 
 .chart-group {
-    margin-bottom: 20px; /* Khoảng cách giữa các biểu đồ */
+    margin-left: 50px; /* Khoảng cách giữa các biểu đồ */
 }
 
 .chart-group-title {
@@ -516,3 +517,18 @@ h2.text-center {
         transform: rotate(0deg);
     }
 }
+body {
+    margin: 0;
+}
+
+canvas {
+    display: block;
+}
+
+
+
+
+
+
+
+

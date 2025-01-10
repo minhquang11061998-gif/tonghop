@@ -320,8 +320,8 @@ namespace API.Controllers
 					var ExamRoom = new Exam_Room
 					{
 						Id = Guid.NewGuid(),
-                        StartTime = DateTime.Today.AddHours(testDTO.StartTime.Hour).AddMinutes(testDTO.StartTime.Minute),
-                        EndTime = DateTime.Today.AddHours(testDTO.EndTime.Hour).AddMinutes(testDTO.EndTime.Minute),
+                        StartTime = testDTO.StartTime,
+                        EndTime = testDTO.EndTime,
                         Status = 1,
 						ExamId = testDTO.ExamId,
 						RoomId = testDTO.RoomId,
