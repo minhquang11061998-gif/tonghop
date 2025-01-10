@@ -678,7 +678,8 @@ namespace API.Controllers
                          new Claim("email",data.Email.ToString()),
                          new Claim("numberPhone",data.PhoneNumber.ToString()),
                          new Claim("CodeStudent", studentId.Code.ToString()),
-                         
+                        new Claim("anh", data.Avartar?.ToString() ?? "DefaultAvatar"),
+
                         }),
                         Expires = DateTime.UtcNow.AddMinutes(15),
                         SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature),
