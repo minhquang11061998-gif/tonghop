@@ -286,7 +286,16 @@ namespace API.Controllers
                                        && s.SubjectId == t.SubjectId && s.StudentId == IdStudent
                                        select s).ToListAsync();
 
-                foreach (var item in ListScore)
+				var examroomstudent = await (from a in _db.Tests
+											 join b in _db.Exam_Room_TestCodes on a.Id equals b.TestId
+											 join c in _db.Exam_Room_Students on b.Id equals c.ExamRoomTestCodeId
+											 where a.Code == CodeTest && c.StudentId == IdStudent
+											 select new
+											 {
+												 c.Id
+											 }).FirstOrDefaultAsync();
+
+				foreach (var item in ListScore)
                 {
                     if (item.Score == 0)
                     {
@@ -310,7 +319,7 @@ namespace API.Controllers
 					Id = Guid.NewGuid(),
 					Score = ExamResultStorage,
 					CreationTime = DateTime.Now,
-					ExamRoomStudentId = IdStudent
+					ExamRoomStudentId = examroomstudent.Id
 				};
 
 				_db.ExamHistorys.Add(data);

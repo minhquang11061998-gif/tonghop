@@ -206,8 +206,9 @@ else
 		try
 		{
 			isLoading = true;
-			hist = await client.GetFromJsonAsync<HistDTO>($"api/ViewExam/test-testcode-question-await?CodeTest={CodeTest}");
-			infomationDTOs = await client.GetFromJsonAsync<List<infomationDTO>>($"https://localhost:7046/api/ViewExam/information_exam?code={CodeTest}&id={isdtudent}");
+			string formattedScore = CodeTest.ToString().PadLeft(6, '0');
+			hist = await client.GetFromJsonAsync<HistDTO>($"api/ViewExam/test-testcode-question-await?CodeTest={formattedScore}");
+			infomationDTOs = await client.GetFromJsonAsync<List<infomationDTO>>($"https://localhost:7046/api/ViewExam/information_exam?code={formattedScore}&id={isdtudent}");
 		}
 		catch (Exception ex)
 		{
@@ -248,7 +249,8 @@ else
 	}
 	private async Task DeleteHisst(int codetest, Guid idquest)
 	{
-		var res = await client.DeleteAsync($"api/ViewExam/Delete_hist?Cotesst={codetest}&IDQuestion={idquest}&IDStudent={isdtudent}");
+		string formattedScore = CodeTest.ToString().PadLeft(6, '0');
+		var res = await client.DeleteAsync($"api/ViewExam/Delete_hist?Cotesst={formattedScore}&IDQuestion={idquest}&IDStudent={isdtudent}");
 
 		if (!res.IsSuccessStatusCode)
 		{
@@ -264,9 +266,10 @@ else
 			examhistories.TestQuestionAnswerId = idAnswer;
 			examhistories.Id = Guid.NewGuid(); // Tạo ID duy nhất cho lịch sử
 
+			string formattedScore = CodeTest.ToString().PadLeft(6, '0');
 			// Gửi yêu cầu POST
 			var response = await client.PostAsJsonAsync(
-				$"api/ViewExam/create-hist?CodeTesst={codetest}&GuidId={isdtudent}&answerId={idAnswer}",
+				$"api/ViewExam/create-hist?CodeTesst={formattedScore}&GuidId={isdtudent}&answerId={idAnswer}",
 				examhistories
 			);
 
@@ -310,8 +313,9 @@ else
 	{
 		try
 		{
-			var score = await client.GetAsync($"api/ViewExam/Exam_results_storage?CodeTest={CodeTest}&ExamResultStorage={STFDto.TotalScore}&IdStudent={isdtudent}");
-			var examhistory = await client.PostAsync($"api/ViewExam/Exam_Histories?CodeTest={CodeTest}&ExamResultStorage={STFDto.TotalScore}&IdStudent={isdtudent}", null);
+			string formattedScore = CodeTest.ToString().PadLeft(6, '0');
+			var score = await client.GetAsync($"api/ViewExam/Exam_results_storage?CodeTest={formattedScore}&ExamResultStorage={STFDto.TotalScore}&IdStudent={isdtudent}");
+			var examhistory = await client.PostAsync($"api/ViewExam/Exam_Histories?CodeTest={formattedScore}&ExamResultStorage={STFDto.TotalScore}&IdStudent={isdtudent}", null);
 		}
 		catch (Exception)
 		{
@@ -322,7 +326,8 @@ else
 	// Hàm kiểm tra xem câu hỏi đã có bao nhiêu đáp án được lưu cho sinh viên
 	private async Task<int> CheckAnswerHistory(int codetest, Guid questionId, string studentId)
 	{
-		var response = await client.GetAsync($"api/ViewExam/check-answer-history?codetest={codetest}&questionId={questionId}&studentId={studentId}");
+		string formattedScore = CodeTest.ToString().PadLeft(6, '0');
+		var response = await client.GetAsync($"api/ViewExam/check-answer-history?codetest={formattedScore}&questionId={questionId}&studentId={studentId}");
 
 		if (response.IsSuccessStatusCode)
 		{
@@ -364,7 +369,8 @@ else
 			isLoading = true;
 
 			// Gọi API lấy thời gian làm bài
-			var response = await client.GetAsync($"https://localhost:7046/api/ViewExam/GetExamDuration?codeTest={CodeTest}");
+			string formattedScore = CodeTest.ToString().PadLeft(6, '0');
+			var response = await client.GetAsync($"https://localhost:7046/api/ViewExam/GetExamDuration?codeTest={formattedScore}");
 			if (response.IsSuccessStatusCode)
 			{
 				var durationMinutes = await response.Content.ReadFromJsonAsync<int>();

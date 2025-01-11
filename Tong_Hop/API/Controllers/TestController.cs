@@ -263,17 +263,17 @@ namespace API.Controllers
                     return BadRequest("Không tìm thấy số lượng sinh viên tối đa cho lớp học.");
                 }
 
-				var testCount = await (from t in _db.Tests
-									   join pts in _db.PointType_Subjects on t.PointTypeId equals pts.PointTypeId
-									   join subj in _db.Subjects on pts.SubjectId equals subj.Id
-									   join p in _db.PointTypes on pts.PointTypeId equals p.Id
-									   join gs in _db.Subject_Grades on subj.Id equals gs.SubjectId
-									   join g in _db.Grades on gs.GradeId equals g.Id
-									   join cl in _db.Classes on g.Id equals cl.GradeId
-									   where t.SubjectId == testDTO.SubjectId
-											 && t.PointTypeId == testDTO.PointTypeId
-											 && cl.Id == testDTO.ClassId
-									   select t.Id).CountAsync();
+                var testCount = await (from t in _db.Tests
+                                     join pts in _db.PointType_Subjects on t.PointTypeId equals pts.PointTypeId
+                                     join subj in _db.Subjects on pts.SubjectId equals subj.Id
+                                     join p in _db.PointTypes on pts.PointTypeId equals p.Id
+                                     join gs in _db.Subject_Grades on subj.Id equals gs.SubjectId
+                                     join g in _db.Grades on gs.GradeId equals g.Id
+                                     join cl in _db.Classes on g.Id equals cl.GradeId
+                                     where t.SubjectId == testDTO.SubjectId &&
+                                           t.PointTypeId == testDTO.PointTypeId &&
+                                           t.ClassId == testDTO.ClassId
+                                     select t.Id).Distinct().CountAsync();
 
 				var maxQuantity = await (from pts in _db.PointType_Subjects
 										 where pts.SubjectId == testDTO.SubjectId
