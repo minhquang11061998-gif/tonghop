@@ -232,7 +232,6 @@ namespace API.Controllers
         {
             try
             {
-
                 // Kiểm tra trùng lặp
                 var isDuplicateUserName = await _db.Users.AnyAsync(u => u.UserName == user.UserName);
                 if (isDuplicateUserName)
@@ -251,11 +250,12 @@ namespace API.Controllers
                 {
                     return BadRequest("PhoneNumber đã tồn tại.");
                 }
+
                 var roleStudent = await _db.Roles.Where(x => x.Name == "Student").Select(x => x.Id).FirstOrDefaultAsync();
                 var userId = Guid.NewGuid();
-                string avatarPath = null;
+                string avatarPath;
 
-                // Kiểm tra nếu có file ảnh, tiến hành tải lên, nếu không có ảnh thì avatarPath sẽ là null
+                // Xử lý ảnh đại diện
                 if (avatarFile != null && avatarFile.Length > 0)
                 {
                     var uploadParams = new ImageUploadParams
@@ -270,6 +270,14 @@ namespace API.Controllers
                     {
                         avatarPath = uploadResult.SecureUrl.ToString();
                     }
+                    else
+                    {
+                        avatarPath = "https://res.cloudinary.com/dbhqjvozb/image/upload/v1735837528/qolucruwvl86djlfvz4n.png"; // Gán giá trị mặc định nếu upload thất bại
+                    }
+                }
+                else
+                {
+                    avatarPath = "https://res.cloudinary.com/dbhqjvozb/image/upload/v1735837528/qolucruwvl86djlfvz4n.png"; // Gán giá trị mặc định nếu không có ảnh
                 }
 
                 // Cập nhật thời gian thay đổi cuối cùng
@@ -280,7 +288,7 @@ namespace API.Controllers
                 {
                     Id = userId, // Sử dụng userId vừa tạo
                     FullName = user.FullName,
-                    Avartar = avatarPath, // Đường dẫn ảnh lưu trong thuộc tính Avatar (null nếu không có ảnh)
+                    Avartar = avatarPath, // Đường dẫn ảnh lưu trong thuộc tính Avatar
                     Email = user.Email,
                     UserName = user.UserName,
                     PasswordHash = user.PasswordHash,
@@ -343,7 +351,7 @@ namespace API.Controllers
                     }
                 }
 
-                return Ok("Them thanh cong");
+                return Ok("Thêm thành công");
             }
             catch (Exception ex)
             {
@@ -1241,7 +1249,10 @@ namespace API.Controllers
                         avatarPath = uploadResult.SecureUrl.ToString();
                     }
                 }
-
+                if (string.IsNullOrEmpty(avatarPath))
+                {
+                    avatarPath = "https://res.cloudinary.com/dbhqjvozb/image/upload/v1735837528/qolucruwvl86djlfvz4n.png";
+                }
                 // Cập nhật thời gian thay đổi cuối cùng
                 var currentDateTime = DateTime.UtcNow;
 
