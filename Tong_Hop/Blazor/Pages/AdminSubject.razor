@@ -61,7 +61,7 @@
                                 {
                                     @foreach (var itemsubject in subjects)
                                     {
-                                        <tr>
+                                        <tr @onclick="()=>GetTeacher(itemsubject.Id)">
                                             <td></td> <!-- Cột để căn chỉnh cấp con -->
                                             <td>@itemsubject.Name</td>
                                             <td></td>

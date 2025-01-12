@@ -105,14 +105,14 @@
                         </td>
                         <td>@item.Name</td>
                         <td>@item.Email</td>
-                        <td>@item.dateofbirt</td>
+                        <td>@item.dateofbirt.ToString("dd/MM/yyyy")</td>
                         <td>@item.codestudent</td>
                         <td class="text-center">@item.RegistrationStatus</td>
                         <td>
                             <td class="text-center">
-                            <button class="btn btn-sm btn-success rounded-pill px-3 py-2" @onclick="()=>showdata(item.idstudent)">
-                                Đăng ký
-                            </button>
+                                <button class="btn btn-sm btn-success rounded-pill px-3 py-2" @onclick="()=>showdata(item.idstudent)">
+                                    Đăng ký
+                                </button>
                                 <button class="btn btn-sm btn-danger rounded-pill px-3" @onclick="() => delete(item.idstudent.ToString())">
                                     Xóa
                                 </button>
@@ -176,13 +176,14 @@
     {
         showfaceid = false;
     }
-   
+
     private async Task delete(string id)
     {
         var resrpon = await client.DeleteAsync($"https://localhost:7046/api/FaceId/remove-face?userId={id}");
         if (resrpon.IsSuccessStatusCode)
         {
             await jsruntime.InvokeVoidAsync("alert", "xóa dữ liệu thành công");
+            await getallstudent(selectidclass);
         }
         else { await jsruntime.InvokeVoidAsync("alert", "xóa dữ liệu thất bại"); }
 
@@ -204,6 +205,7 @@
                 await jsruntime.InvokeVoidAsync("alert", "thêm dữ liệu  thành công");
                 await jsruntime.InvokeVoidAsync("reloadCameraFeed");
                 showfaceid = false;
+                await getallstudent(selectidclass);
 
 
             }
