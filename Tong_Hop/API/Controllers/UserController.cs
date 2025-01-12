@@ -682,12 +682,12 @@ namespace API.Controllers
         [HttpPost("login")]
         public IActionResult Login([FromBody] LoginModelDTO model)
         {
-            var data = _db.Users.FirstOrDefault(temp => temp.UserName == model.Username);
+            var data = _db.Users.FirstOrDefault(temp => temp.Email == model.Email);
             var student = _db.Roles.FirstOrDefault(temp => temp.Id == data.RoleId);
             var studentId = _db.Students.FirstOrDefault(temp => temp.UserId == data.Id);
             var teacherId = _db.Teachers.FirstOrDefault(temp => temp.UserId == data.Id);
 
-            if (model.Username == data.UserName && model.Password == data.PasswordHash)
+            if (model.Email == data.Email && model.Password == data.PasswordHash)         
             {
                 if (student.Name == "Student")
                 {
@@ -704,7 +704,6 @@ namespace API.Controllers
                          new Claim("email",data.Email.ToString()),
                          new Claim("numberPhone",data.PhoneNumber.ToString()),
                          new Claim("CodeStudent", studentId.Code.ToString()),
-                        new Claim("anh", data.Avartar?.ToString() ?? "DefaultAvatar"),
 
                         }),
                         Expires = DateTime.UtcNow.AddMinutes(15),
@@ -730,7 +729,7 @@ namespace API.Controllers
                          new Claim("nameab",data.FullName.ToString()),
                          new Claim("Id",student.Name.ToString()),
                          new Claim("Idteacher",teacherId.Id.ToString()),
-                         new Claim("email",data.Email.ToString()),
+                         new Claim("emailclam",data.Email.ToString()),
                          new Claim("numberPhone",data.PhoneNumber.ToString()),
                          //new Claim("avatar",data.Avartar.ToString()),
                          

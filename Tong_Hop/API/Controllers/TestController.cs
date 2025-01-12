@@ -302,7 +302,7 @@ namespace API.Controllers
 					await _db.Tests.AddAsync(newTest);
 					await _db.SaveChangesAsync();
 
-					// Tạo TestCode tương ứng với số lượng MaxStudent
+					// Tạo TestCode tương ứng với số lượng MaxStudent 
 					for (int i = 0; i < maxStudents; i++)
 					{
 						var newTestCode = new TestCodes
@@ -316,6 +316,12 @@ namespace API.Controllers
 						// Thêm thực thể TestCode vào DbContext
 						await _db.TestCodes.AddAsync(newTestCode);
 					}
+
+                    var data = await _db.Exam_Rooms.FirstOrDefaultAsync(x => x.StartTime == testDTO.StartTime && x.EndTime == testDTO.EndTime && x.RoomId == testDTO.RoomId);
+                    if (data != null)
+                    {
+                        return BadRequest("Đã có ca thi ở thời điểm hiện tại");
+                    }
 
 					var ExamRoom = new Exam_Room
 					{
