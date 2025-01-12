@@ -128,7 +128,7 @@
                                 <label class="form-label">Email</label>
                                 <input type="email" class="form-control" placeholder="Nhập email" @bind="usercreate.Email" />
                                 @if (!string.IsNullOrWhiteSpace(usercreate.Email) &&
-                               !new System.ComponentModel.DataAnnotations.EmailAddressAttribute().IsValid(usercreate.Email))
+                              !new System.ComponentModel.DataAnnotations.EmailAddressAttribute().IsValid(usercreate.Email))
                                 {
                                     <span class="text-danger">Email không hợp lệ.</span>
                                 }
@@ -136,11 +136,11 @@
                             <div class="col-md-6">
                                 <label class="form-label">Số điện thoại</label>
                                 <input type="text"
-                                       class="form-control"
-                                       maxlength="10"
-                                       placeholder="Nhập số điện thoại"
-                                       @bind="usercreate.PhoneNumber"
-                                       oninput="this.value = this.value.replace(/[^0-9]/g, '');" />
+                                class="form-control"
+                                maxlength="10"
+                                placeholder="Nhập số điện thoại"
+                                @bind="usercreate.PhoneNumber"
+                                oninput="this.value = this.value.replace(/[^0-9]/g, '');" />
                                 @if (string.IsNullOrWhiteSpace(usercreate.PhoneNumber))
                                 {
                                     <span class="text-danger">Vui lòng nhập số điện thoại.</span>
@@ -460,6 +460,7 @@
             var respon = await client.PostAsync("https://localhost:7046/api/User/create-user-Teacher", content);
             if (respon.IsSuccessStatusCode)
             {
+                await jsruntime.InvokeVoidAsync("alert", "Thêm giáo viên thành công");
                 CloseModal();
                 await getuser();
             }

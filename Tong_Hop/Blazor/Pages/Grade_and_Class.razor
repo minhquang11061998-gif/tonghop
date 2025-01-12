@@ -206,7 +206,7 @@
                                 <input type="email"  class="form-control" placeholder="Nhập email" @bind="user.Email"
                                 disabled="@(CurrentModalType == ModalType.Detail)" />
                                 @if (!string.IsNullOrWhiteSpace(user.Email) &&
-                               !new System.ComponentModel.DataAnnotations.EmailAddressAttribute().IsValid(user.Email))
+                              !new System.ComponentModel.DataAnnotations.EmailAddressAttribute().IsValid(user.Email))
                                 {
                                     <span class="text-danger">Email không hợp lệ.</span>
                                 }
@@ -215,11 +215,11 @@
                             <div class="col-md-6">
                                 <label class="form-label">Số điện thoại</label>
                                 <input type="number"
-                                       class="form-control"
-                                       placeholder="Nhập số điện thoại"
-                                       @bind="user.PhoneNumber"
-                                       disabled="@(CurrentModalType == ModalType.Detail)"
-                                       oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10);" />
+                                class="form-control"
+                                placeholder="Nhập số điện thoại"
+                                @bind="user.PhoneNumber"
+                                disabled="@(CurrentModalType == ModalType.Detail)"
+                                oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10);" />
                                 @if (string.IsNullOrWhiteSpace(user.PhoneNumber))
                                 {
                                     <span class="text-danger">Vui lòng nhập số điện thoại.</span>
@@ -238,7 +238,7 @@
                                 <input type="text" class="form-control" placeholder="Nhập mật khẩu" @bind="user.PasswordHash"
                                 disabled="@(CurrentModalType == ModalType.Detail)" />
                             </div>
-                        
+
                             <!-- Ngày Sinh -->
                             <div class="col-md-6">
                                 <label class="form-label">Ngày sinh</label>
@@ -374,8 +374,13 @@
                 </div>
 
                 <div class="text-center">
-                    <button type="button" class="btn btn-primary me-2" @onclick="createclass">Lưu</button>
-                    <button type="button" class="btn btn-secondary" @onclick="CloseModal">Hủy</button>
+                    @if (CurrentModalTypeclass == ModalTypeClass.Edit)
+                    {
+                        <button type="button" class="btn btn-primary me-2" @onclick="updateclass">Lưu</button>
+                    }else{
+                        <button type="button" class="btn btn-primary me-2" @onclick="createclass">Lưu</button>
+                    }
+                   
                 </div>
             </div>
         </div>
@@ -734,40 +739,47 @@
 
     }
 
-    private async Task createclass(){
-        if(idclass==Guid.Empty){
-            classcreateandupdate.GradeId = idgrade;
-            var respon = await client.PostAsJsonAsync("https://localhost:7046/api/Classes/create-class", classcreateandupdate);
-            if (respon.IsSuccessStatusCode)
-            {
-                await jsruntime.InvokeVoidAsync("alert", $"Thêm Lớp thành công");
-                isClassModalVisible = false;
-                classcreateandupdate = new ClassStandardDTO();
-                idgrade = Guid.Empty;
-                await GetAllClass();
+    private async Task createclass()
+    {
+        classcreateandupdate.GradeId = idgrade;
+        var respon = await client.PostAsJsonAsync("https://localhost:7046/api/Classes/create-class", classcreateandupdate);
+        if (respon.IsSuccessStatusCode)
+        {
+            await jsruntime.InvokeVoidAsync("alert", $"Thêm Lớp thành công");
+            isClassModalVisible = false;
+            classcreateandupdate = new ClassStandardDTO();
+            idgrade = Guid.Empty;
+            await GetAllClass();
 
-            }
-            else { await jsruntime.InvokeVoidAsync("alert", $"Thêm Lớp thất bại"); }
-        }else{
-            classcreateandupdate.Id = idclass;
-            var respon = await client.PutAsJsonAsync("https://localhost:7046/api/Classes/update-class", classcreateandupdate);
-            if (respon.IsSuccessStatusCode)
-            {
-                await jsruntime.InvokeVoidAsync("alert", $"Thêm Lớp thành công");
-                classcreateandupdate = new ClassStandardDTO();
-                isClassModalVisible = false;
-                await GetAllClass();
-            }
-            else
-            {
-                await jsruntime.InvokeVoidAsync("alert", "Sửa lớp thất bại");
-            }
-
-
+        }
+        else
+        {
+            var errorMessage = await respon.Content.ReadAsStringAsync();
+            await jsruntime.InvokeVoidAsync("alert", $"{errorMessage}");
         }
 
     }
-   
+
+        
+
+    
+   private async Task updateclass(){
+        classcreateandupdate.Id = idclass;
+        var respon = await client.PutAsJsonAsync("https://localhost:7046/api/Classes/update-class", classcreateandupdate);
+        if (respon.IsSuccessStatusCode)
+        {
+            await jsruntime.InvokeVoidAsync("alert", $"Sửa Lớp thành công");
+            classcreateandupdate = new ClassStandardDTO();
+            isClassModalVisible = false;
+            await GetAllClass();
+        }
+        else
+        {
+            var errorMessage = await respon.Content.ReadAsStringAsync();
+            await jsruntime.InvokeVoidAsync("alert", $"{errorMessage}");
+        }
+
+   }
 
    
     private List<Grades> grades = new List<Grades>();

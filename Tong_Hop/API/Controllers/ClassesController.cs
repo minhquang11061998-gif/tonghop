@@ -172,55 +172,65 @@ namespace API.Controllers
         {
             try
             {
+                // Kiểm tra khối và giáo viên có tồn tại hay không
                 var grade = await _db.Grades.FirstOrDefaultAsync(x => x.Id == classDTO.GradeId);
-
                 var tea = await _db.Teachers.FirstOrDefaultAsync(x => x.Id == classDTO.TeacherId);
 
-                if (grade == null || tea == null)
+                if (grade == null)
                 {
-                    return BadRequest("Lỗi");
+                    return BadRequest("Khối không tồn tại");
                 }
 
-                var teaClass = await _db.Classes.FirstOrDefaultAsync(x => x.TeacherId == tea.Id);
+                if (tea == null)
+                {
+                    return BadRequest("Giáo viên không tồn tại");
+                }
 
+                // Kiểm tra giáo viên đã chủ nhiệm lớp nào chưa
+                var teaClass = await _db.Classes.FirstOrDefaultAsync(x => x.TeacherId == tea.Id);
                 if (teaClass != null)
                 {
-                    return NotFound("Giáo viên này đã chủ nhiệm 1 lớp rồi");
+                    return Conflict("Giáo viên này đã chủ nhiệm một lớp rồi");
                 }
 
-                string input = classDTO.Name;
-
-                string result = ValidateAndTransformString(input);
-
-                if (result != null)
+                // Validate và kiểm tra tên lớp
+                string result = ValidateAndTransformString(classDTO.Name);
+                if (result == null)
                 {
-                    string ClassesName = $"{grade.Name}{result}";
-
-                    var data = new Classes
-                    {
-                        Id = Guid.NewGuid(),
-                        Code = RamdomCode(8),
-                        Name = ClassesName,
-                        MaxStudent = classDTO.MaxStudent,
-                        Status = classDTO.Status,
-                        TeacherId = classDTO.TeacherId,
-                        GradeId = classDTO.GradeId,
-                    };
-
-                    await _db.Classes.AddAsync(data);
-                    await _db.SaveChangesAsync();
+                    return BadRequest("Tên lớp không hợp lệ (chỉ nhận một ký tự chữ cái)");
                 }
-                else
+
+                // Kiểm tra trùng lặp tên lớp trong cùng khối
+                bool isDuplicate = await _db.Classes.AnyAsync(x => x.GradeId == classDTO.GradeId && x.Name.EndsWith(result));
+                if (isDuplicate)
                 {
-                    Console.WriteLine("Chuỗi không hợp lệ. Vui lòng chỉ nhập chữ cái.");
+                    return Conflict($"Lớp {grade.Name}{result} đã tồn tại trong khối");
                 }
 
-                return Ok("Them thanh cong");
+                // Tạo tên lớp
+                string ClassesName = $"{grade.Name}{result}";
 
+                // Tạo dữ liệu lớp mới
+                var data = new Classes
+                {
+                    Id = Guid.NewGuid(),
+                    Code = RamdomCode(8),
+                    Name = ClassesName,
+                    MaxStudent = classDTO.MaxStudent,
+                    Status = classDTO.Status,
+                    TeacherId = classDTO.TeacherId,
+                    GradeId = classDTO.GradeId,
+                };
+
+                await _db.Classes.AddAsync(data);
+                await _db.SaveChangesAsync();
+
+                return Ok("Thêm thành công");
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                return BadRequest("Loi");
+                // Trả về lỗi chi tiết hơn để debug
+                return BadRequest($"Lỗi hệ thống: {ex.Message}");
             }
         }
 
@@ -233,7 +243,7 @@ namespace API.Controllers
 
             if (!char.IsLetter(input[0]))
             {
-                return "Tến lớp chỉ nhận chữ";
+                return "Tên lớp chỉ nhận chữ";
             }
             
             return input.ToUpper();
