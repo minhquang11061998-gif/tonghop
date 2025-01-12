@@ -329,7 +329,6 @@ namespace API.Controllers
                         await _db.Student_Classes.AddAsync(studentClass);
                         await _db.SaveChangesAsync();
                         await updateclass(id);
-
                         await MaxScor_Subj(student.Id, studentClass.ClassId);
                         await _db.SaveChangesAsync();
                     }
@@ -725,7 +724,7 @@ namespace API.Controllers
                          new Claim("nameab",data.FullName.ToString()),
                          new Claim("Id",student.Name.ToString()),
                          new Claim("Idteacher",teacherId.Id.ToString()),
-                         new Claim("emailclam",data.Email.ToString()),
+                         new Claim("email",data.Email.ToString()),
                          new Claim("numberPhone",data.PhoneNumber.ToString()),
                          //new Claim("avatar",data.Avartar.ToString()),
                          
