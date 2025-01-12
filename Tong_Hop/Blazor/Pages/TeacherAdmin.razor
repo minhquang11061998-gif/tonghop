@@ -119,32 +119,20 @@
                             <div class="col-md-6">
                                 <label class="form-label">Họ và Tên</label>
                                 <input type="text" class="form-control" placeholder="Nhập họ và tên" @bind="usercreate.FullName" />
-                                @if (string.IsNullOrWhiteSpace(usercreate.FullName))
-                                {
-                                    <span class="text-danger">Vui lòng nhập họ và tên.</span>
-                                }
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label">Email</label>
                                 <input type="email" class="form-control" placeholder="Nhập email" @bind="usercreate.Email" />
-                                @if (!string.IsNullOrWhiteSpace(usercreate.Email) &&
-                              !new System.ComponentModel.DataAnnotations.EmailAddressAttribute().IsValid(usercreate.Email))
-                                {
-                                    <span class="text-danger">Email không hợp lệ.</span>
-                                }
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label">Số điện thoại</label>
                                 <input type="text"
-                                class="form-control"
-                                maxlength="10"
-                                placeholder="Nhập số điện thoại"
-                                @bind="usercreate.PhoneNumber"
-                                oninput="this.value = this.value.replace(/[^0-9]/g, '');" />
-                                @if (string.IsNullOrWhiteSpace(usercreate.PhoneNumber))
-                                {
-                                    <span class="text-danger">Vui lòng nhập số điện thoại.</span>
-                                }
+                                       class="form-control"
+                                       maxlength="10"
+                                       placeholder="Nhập số điện thoại"
+                                       @bind="usercreate.PhoneNumber"
+                                       oninput="this.value = this.value.replace(/[^0-9]/g, '');" />
+
                             </div>
 
                             <div class="col-md-6">
@@ -158,10 +146,6 @@
                             <div class="col-md-6">
                                 <label class="form-label">Ngày Sinh</label>
                                 <input type="date" class="form-control" @bind="usercreate.DateOfBirth" />
-                                @if (!usercreate.DateOfBirth.HasValue)
-                                {
-                                    <span class="text-danger">Vui lòng chọn ngày sinh.</span>
-                                }
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label">Hình Ảnh</label>
@@ -252,7 +236,7 @@
     private int TotalPages => (int)Math.Ceiling((double)FilteredOrders.Count() / ItemsPerPage);
     protected override async Task OnInitializedAsync()
     {
-        await getuser();
+        await getuser();    
     }
     private void PreviousPage()
     {
@@ -422,9 +406,119 @@
         // Tìm và kích hoạt phần tử InputFile ẩn
         await jsruntime.InvokeVoidAsync("eval", "document.getElementById('selectfile').click()");
     }
+
+
+    private async Task<bool> ValidateInputs()
+    {
+        @if (!string.IsNullOrWhiteSpace(usercreate.FullName) && usercreate.FullName.Any(char.IsDigit))
+        {
+            await jsruntime.InvokeVoidAsync("Swal.fire", new
+            {
+                title = "Lỗi!",
+                text = "Họ và tên không được chứa số.",
+                icon = "error",
+                confirmButtonText = "OK"
+            });
+            return false; // Dừng nếu không hợp lệ
+        }
+
+        if (string.IsNullOrWhiteSpace(usercreate.FullName))
+        {
+            await jsruntime.InvokeVoidAsync("Swal.fire", new
+            {
+                title = "Lỗi!",
+                text = "Họ và tên không được để trống.",
+                icon = "error",
+                confirmButtonText = "OK"
+            });
+            return false; // Dừng nếu không hợp lệ
+        }
+
+        if (string.IsNullOrWhiteSpace(usercreate.Email))
+        {
+            await jsruntime.InvokeVoidAsync("Swal.fire", new
+            {
+                title = "Lỗi!",
+                text = "Email không được để trống.",
+                icon = "error",
+                confirmButtonText = "OK"
+            });
+            return false; // Dừng nếu không hợp lệ
+        }
+
+        if (!new System.ComponentModel.DataAnnotations.EmailAddressAttribute().IsValid(usercreate.Email))
+        {
+            await jsruntime.InvokeVoidAsync("Swal.fire", new
+            {
+                title = "Lỗi!",
+                text = "Email không hợp lệ. Vui lòng nhập đúng định dạng email.",
+                icon = "error",
+                confirmButtonText = "OK"
+            });
+            return false; // Dừng nếu email không hợp lệ
+        }
+
+        if (string.IsNullOrWhiteSpace(usercreate.PhoneNumber) || usercreate.PhoneNumber.Length != 10)
+        {
+            await jsruntime.InvokeVoidAsync("Swal.fire", new
+            {
+                title = "Lỗi!",
+                text = "Số điện thoại phải bao gồm đúng 10 số.",
+                icon = "error",
+                confirmButtonText = "OK"
+            });
+            return false; // Ngăn tiếp tục nếu số điện thoại không hợp lệ
+        }
+
+        if (string.IsNullOrWhiteSpace(usercreate.PhoneNumber))
+        {
+            await jsruntime.InvokeVoidAsync("Swal.fire", new
+            {
+                title = "Lỗi!",
+                text = "Số điện thoại không được để trống.",
+                icon = "error",
+                confirmButtonText = "OK"
+            });
+            return false; // Dừng nếu không hợp lệ
+        }
+
+        if (string.IsNullOrWhiteSpace(usercreate.UserName))
+        {
+            await jsruntime.InvokeVoidAsync("Swal.fire", new
+            {
+                title = "Lỗi!",
+                text = "Tên đăng nhập không được để trống.",
+                icon = "error",
+                confirmButtonText = "OK"
+            });
+            return false; // Dừng nếu không hợp lệ
+        }
+
+        if (string.IsNullOrWhiteSpace(usercreate.PasswordHash))
+        {
+            await jsruntime.InvokeVoidAsync("Swal.fire", new
+            {
+                title = "Lỗi!",
+                text = "Mật khẩu không được để trống.",
+                icon = "error",
+                confirmButtonText = "OK"
+            });
+            return false; // Dừng nếu không hợp lệ
+        }
+
+        return true; // Tất cả đều hợp lệ
+    }
+
+
     #endregion
     private async Task SaveOrder()
     {
+
+        if (!await ValidateInputs())
+        {
+            return; // Dừng nếu dữ liệu không hợp lệ
+        }
+
         if (SelectedOrder == Guid.Empty)
         {
             // Tạo người dùng mới
@@ -460,9 +554,17 @@
             var respon = await client.PostAsync("https://localhost:7046/api/User/create-user-Teacher", content);
             if (respon.IsSuccessStatusCode)
             {
-                await jsruntime.InvokeVoidAsync("alert", "Thêm giáo viên thành công");
-                CloseModal();
+                // Hiển thị thông báo thành công
+                await jsruntime.InvokeVoidAsync("Swal.fire", new
+                {
+                    title = "Thành công!",
+                    text = "Giáo viên đã được thêm thành công.",
+                    icon = "success",
+                    confirmButtonText = "OK"
+                });
                 await getuser();
+                CloseModal();
+
             }
             else
             {
@@ -530,8 +632,15 @@
             var respon = await client.PutAsync($"https://localhost:7046/api/User/update-user-teacher/", content);
             if (respon.IsSuccessStatusCode)
             {
-                CloseModal();
+                await jsruntime.InvokeVoidAsync("Swal.fire", new
+                {
+                    title = "Thành công!",
+                    text = "Giáo viên đã được cập nhật thành công.",
+                    icon = "success",
+                    confirmButtonText = "OK"
+                });
                 await getuser();
+                CloseModal();
                 SelectedOrder = Guid.Empty ;
             }
             else
