@@ -191,25 +191,12 @@
                                 <label class="form-label">Họ và tên</label>
                                 <input type="text" class="form-control" placeholder="Nhập họ và tên" @bind="user.FullName"
                                 disabled="@(CurrentModalType == ModalType.Detail)" />
-                                @if (string.IsNullOrWhiteSpace(user.FullName))
-                                {
-                                    <span class="text-danger">Vui lòng nhập họ và tên.</span>
-                                }
-                                @if (!string.IsNullOrWhiteSpace(user.FullName) && user.FullName.Any(char.IsDigit))
-                                {
-                                    <span class="text-danger">Họ và tên không được chứa số.</span>
-                                }
                             </div>
                             <!-- Email -->
                             <div class="col-md-6">
                                 <label class="form-label">Email</label>
                                 <input type="email"  class="form-control" placeholder="Nhập email" @bind="user.Email"
                                 disabled="@(CurrentModalType == ModalType.Detail)" />
-                                @if (!string.IsNullOrWhiteSpace(user.Email) &&
-                               !new System.ComponentModel.DataAnnotations.EmailAddressAttribute().IsValid(user.Email))
-                                {
-                                    <span class="text-danger">Email không hợp lệ.</span>
-                                }
                             </div>
                             <!-- Số điện thoại -->
                             <div class="col-md-6">
@@ -220,10 +207,6 @@
                                        @bind="user.PhoneNumber"
                                        disabled="@(CurrentModalType == ModalType.Detail)"
                                        oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10);" />
-                                @if (string.IsNullOrWhiteSpace(user.PhoneNumber))
-                                {
-                                    <span class="text-danger">Vui lòng nhập số điện thoại.</span>
-                                }
                             </div>
                             <!-- Tên Đăng Nhập -->
                             <div class="col-md-6">
@@ -244,11 +227,6 @@
                                 <label class="form-label">Ngày sinh</label>
                                 <input type="date" class="form-control" @bind="user.DateOfBirth"
                                 disabled="@(CurrentModalType == ModalType.Detail)" />
-                                @if (!user.DateOfBirth.HasValue)
-                                {
-                                    <span class="text-danger">Vui lòng chọn ngày sinh.</span>
-                                }
-
                             </div>
                             <!-- Hình Ảnh -->
                             <div class="col-md-6">
@@ -557,8 +535,116 @@
             await jsruntime.InvokeVoidAsync("alert", "Tải file không thành công");
         }
     }
+
+    private async Task<bool> ValidateInputs()
+    {
+        @if (!string.IsNullOrWhiteSpace(user.FullName) && user.FullName.Any(char.IsDigit))
+        {
+            await jsruntime.InvokeVoidAsync("Swal.fire", new
+            {
+                title = "Lỗi!",
+                text = "Họ và tên không được chứa số.",
+                icon = "error",
+                confirmButtonText = "OK"
+            });
+            return false; // Dừng nếu không hợp lệ
+        }
+
+        if (string.IsNullOrWhiteSpace(user.FullName))
+        {
+            await jsruntime.InvokeVoidAsync("Swal.fire", new
+            {
+                title = "Lỗi!",
+                text = "Họ và tên không được để trống.",
+                icon = "error",
+                confirmButtonText = "OK"
+            });
+            return false; // Dừng nếu không hợp lệ
+        }
+
+        if (string.IsNullOrWhiteSpace(user.Email))
+        {
+            await jsruntime.InvokeVoidAsync("Swal.fire", new
+            {
+                title = "Lỗi!",
+                text = "Email không được để trống.",
+                icon = "error",
+                confirmButtonText = "OK"
+            });
+            return false; // Dừng nếu không hợp lệ
+        }
+
+        if (!new System.ComponentModel.DataAnnotations.EmailAddressAttribute().IsValid(user.Email))
+        {
+            await jsruntime.InvokeVoidAsync("Swal.fire", new
+            {
+                title = "Lỗi!",
+                text = "Email không hợp lệ. Vui lòng nhập đúng định dạng email.",
+                icon = "error",
+                confirmButtonText = "OK"
+            });
+            return false; // Dừng nếu email không hợp lệ
+        }
+
+        if (string.IsNullOrWhiteSpace(user.PhoneNumber) || user.PhoneNumber.Length != 10)
+        {
+            await jsruntime.InvokeVoidAsync("Swal.fire", new
+            {
+                title = "Lỗi!",
+                text = "Số điện thoại phải bao gồm đúng 10 số.",
+                icon = "error",
+                confirmButtonText = "OK"
+            });
+            return false; // Ngăn tiếp tục nếu số điện thoại không hợp lệ
+        }
+
+        if (string.IsNullOrWhiteSpace(user.PhoneNumber))
+        {
+            await jsruntime.InvokeVoidAsync("Swal.fire", new
+            {
+                title = "Lỗi!",
+                text = "Số điện thoại không được để trống.",
+                icon = "error",
+                confirmButtonText = "OK"
+            });
+            return false; // Dừng nếu không hợp lệ
+        }
+
+        if (string.IsNullOrWhiteSpace(user.UserName))
+        {
+            await jsruntime.InvokeVoidAsync("Swal.fire", new
+            {
+                title = "Lỗi!",
+                text = "Tên đăng nhập không được để trống.",
+                icon = "error",
+                confirmButtonText = "OK"
+            });
+            return false; // Dừng nếu không hợp lệ
+        }
+
+        if (string.IsNullOrWhiteSpace(user.PasswordHash))
+        {
+            await jsruntime.InvokeVoidAsync("Swal.fire", new
+            {
+                title = "Lỗi!",
+                text = "Mật khẩu không được để trống.",
+                icon = "error",
+                confirmButtonText = "OK"
+            });
+            return false; // Dừng nếu không hợp lệ
+        }
+
+        return true; // Tất cả đều hợp lệ
+    }
+
+
     private async Task SaveOrder()
     {
+        if (!await ValidateInputs())
+        {
+            return; // Dừng nếu dữ liệu không hợp lệ
+        }
+
         user.IsLocked = true;
         var content = new MultipartFormDataContent();
         content.Add(new StringContent(user.FullName ?? ""), "FullName");
@@ -598,21 +684,13 @@
             var errorResponse = await response.Content.ReadAsStringAsync();
 
             // Hiển thị thông báo lỗi cụ thể qua alert
-            if (errorResponse.Contains("UserName đã tồn tại"))
-            {
-                await jsruntime.InvokeVoidAsync("alert", "Lỗi: Tên đăng nhập đã tồn tại!");
-            }
-            else if (errorResponse.Contains("Email đã tồn tại"))
+            if (errorResponse.Contains("Email đã tồn tại"))
             {
                 await jsruntime.InvokeVoidAsync("alert", "Lỗi: Email đã tồn tại!");
             }   
             else if (errorResponse.Contains("PhoneNumber đã tồn tại"))
             {
                 await jsruntime.InvokeVoidAsync("alert", "Lỗi: Số điện thoại đã tồn tại!");
-            }
-            else if (errorResponse.Contains("PasswordHash đã tồn tại"))
-            {
-                await jsruntime.InvokeVoidAsync("alert", "Lỗi: Mật khẩu này đã được sử dụng!");
             }
             else
             {
@@ -623,6 +701,11 @@
         }
     }
     private async Task updatestudent(){
+
+        if (!await ValidateInputs())
+        {
+            return; // Dừng nếu dữ liệu không hợp lệ
+        }
         var content = new MultipartFormDataContent();
 
         if (avatarFile != null)
@@ -658,8 +741,8 @@
         var respon = await client.PutAsync($"https://localhost:7046/api/User/update-user-teacher/", content);
         if (respon.IsSuccessStatusCode)
         {
-            await getallstudent(idclass);
             await jsruntime.InvokeVoidAsync("alert", "Cập nhật học sinh thành công");
+            await getallstudent(idclass);
             CloseModal();
         }
         else
@@ -668,11 +751,7 @@
             var errorResponse = await respon.Content.ReadAsStringAsync();
 
             // Hiển thị thông báo lỗi cụ thể qua alert
-            if (errorResponse.Contains("UserName đã tồn tại"))
-            {
-                await jsruntime.InvokeVoidAsync("alert", "Lỗi: Tên đăng nhập đã tồn tại!");
-            }
-            else if (errorResponse.Contains("Email đã tồn tại"))
+            if (errorResponse.Contains("Email đã tồn tại"))
             {
                 await jsruntime.InvokeVoidAsync("alert", "Lỗi: Email đã tồn tại!");
             }
@@ -680,13 +759,9 @@
             {
                 await jsruntime.InvokeVoidAsync("alert", "Lỗi: Số điện thoại đã tồn tại!");
             }
-            else if (errorResponse.Contains("PasswordHash đã tồn tại"))
-            {
-                await jsruntime.InvokeVoidAsync("alert", "Lỗi: Mật khẩu này đã được sử dụng!");
-            }
             else
             {
-                await jsruntime.InvokeVoidAsync("alert", "Cập nhật học sinh thất bại! Vui lòng kiểm tra lại thông tin.");
+                await jsruntime.InvokeVoidAsync("alert", "Thêm học sinh thất bại! Vui lòng kiểm tra lại thông tin.");
             }
 
             StateHasChanged(); // Cập nhật giao diện
