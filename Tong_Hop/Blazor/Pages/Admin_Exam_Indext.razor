@@ -27,7 +27,7 @@
                 <thead class="table-primary text-center">
                     <tr>
                         <th style="width: 50px;">
-                            <input type="checkbox" @onchange="ToggleSelectAll" title="Chọn tất cả">
+                           
                         </th>
                         <th>Tên bài thi</th>
                         <th>Phòng thi</th>
@@ -55,8 +55,8 @@
                                 <td>@examroom.Name</td>
                                 <td>@examroom.Nameroom</td>
                                 <td>@examroom.NameSubject</td>
-                                <td>@examroom.StartTime.ToString(" HH:mm tt")</td>
-                                <td>@examroom.EndTime.ToString("HH:mm tt")</td>
+                                <td>@examroom.StartTime</td>
+                                <td>@examroom.EndTime</td>
                                 <td>@examroom.NameTeacher1</td>
                                 <td>@examroom.NameTeacher2</td>
                                 <td class="text-center">

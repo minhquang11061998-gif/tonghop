@@ -200,7 +200,7 @@
     private Guid? TaskIdToEdit = null;
     private Guid? EditClass = null;
     private subject_teacherDTO teacher_Subject = new subject_teacherDTO();
-    
+
     private void OnInputChanged(string? value)
     {
         if (int.TryParse(value, out var parsedValue))
@@ -237,6 +237,7 @@
 
             await jsruntime.InvokeVoidAsync("alert", "Xóa thành công.");
             await GetTeacher(IdSubject);
+            await Getallteacher();
         }
         else
         {
@@ -247,22 +248,23 @@
     }
     private async Task updateteacher(Guid IdSubject)
     {
-       
-            teacher_Subject.idsubject = IdSubject;
-            var response = await client.PutAsJsonAsync("https://localhost:7046/api/Subject/update-subject", teacher_Subject);
 
-            if (response.IsSuccessStatusCode)
-            {
-               
-                await jsruntime.InvokeVoidAsync("alert", "Cập nhật thành công.");
+        teacher_Subject.idsubject = IdSubject;
+        var response = await client.PutAsJsonAsync("https://localhost:7046/api/Subject/update-subject", teacher_Subject);
+
+        if (response.IsSuccessStatusCode)
+        {
+
+            await jsruntime.InvokeVoidAsync("alert", "Cập nhật thành công.");
             await GetTeacher(IdSubject);
-            }
-            else
-            {
-                await jsruntime.InvokeVoidAsync("alert", "Cập nhật thất bại");
-            }
-        
-       
+           await Getallteacher();
+        }
+        else
+        {
+            await jsruntime.InvokeVoidAsync("alert", "Cập nhật thất bại");
+        }
+
+
     }
 
 
@@ -282,12 +284,13 @@
         await Getallteacher();
     }
     private async Task getidsbj(Guid id){
-       
+
         teacher_Subject = await client.GetFromJsonAsync<subject_teacherDTO>($"https://localhost:7046/api/Subject/get-by-id-teach-subj?id={id}");
     }
     private async Task Getallteacher()
     {
-        teacherDTOs = await client.GetFromJsonAsync<List<TeacherDTO>>("https://localhost:7046/api/Teacher/get-all-teacher-all");
+        teacherDTOs = await client.GetFromJsonAsync<List<TeacherDTO>>("https://localhost:7046/api/Teacher/get-all-teachers-not-assigned-to-any-subject");
+       
     }
     private async Task GetTeacher(Guid id){
         subjectid = id;

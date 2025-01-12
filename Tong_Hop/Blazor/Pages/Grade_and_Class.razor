@@ -556,6 +556,7 @@
 
     private async Task<bool> ValidateInputs()
     {
+        
         @if (!string.IsNullOrWhiteSpace(user.FullName) && user.FullName.Any(char.IsDigit))
         {
             await jsruntime.InvokeVoidAsync("Swal.fire", new
@@ -567,7 +568,16 @@
             });
             return false; // Dừng nếu không hợp lệ
         }
-
+        if(user.DateOfBirth>DateTime.Now){
+            await jsruntime.InvokeVoidAsync("Swal.fire", new
+            {
+                title = "Lỗi!",
+                text = "Ngày tháng năm sinh không hợp lệ",
+                icon = "error",
+                confirmButtonText = "OK"
+            });
+            return false; // Dừng nếu không hợp lệ
+        }
         if (string.IsNullOrWhiteSpace(user.FullName))
         {
             await jsruntime.InvokeVoidAsync("Swal.fire", new
