@@ -193,10 +193,6 @@
                                     Đăng nhập
                                 </button>
                             </div>
-                            @if (!string.IsNullOrEmpty(errorMessage))
-                            {
-                                <div class="alert alert-danger mt-3" id="error">@errorMessage</div>
-                            }
                         </EditForm>
                     </div>
                 </div>
@@ -386,7 +382,7 @@
         }
         else
         {
-            errorMessage = "Tên đăng nhập hoặc mật khẩu không chính xác.";
+            await jsRuntime.InvokeVoidAsync("alert", "Emai hoặc mật khẩu không chính xác");
             isLoading = false;
             loginModel.Email = string.Empty;
             loginModel.Password = string.Empty;
