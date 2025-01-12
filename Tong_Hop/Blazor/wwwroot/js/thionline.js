@@ -1,4 +1,4 @@
-async function enterExamMode() {
+﻿async function enterExamMode() {
 
     await document.documentElement.requestFullscreen();
     if (navigator.keyboard) {
@@ -24,28 +24,52 @@ function getCode() {
 }
 
 function moveToNext(current, nextId) {
-    if (current.value.length >= 1) {
-        // Chuy?n sang � ti?p theo n?u � hi?n t?i ?� c� k� t?
+    const currentId = current.id;
+    const previousId = getPreviousId(currentId);
+
+    // Kiểm tra nếu ô cuối cùng bị xóa
+    if (currentId === "box6" && current.value.length === 0) {
+        clearAllInputs(); // Xóa tất cả dữ liệu
+        const firstElement = document.getElementById("box1");
+        if (firstElement) {
+            firstElement.focus(); // Đưa focus về ô đầu tiên
+        }
+        return;
+    }
+
+    // Chuyển sang ô tiếp theo nếu ô hiện tại có ký tự
+    if (current.value.length === 1 && nextId) {
         const nextElement = document.getElementById(nextId);
         if (nextElement) {
             nextElement.focus();
         }
-    } else {
-        // Quay l?i � tr??c n?u ng??i d�ng x�a (n?u c� � tr??c ?�)
-        const previousId = getPreviousId(current.id);
-        if (previousId) {
-            const previousElement = document.getElementById(previousId);
-            if (previousElement) {
-                previousElement.focus();
-            }
+    }
+    // Quay lại ô trước nếu ô hiện tại bị xóa
+    else if (current.value.length === 0 && previousId) {
+        const previousElement = document.getElementById(previousId);
+        if (previousElement) {
+            previousElement.focus();
+            previousElement.value = ""; // Xóa dữ liệu ô trước
         }
     }
-    validateCode(); // G?i h�m validate (n?u c� logic th�m)
+
+    validateCode(); // Kiểm tra trạng thái mã
+}
+
+// Hàm xóa tất cả dữ liệu trong các ô nhập
+function clearAllInputs() {
+    const boxes = document.querySelectorAll('input[id^="box"]');
+    boxes.forEach((box) => {
+        box.value = ""; // Xóa giá trị từng ô
+    });
 }
 
 function getPreviousId(currentId) {
-    const currentIndex = parseInt(currentId.replace('box', '')) - 1;
-    return currentIndex >= 1 ? `box${currentIndex}` : null;
+    const currentNumber = parseInt(currentId.replace('box', ''), 10); // Lấy số từ ID
+    if (!isNaN(currentNumber) && currentNumber > 1) {
+        return 'box' + (currentNumber - 1); // Tạo ID cho ô trước đó
+    }
+    return null;
 }
 
 function validateCode() {

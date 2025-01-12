@@ -70,7 +70,7 @@
                                                 <ValidationSummary />
                                             <div class="row mb-10 p-2">
                                                 <div class="col-md-12">
-                                                    <input class="form-control" type="text" placeholder="Họ và tên *"  @bind-value="systemConfigDTO.Name">
+                                                    <input class="form-control" type="text" placeholder="Họ và tên *"  @bind-value="systemConfigDTO.Name" disabled>
                                                 </div>
                                             </div>
                                             <div class="row mb-10 p-2">
@@ -80,12 +80,12 @@
                                             </div>
                                             <div class="row mb-10 p-2">
                                                 <div class="col-md-12">
-                                                    <input class="form-control"  type="text" placeholder="Số điện thoại *" @bind-value="systemConfigDTO.PhoneNumber">
+                                                        <input class="form-control" type="text" placeholder="Số điện thoại *" @bind-value="systemConfigDTO.PhoneNumber" disabled>
                                                 </div>
                                             </div>
                                             <div class="row mb-10 p-2">
                                                 <div class="col-md-12">
-                                                    <input class="form-control" name="fields[email]"  type="text" placeholder="Email *" @bind-value="systemConfigDTO.Email">
+                                                        <input class="form-control" name="fields[email]" type="text" placeholder="Email *" @bind-value="systemConfigDTO.Email" disabled>
                                                 </div>
                                             </div>
                                             <div class="row mb-10 p-2">
@@ -198,7 +198,7 @@
                 tokenResponse = new TokenResponse { Token = token };
                 var handler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
                 var jsonToken = handler.ReadToken(token) as System.IdentityModel.Tokens.Jwt.JwtSecurityToken;
-                    systemConfigDTO.Name = jsonToken?.Claims.FirstOrDefault(c => c.Type == "name")?.Value;
+                systemConfigDTO.Name = jsonToken?.Claims.FirstOrDefault(c => c.Type == "nameab")?.Value;
                    systemConfigDTO.Email= jsonToken?.Claims.FirstOrDefault(temp => temp.Type == "email")?.Value;
                 systemConfigDTO.PhoneNumber = jsonToken?.Claims.FirstOrDefault(temp => temp.Type == "numberPhone")?.Value;
                 StateHasChanged();
