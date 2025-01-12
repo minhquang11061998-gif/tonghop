@@ -682,12 +682,12 @@ namespace API.Controllers
         [HttpPost("login")]
         public IActionResult Login([FromBody] LoginModelDTO model)
         {
-            var data = _db.Users.FirstOrDefault(temp => temp.UserName == model.Username);
+            var data = _db.Users.FirstOrDefault(temp => temp.Email == model.Email);
             var student = _db.Roles.FirstOrDefault(temp => temp.Id == data.RoleId);
             var studentId = _db.Students.FirstOrDefault(temp => temp.UserId == data.Id);
             var teacherId = _db.Teachers.FirstOrDefault(temp => temp.UserId == data.Id);
 
-            if (model.Username == data.UserName && model.Password == data.PasswordHash)
+            if (model.Email == data.Email && model.Password == data.PasswordHash)         
             {
                 if (student.Name == "Student")
                 {
