@@ -5,54 +5,7 @@
 @layout AdminLayout
 @inject IJSRuntime jsruntime
 @inject HttpClient client
-<div class="container-fluid mt-3">
-    <div class="border rounded shadow p-3">
 
-        <div class="row mb-3">
-            <div class="col-5">
-                <h5 class="text-start text-primary">Tìm kiếm danh sách môn học</h5>
-            </div>
-        </div>
-
-        <!-- Form tìm kiếm -->
-        <div class="row justify-content-center align-items-center">
-            <!-- Dropdown Khối -->
-            <div class="col-5 col-md-3 mx-1">
-                <div class="form-group">
-                    <select class="form-select" @onchange="@(e => GetAllClass(Guid.Parse(e.Value.ToString())))">
-                        <option value="0" style="display:none">Chọn khối...</option>
-                        @foreach (var itemGrade in grades.OrderBy(a => a.Name))
-                        {
-                            <option value="@itemGrade.Id">Khối @itemGrade.Name</option>
-                        }
-                    </select>
-                </div>
-            </div>
-
-            <!-- Dropdown Lớp -->
-            <div class="col-5 col-md-3 mx-1">
-                <div class="form-group">
-                    <select class="form-select" @onchange="OnClassChanged">
-                        <option value="0" style="display:none">Chọn lớp...</option>
-                        @foreach (var itemClass in classes.OrderBy(a => a.Name))
-                        {
-                            <option value="@itemClass.Id"
-                            selected="@(itemClass.Id == selectidclass ? "selected" : null)">
-                                Lớp @itemClass.Name
-                            </option>
-                        }
-                    </select>
-                </div>
-            </div>
-
-            <!-- Nút Tìm kiếm -->
-            <div class="col-2 d-flex justify-content-center p-1">
-                <button class="btn btn-primary" @onclick="() => getallsubject(selectidclass)">Tìm kiếm</button>
-            </div>
-        </div>
-
-    </div>
-</div>
 <div class="row">
     <!-- Bên trái: Danh sách môn học -->
     <div class="col-9">
@@ -79,36 +32,62 @@
                 <thead>
                     <tr>
                         <th style="width: 10%;">STT</th>
-                        <th style="width: 25%;">Tên môn</th>
-                        <th style="width: 10%;">Mã code</th>
+                        <th style="width: 25%;">Tên khối</th>
                         <th style="width: 15%;">Trạng thái</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <!-- Hàng danh sách dữ liệu -->
                     @if (FilteredUserstudent != null && FilteredUserstudent.Any())
                     {
                         @foreach (var item in FilteredUserstudent)
                         {
-                            <tr class="align-content-center" @onclick="()=>GetTeacher(item.Id)">
-                                <td>@(FilteredUserstudent.IndexOf(item)+1)</td>
-                                <td>@item.Name</td>
-                                <td>@item.Code</td>
+                            <tr class="align-content-center">
+                                <td>@(FilteredUserstudent.IndexOf(item) + 1)</td>
+                                <td>
+                                    <span style="cursor: pointer;" @onclick="() => ToggleTree(item.Id)" type="button">
+                                        Khối @item.Name
+                                    </span>
+                                </td>
                                 <td>
                                     <span class="badge @(item.Status == 1 ? "bg-success" : "bg-secondary")">
                                         @(item.Status == 1 ? "Hoạt động" : "Tạm dừng")
                                     </span>
                                 </td>
                             </tr>
+                            @if (ExpandedTasks.Contains(item.Id))
+                            {
+
+                                if (subjects.Any())
+                                {
+                                    @foreach (var itemsubject in subjects)
+                                    {
+                                        <tr>
+                                            <td></td> <!-- Cột để căn chỉnh cấp con -->
+                                            <td>@itemsubject.Name</td>
+                                            <td></td>
+                                        </tr>
+                                    }
+                                }
+                                else
+                                {
+                                    <tr>
+                                        <td></td>
+                                        <td colspan="2" class="text-danger">Không có môn học.</td>
+                                    </tr>
+                                }
+                            }
                         }
                     }
                     else
                     {
                         <tr>
-                            <td colspan="8" class="text-center text-danger">Không có dữ liệu.</td>
+                            <td colspan="3" class="text-center text-danger">Không có dữ liệu.</td>
                         </tr>
                     }
                 </tbody>
+
+
+
             </table>
         </div>
     </div>
@@ -178,6 +157,7 @@
     private Guid idteacher;
     private bool showfaceid = false;
     private Guid idstudent;
+    private List<Guid> ExpandedTasks = new List<Guid>();
     private void showdata(Guid id)
     {
         idstudent = id;
@@ -193,7 +173,21 @@
         editsubject = true;
 
     }
+    private async void ToggleTree(Guid IdGrade)
+    {
+        if (ExpandedTasks.Contains(IdGrade))
+        {
 
+            ExpandedTasks.Remove(IdGrade);
+        }
+        else
+        {
+            ExpandedTasks.Clear();
+            ExpandedTasks.Add(IdGrade);
+            await getallsubject(IdGrade);
+            StateHasChanged();
+        }
+    }
 
 
 }
@@ -206,6 +200,7 @@
     private Guid? TaskIdToEdit = null;
     private Guid? EditClass = null;
     private subject_teacherDTO teacher_Subject = new subject_teacherDTO();
+    
     private void OnInputChanged(string? value)
     {
         if (int.TryParse(value, out var parsedValue))
@@ -277,9 +272,9 @@
     private List<Grades> grades = new List<Grades>();
     private List<Classes> classes = new List<Classes>();
     private List<Subjects> subjects = new List<Subjects>();
-    private List<Subjects> FilteredUserstudent => string.IsNullOrEmpty(SearchText)
-     ? subjects
-     : subjects.Where(o => o.Name.ToString().Contains(SearchText))
+    private List<Grades> FilteredUserstudent => string.IsNullOrEmpty(SearchText)
+     ? grades
+     : grades.Where(o => o.Name.ToString().Contains(SearchText))
               .ToList();
     protected override async Task OnInitializedAsync()
     {
@@ -317,7 +312,7 @@
     }
     private async Task getallsubject(Guid id)
     {
-        subjects = await client.GetFromJsonAsync<List<Subjects>>($"https://localhost:7046/api/Classes/ListSubjectFor?IdClass={id}");
+        subjects = await client.GetFromJsonAsync<List<Subjects>>($"https://localhost:7046/api/Classes/ListSubjectFor?IdGrade={id}");
 
     }
     private string? SearchText { get; set; }

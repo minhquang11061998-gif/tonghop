@@ -177,8 +177,8 @@
                             <DataAnnotationsValidator />
                             <ValidationSummary />
                             <div class="mb-3">
-                                <label for="username" class="form-label">Tên tài khoản hoặc Email</label>
-                                <InputText id="username" @bind-Value="loginModel.Username" class="form-control" required />
+                                <label for="username" class="form-label">Email</label>
+                                <InputText id="username" @bind-Value="loginModel.Email" class="form-control" required />
                             </div>
                             <div class="mb-3">
                                 <label for="password" class="form-label">Mật khẩu</label>
@@ -388,7 +388,7 @@
         {
             errorMessage = "Tên đăng nhập hoặc mật khẩu không chính xác.";
             isLoading = false;
-            loginModel.Username = string.Empty;
+            loginModel.Email = string.Empty;
             loginModel.Password = string.Empty;
             StateHasChanged();
         }
