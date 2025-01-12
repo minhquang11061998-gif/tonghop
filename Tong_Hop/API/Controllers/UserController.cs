@@ -704,7 +704,6 @@ namespace API.Controllers
                          new Claim("email",data.Email.ToString()),
                          new Claim("numberPhone",data.PhoneNumber.ToString()),
                          new Claim("CodeStudent", studentId.Code.ToString()),
-                        new Claim("anh", data.Avartar?.ToString() ?? "DefaultAvatar"),
 
                         }),
                         Expires = DateTime.UtcNow.AddMinutes(15),
@@ -730,7 +729,7 @@ namespace API.Controllers
                          new Claim("nameab",data.FullName.ToString()),
                          new Claim("Id",student.Name.ToString()),
                          new Claim("Idteacher",teacherId.Id.ToString()),
-                         new Claim("email",data.Email.ToString()),
+                         new Claim("emailclam",data.Email.ToString()),
                          new Claim("numberPhone",data.PhoneNumber.ToString()),
                          //new Claim("avatar",data.Avartar.ToString()),
                          

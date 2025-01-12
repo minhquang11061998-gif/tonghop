@@ -450,16 +450,18 @@ namespace API.Controllers
         }
 
         [HttpGet("ListSubjectFor")]
-        public async Task<ActionResult> GetListSubj(Guid IdClass)
+        public async Task<ActionResult> GetListSubj(Guid IdGrade)
         {
             try
             {
                 var listSubj = await (from SubjG in _db.Subject_Grades
                                       join g in _db.Grades on SubjG.GradeId equals g.Id
-                                      join cl in _db.Classes on g.Id equals cl.GradeId
                                       join subj in _db.Subjects on SubjG.SubjectId equals subj.Id
-                                      where cl.Id == IdClass
-                                      select subj).ToListAsync();
+                                      where g.Id == IdGrade
+                                      select new {
+                                          subj.Id,
+                                          subj.Name
+                                      } ).ToListAsync();
                 return Ok(listSubj);
             }
             catch (Exception ex)
@@ -467,6 +469,7 @@ namespace API.Controllers
                 return BadRequest(ex.Message);
             }
         }
+
         [HttpGet("Listteachersubj")]
         public async Task<ActionResult> GetListteacherSubj(Guid idsbj)
         {

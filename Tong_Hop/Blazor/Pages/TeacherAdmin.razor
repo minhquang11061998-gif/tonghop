@@ -110,7 +110,7 @@
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">@((SelectedOrder == Guid.Empty ? "Thêm Tài Khoản" : "Chỉnh Sửa Tài Khoản"))</h5>
+                    <h5 class="modal-title">@((SelectedOrder == Guid.Empty ? "Thêm giáo viên" : "Chỉnh Sửa giáo viên"))</h5>
                     <button type="button" class="btn-close" @onclick="CloseModal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
@@ -208,7 +208,7 @@
         <div class="modal-content">
             <!-- Tiêu đề -->
             <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title @* @(selectedClassId=Guid.Empty)? *@">Nhập dữ liệu học sinh</h5>
+                <h5 class="modal-title @* @(selectedClassId=Guid.Empty)? *@">Nhập dữ liệu giáo viên</h5>
                 <button type="button" class="btn-close" aria-label="Close" @onclick="CloseModal"></button>
             </div>
             <!-- Nội dung -->
