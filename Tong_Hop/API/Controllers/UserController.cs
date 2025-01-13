@@ -355,6 +355,7 @@ namespace API.Controllers
         }
 
 
+
         #region thêm điểm mặc định bằng 0 cho từng môn và đầu điểm
         private async Task MaxScor_Subj(Guid IdStudent, Guid IdClass)
         {

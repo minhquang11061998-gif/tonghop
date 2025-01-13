@@ -584,7 +584,7 @@
             {
                 title = "Lỗi!",
                 text = "Họ và tên không được để trống.",
-                icon = "error",
+                icon = "error", 
                 confirmButtonText = "OK"
             });
             return false; // Dừng nếu không hợp lệ
@@ -614,12 +614,14 @@
             return false; // Dừng nếu email không hợp lệ
         }
 
-        if (string.IsNullOrWhiteSpace(user.PhoneNumber) || user.PhoneNumber.Length != 10)
+        // Kiểm tra số điện thoại bắt đầu bằng 0, đúng 10 ký tự
+        var phoneRegex = new System.Text.RegularExpressions.Regex(@"^0\d{9}$");
+        if (string.IsNullOrWhiteSpace(user.PhoneNumber) || !phoneRegex.IsMatch(user.PhoneNumber))
         {
             await jsruntime.InvokeVoidAsync("Swal.fire", new
             {
                 title = "Lỗi!",
-                text = "Số điện thoại phải bao gồm đúng 10 số.",
+                text = "Số điện thoại phải bắt đầu bằng số 0 và gồm đúng 10 chữ số.",
                 icon = "error",
                 confirmButtonText = "OK"
             });

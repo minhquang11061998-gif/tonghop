@@ -117,7 +117,13 @@
                                                 </div>
                                                 <div class="row mb-10 p-2">
                                                     <div class="col-md-12">
-                                                        <input class="form-control" type="text" placeholder="Số điện thoại *" @bind-value="systemConfigDTO.PhoneNumber">
+                                                        <input class="form-control"
+                                                               type="text"
+                                                               placeholder="Số điện thoại *"
+                                                               @bind-value="systemConfigDTO.PhoneNumber"
+                                                               maxlength="10"
+                                                               oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10); if(this.value.length > 0 && this.value[0] !== '0') this.value = '0' + this.value.slice(1);" />
+
                                                     </div>
                                                 </div>
                                                 <div class="row mb-10 p-2">
@@ -161,8 +167,95 @@
     private string numberphone;
     private SystemConfigDTO systemConfigDTO = new SystemConfigDTO();
 
+    private async Task<bool> ValidateInputs()
+    {
+
+        @if (!string.IsNullOrWhiteSpace(systemConfigDTO.Name) && systemConfigDTO.Name.Any(char.IsDigit))
+        {
+            await jsruntime.InvokeVoidAsync("Swal.fire", new
+            {
+                title = "Lỗi!",
+                text = "Họ và tên không được chứa số.",
+                icon = "error",
+                confirmButtonText = "OK"
+            });
+            return false; // Dừng nếu không hợp lệ
+        }
+
+        if (string.IsNullOrWhiteSpace(systemConfigDTO.Name))
+        {
+            await jsruntime.InvokeVoidAsync("Swal.fire", new
+            {
+                title = "Lỗi!",
+                text = "Họ và tên không được để trống.",
+                icon = "error",
+                confirmButtonText = "OK"
+            });
+            return false; // Dừng nếu không hợp lệ
+        }
+
+        if (string.IsNullOrWhiteSpace(systemConfigDTO.Value))
+        {
+            await jsruntime.InvokeVoidAsync("Swal.fire", new
+            {
+                title = "Lỗi!",
+                text = "Nội dung liên hệ không được để trống.",
+                icon = "error",
+                confirmButtonText = "OK"
+            });
+            return false; // Dừng nếu không hợp lệ
+        }
+
+        if (string.IsNullOrWhiteSpace(systemConfigDTO.Email))
+        {
+            await jsruntime.InvokeVoidAsync("Swal.fire", new
+            {
+                title = "Lỗi!",
+                text = "Email không được để trống.",
+                icon = "error",
+                confirmButtonText = "OK"
+            });
+            return false; // Dừng nếu không hợp lệ
+        }
+
+        // Kiểm tra số điện thoại
+        var phoneRegex = new System.Text.RegularExpressions.Regex(@"^0\d{9}$");
+        if (string.IsNullOrWhiteSpace(systemConfigDTO.PhoneNumber) || !phoneRegex.IsMatch(systemConfigDTO.PhoneNumber))
+        {
+            await jsruntime.InvokeVoidAsync("Swal.fire", new
+            {
+                title = "Lỗi!",
+                text = "Số điện thoại phải bắt đầu bằng số 0 và gồm đúng 10 chữ số.",
+                icon = "error",
+                confirmButtonText = "OK"
+            });
+            return false; // Ngăn tiếp tục nếu số điện thoại không hợp lệ
+        }
+
+        // Kiểm tra email
+        if (string.IsNullOrWhiteSpace(systemConfigDTO.Email) ||
+            !new System.ComponentModel.DataAnnotations.EmailAddressAttribute().IsValid(systemConfigDTO.Email))
+        {
+            await jsruntime.InvokeVoidAsync("Swal.fire", new
+            {
+                title = "Lỗi!",
+                text = "Email không hợp lệ. Vui lòng nhập đúng định dạng email.",
+                icon = "error",
+                confirmButtonText = "OK"
+            });
+            return false; // Ngăn tiếp tục nếu email không hợp lệ
+        }
+
+        return true; // Dữ liệu hợp lệ
+    }
+
     private async Task SaveDataToApi()
     {
+        if (!await ValidateInputs())
+        {
+            return; // Dừng nếu dữ liệu không hợp lệ
+        }
+
         var response = await http.PostAsJsonAsync("api/SystemConfig/create- system", systemConfigDTO);
         if (response.IsSuccessStatusCode)
         {
