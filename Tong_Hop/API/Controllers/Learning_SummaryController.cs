@@ -22,6 +22,7 @@ namespace API.Controllers
 		{
 			try
 			{
+
 				// Kiểm tra giáo viên có phải giáo viên chủ nhiệm hay không
 				var teacherClass = await _db.Classes
 					.Where(tc => tc.Id == classId && tc.TeacherId == teacherId)
@@ -33,7 +34,6 @@ namespace API.Controllers
 				{
 					// Tính toán tổng kết nếu giáo viên là chủ nhiệm
 					summaries = await CalculateFinalScoresAsync(classId);
-
 				}
 				else
 				{
@@ -72,10 +72,52 @@ namespace API.Controllers
 							Point_Midterm = ls.Point_Midterm,
 							Point_Final = ls.Point_Final,
 							Point_Summary = ls.Point_Summary,
-							IsView = ls.IsView
+							IsView = ls.IsView,
+							SemesterID = ls.SemesterID
 						})
 						.ToListAsync();
 				}
+
+				// Lưu vào database
+				foreach (var summary in summaries)
+				{
+					var existingSummary = await _db.Learning_Summaries
+						.Where(ls => ls.StudentId == summary.StudentId
+								  && ls.SubjectId == summary.SubjectId)
+						.FirstOrDefaultAsync();
+
+					if (existingSummary == null)
+					{
+						var newSummary = new Learning_Summary
+						{
+							Id = summary.Id,
+							StudentId = summary.StudentId,
+							SubjectId = summary.SubjectId,
+							SemesterID = summary.SemesterID,
+							Attendance = summary.Attendance,
+							Point_15 = summary.Point_15,
+							Point_45 = summary.Point_45,
+							Point_Midterm = summary.Point_Midterm,
+							Point_Final = summary.Point_Final,
+							Point_Summary = summary.Point_Summary,
+							IsView = summary.IsView
+						};
+						_db.Learning_Summaries.Add(newSummary);
+					}
+					else
+					{
+						// Update nếu đã tồn tại
+						existingSummary.Attendance = summary.Attendance;
+						existingSummary.Point_15 = summary.Point_15;
+						existingSummary.Point_45 = summary.Point_45;
+						existingSummary.Point_Midterm = summary.Point_Midterm;
+						existingSummary.Point_Final = summary.Point_Final;
+						existingSummary.Point_Summary = summary.Point_Summary;
+						existingSummary.IsView = summary.IsView;
+					}
+				}
+
+				await _db.SaveChangesAsync();
 
 				return Ok(summaries);
 			}
