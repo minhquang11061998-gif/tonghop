@@ -7,49 +7,21 @@ using Microsoft.EntityFrameworkCore;
 
 namespace API.Controllers
 {
-    [Route("api/[controller]")]
-    [ApiController]
-    public class Learning_SummaryController : ControllerBase
-    {
-        private AppDbContext _db;
-        public Learning_SummaryController(AppDbContext db)
-        {
-            _db = db;
-        }
+	[Route("api/[controller]")]
+	[ApiController]
+	public class Learning_SummaryController : ControllerBase
+	{
+		private AppDbContext _db;
+		public Learning_SummaryController(AppDbContext db)
+		{
+			_db = db;
+		}
 
 		[HttpGet("GetLearningSummaries")]
 		public async Task<IActionResult> GetLearningSummaries(Guid classId, Guid teacherId)
 		{
 			try
 			{
-				// Xác định kỳ học hiện tại
-				var currentSemester = await _db.Semesters
-					.Where(s => s.StartTime <= DateTime.Now && s.EndTime >= DateTime.Now)
-					.FirstOrDefaultAsync();
-
-				if (currentSemester == null)
-				{
-					return BadRequest(new { message = "No active semester found." });
-				}
-
-				Guid currentSemesterId = currentSemester.Id;
-
-				// Nếu kỳ học hiện tại là Kỳ 1 mà thời gian đã hết, chuyển sang Kỳ 2
-				if (currentSemester.Name == "Kỳ 1" && DateTime.Now > currentSemester.EndTime)
-				{
-					var semester2 = await _db.Semesters
-						.Where(s => s.Name == "Kỳ 2")
-						.FirstOrDefaultAsync();
-
-					if (semester2 != null)
-					{
-						currentSemesterId = semester2.Id;
-					}
-					else
-					{
-						return BadRequest(new { message = "No Semester 2 found." });
-					}
-				}
 
 				// Kiểm tra giáo viên có phải giáo viên chủ nhiệm hay không
 				var teacherClass = await _db.Classes
@@ -61,14 +33,7 @@ namespace API.Controllers
 				if (teacherClass != null)
 				{
 					// Tính toán tổng kết nếu giáo viên là chủ nhiệm
-					summaries = await CalculateFinalScoresAsync(classId, currentSemesterId);
-
-					// Bổ sung thông tin kỳ học vào danh sách `summaries`
-					foreach (var summary in summaries)
-					{
-						summary.SemesterID = currentSemesterId; // Gán kỳ học hiện tại
-						summary.SemesterName = currentSemester.Name; // Gán tên kỳ học hiện tại
-					}
+					summaries = await CalculateFinalScoresAsync(classId);
 				}
 				else
 				{
@@ -92,8 +57,7 @@ namespace API.Controllers
 					}
 
 					summaries = await _db.Learning_Summaries
-						.Where(ls => ls.SemesterID == currentSemesterId
-									 && studentIdsInClass.Contains(ls.StudentId)
+						.Where(ls => studentIdsInClass.Contains(ls.StudentId)
 									 && subjectIds.Contains(ls.SubjectId))
 						.Select(ls => new Learning_SummaryDTO
 						{
@@ -109,8 +73,7 @@ namespace API.Controllers
 							Point_Final = ls.Point_Final,
 							Point_Summary = ls.Point_Summary,
 							IsView = ls.IsView,
-							SemesterID = ls.SemesterID,
-							SemesterName = _db.Semesters.Where(s => s.Id == ls.SemesterID).Select(s => s.Name).FirstOrDefault()
+							SemesterID = ls.SemesterID
 						})
 						.ToListAsync();
 				}
@@ -120,8 +83,7 @@ namespace API.Controllers
 				{
 					var existingSummary = await _db.Learning_Summaries
 						.Where(ls => ls.StudentId == summary.StudentId
-								  && ls.SubjectId == summary.SubjectId
-								  && ls.SemesterID == currentSemesterId)
+								  && ls.SubjectId == summary.SubjectId)
 						.FirstOrDefaultAsync();
 
 					if (existingSummary == null)
@@ -131,7 +93,7 @@ namespace API.Controllers
 							Id = summary.Id,
 							StudentId = summary.StudentId,
 							SubjectId = summary.SubjectId,
-							SemesterID = currentSemesterId,
+							SemesterID = summary.SemesterID,
 							Attendance = summary.Attendance,
 							Point_15 = summary.Point_15,
 							Point_45 = summary.Point_45,
@@ -165,80 +127,80 @@ namespace API.Controllers
 			}
 		}
 
-		private async Task<List<Learning_SummaryDTO>> CalculateFinalScoresAsync(Guid classId, Guid semesterId)
-        {
-            var summaries = new List<Learning_SummaryDTO>();
+		private async Task<List<Learning_SummaryDTO>> CalculateFinalScoresAsync(Guid classId)
+		{
+			var summaries = new List<Learning_SummaryDTO>();
 
-            var studentIdsInClass = await _db.Student_Classes
-                .Where(sc => sc.ClassId == classId)
-                .Select(sc => sc.StudentId)
-                .ToListAsync();
+			var studentIdsInClass = await _db.Student_Classes
+				.Where(sc => sc.ClassId == classId)
+				.Select(sc => sc.StudentId)
+				.ToListAsync();
 
-            var studentsInClass = await _db.Students
-                .Where(s => studentIdsInClass.Contains(s.Id))
-                .Include(s => s.User)
-                .ToListAsync();
+			var studentsInClass = await _db.Students
+				.Where(s => studentIdsInClass.Contains(s.Id))
+				.Include(s => s.User)
+				.ToListAsync();
 
-            var scores = await _db.Scores
-                .Where(s => studentIdsInClass.Contains(s.StudentId))
-                .ToListAsync();
+			var scores = await _db.Scores
+				.Where(s => studentIdsInClass.Contains(s.StudentId))
+				.ToListAsync();
 
-            var pointTypes = await _db.PointTypes.ToListAsync();
-            var pointTypeIds = pointTypes.ToDictionary(pt => pt.Name, pt => pt.Id);
+			var pointTypes = await _db.PointTypes.ToListAsync();
+			var pointTypeIds = pointTypes.ToDictionary(pt => pt.Name, pt => pt.Id);
 
-            foreach (var student in studentsInClass)
-            {
-                var studentScores = scores.Where(s => s.StudentId == student.Id).ToList();
+			foreach (var student in studentsInClass)
+			{
+				var studentScores = scores.Where(s => s.StudentId == student.Id).ToList();
 
-                var groupedScores = studentScores
-                    .GroupBy(s => s.SubjectId)
-                    .ToList();
+				var groupedScores = studentScores
+					.GroupBy(s => s.SubjectId)
+					.ToList();
 
-                foreach (var group in groupedScores)
-                {
-                    var subjectId = group.Key;
-                    var subjectScores = group.ToList();
+				foreach (var group in groupedScores)
+				{
+					var subjectId = group.Key;
+					var subjectScores = group.ToList();
 
-                    var Attendance = subjectScores.Where(s => s.PointTypeId == pointTypeIds["Attendance"]).ToList();
-                    var point15 = subjectScores.Where(s => s.PointTypeId == pointTypeIds["Point_15"]).ToList();
-                    var point45 = subjectScores.Where(s => s.PointTypeId == pointTypeIds["Point_45"]).ToList();
-                    var midterm = subjectScores.Where(s => s.PointTypeId == pointTypeIds["Point_Midterm"]).ToList();
-                    var final = subjectScores.Where(s => s.PointTypeId == pointTypeIds["Point_Final"]).ToList();
+					var Attendance = subjectScores.Where(s => s.PointTypeId == pointTypeIds["Attendance"]).ToList();
+					var point15 = subjectScores.Where(s => s.PointTypeId == pointTypeIds["Point_15"]).ToList();
+					var point45 = subjectScores.Where(s => s.PointTypeId == pointTypeIds["Point_45"]).ToList();
+					var midterm = subjectScores.Where(s => s.PointTypeId == pointTypeIds["Point_Midterm"]).ToList();
+					var final = subjectScores.Where(s => s.PointTypeId == pointTypeIds["Point_Final"]).ToList();
 
-                    double CalculateAverage(IEnumerable<Scores> points, int quantity)
-                    {
-                        return quantity > 0 ? points.Sum(p => p.Score) / quantity : 0;
-                    }
+					double CalculateAverage(IEnumerable<Scores> points, int quantity)
+					{
+						return quantity > 0 ? points.Sum(p => p.Score) / quantity : 0;
+					}
 
-                    var averageAttendance = CalculateAverage(Attendance, Attendance.Count);
-                    var averagePoint15 = CalculateAverage(point15, point15.Count);
-                    var averagePoint45 = CalculateAverage(point45, point45.Count);
-                    var averagePointMidterm = CalculateAverage(midterm, midterm.Count);
-                    var averagePointFinal = CalculateAverage(final, final.Count);
+					var averageAttendance = CalculateAverage(Attendance, Attendance.Count);
+					var averagePoint15 = CalculateAverage(point15, point15.Count);
+					var averagePoint45 = CalculateAverage(point45, point45.Count);
+					var averagePointMidterm = CalculateAverage(midterm, midterm.Count);
+					var averagePointFinal = CalculateAverage(final, final.Count);
 
-                    var summary = new Learning_SummaryDTO
-                    {
-                        Id = Guid.NewGuid(),
-                        StudentId = student.Id,
-                        StudentName = student.User.FullName,
-                        SubjectId = subjectId,
-                        SubjectName = await _db.Subjects.Where(sub => sub.Id == subjectId).Select(sub => sub.Name).FirstOrDefaultAsync(),
-                        Attendance = averageAttendance,
-                        Point_15 = averagePoint15,
-                        Point_45 = averagePoint45,
-                        Point_Midterm = averagePointMidterm,
-                        Point_Final = averagePointFinal,
-                        Point_Summary = (averageAttendance + averagePoint15 + averagePoint45 + averagePointMidterm + averagePointFinal) / 10,
-                        IsView = false
-                    };
+					var summary = new Learning_SummaryDTO
+					{
+						Id = Guid.NewGuid(),
+						StudentId = student.Id,
+						StudentName = student.User.FullName,
+						SubjectId = subjectId,
+						SubjectName = await _db.Subjects.Where(sub => sub.Id == subjectId).Select(sub => sub.Name).FirstOrDefaultAsync(),
+						Attendance = averageAttendance,
+						Point_15 = averagePoint15,
+						Point_45 = averagePoint45,
+						Point_Midterm = averagePointMidterm,
+						Point_Final = averagePointFinal,
+						Point_Summary = (averageAttendance + averagePoint15 + averagePoint45 + averagePointMidterm + averagePointFinal) / 10,
+						IsView = false
+					};
 
-                    summaries.Add(summary);
-                }
-            }
+					summaries.Add(summary);
+				}
+			}
 
-            return summaries;
-        }
+			return summaries;
+		}
 
 
-    }
+	}
 }
