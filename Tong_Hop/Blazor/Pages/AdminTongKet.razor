@@ -78,6 +78,7 @@
 			<div class="modal-body">
 				<div class="summary-header mb-4">
 					<p><strong>Lớp:</strong> <span class="highlight-text">@className</span></p>
+
 				</div>
 				<table class="table table-striped table-hover table-bordered custom-table">
 					<thead>
@@ -129,6 +130,7 @@
 	</div>
 </div>
 
+<!-- Bootstrap Bundle JS (bao gồm Popper.js) -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
 @code {
@@ -138,14 +140,20 @@
 	private List<string> Subjects = new();
 	private string searchKeyword;
 	private bool showMessageBox = false;
+	private TokenResponse tokenResponse;
 	private string IdTeacher;
 	private string className;
 	private bool IsModalOpen = false;
 	private ClassesDTO selectedClass = null;
+	private bool showCalculationMessage = false;
+	private Guid? CurrentClassId { get; set; } // Lưu ClassID
+	private Guid? CurrentTeacherId { get; set; } // Lưu TeacherID
+
 
 	protected override async Task OnInitializedAsync()
 	{
 		await LoadClass();
+
 	}
 
 	private async Task LoadClass()
@@ -225,7 +233,7 @@
 		searchKeyword = e.Value?.ToString();
 		if (string.IsNullOrEmpty(searchKeyword))
 		{
-			await LoadClass();
+			await LoadClass(); // Hiển thị lại danh sách lớp nếu ô tìm kiếm trống
 		}
 	}
 
@@ -250,6 +258,18 @@
 				return;
 			}
 
+			CurrentTeacherId = teacherGuid;
+			CurrentClassId = classId;
+
+			var classInfo = classList.FirstOrDefault(c => c.Id == classId);
+			if (classInfo == null)
+			{
+				await jsRuntime.InvokeVoidAsync("alert", "Lớp không tồn tại.");
+				return;
+			}
+
+			selectedClass = classInfo;
+
 			var response = await client.GetAsync(
 				$"https://localhost:7046/api/Learning_Summary/GetLearningSummaries?classId={classId}&teacherId={teacherGuid}");
 
@@ -266,7 +286,8 @@
 								StudentId = g.Key,
 								StudentName = g.First().StudentName,
 								SubjectScores = g.Where(x => x.SubjectName != null)
-													 .ToDictionary(x => x.SubjectName, x => x.Point_Summary)
+													 .ToDictionary(x => x.SubjectName, x => x.Point_Summary),
+								SemesterID = g.First().SemesterID
 							})
 						.OrderBy(summary => summary.StudentName)
 						.ToList();
@@ -275,6 +296,7 @@
 						.SelectMany(studentSummary => studentSummary.SubjectScores.Keys)
 						.Distinct()
 						.ToList();
+
 				}
 				else
 				{
@@ -282,13 +304,20 @@
 					Subjects = new List<string>();
 				}
 
-				className = classList.FirstOrDefault(c => c.Id == classId)?.Name ?? "Không xác định";
+				className = classInfo.Name;
 				IsModalOpen = true;
 				await jsRuntime.InvokeVoidAsync("bootstrapModal.show", "#summaryModal");
 			}
-			else
+			else if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
 			{
 				await jsRuntime.InvokeVoidAsync("alert", "Lớp này chưa có điểm tổng kết.");
+				learningSummaryList = new List<Learning_SummaryDTO>();
+				Subjects = new List<string>();
+			}
+			else
+			{
+				var errorMessage = await response.Content.ReadAsStringAsync();
+				await jsRuntime.InvokeVoidAsync("alert", $"Có lỗi xảy ra: {errorMessage}");
 			}
 		}
 		catch (Exception ex)
@@ -302,9 +331,11 @@
 		}
 	}
 
+
 	private void CloseModal()
 	{
 		IsModalOpen = false;
+		// StateHasChanged(); // Cập nhật UI
 		jsRuntime.InvokeVoidAsync("bootstrapModal.hide", "#summaryModal");
 	}
 }
