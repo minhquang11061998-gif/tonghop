@@ -251,13 +251,6 @@ namespace API.Controllers
                 {
                     return BadRequest("PhoneNumber đã tồn tại.");
                 }
-
-                var isDuplicatePasswordHash = await _db.Users.AnyAsync(u => u.PasswordHash == user.PasswordHash);
-                if (isDuplicatePasswordHash)
-                {
-                    return BadRequest("PasswordHash đã tồn tại.");
-                }
-
                 var roleStudent = await _db.Roles.Where(x => x.Name == "Student").Select(x => x.Id).FirstOrDefaultAsync();
                 var userId = Guid.NewGuid();
                 string avatarPath = null;
@@ -278,7 +271,10 @@ namespace API.Controllers
                         avatarPath = uploadResult.SecureUrl.ToString();
                     }
                 }
-
+                if (string.IsNullOrEmpty(avatarPath))
+                {
+                    avatarPath = "https://res.cloudinary.com/dbhqjvozb/image/upload/v1735837528/qolucruwvl86djlfvz4n.png";
+                }
                 // Cập nhật thời gian thay đổi cuối cùng
                 var currentDateTime = DateTime.UtcNow;
 
@@ -333,7 +329,6 @@ namespace API.Controllers
                         await _db.Student_Classes.AddAsync(studentClass);
                         await _db.SaveChangesAsync();
                         await updateclass(id);
-
                         await MaxScor_Subj(student.Id, studentClass.ClassId);
                         await _db.SaveChangesAsync();
                     }
@@ -357,6 +352,7 @@ namespace API.Controllers
                 return BadRequest(ex.ToString());
             }
         }
+
 
 
         #region thêm điểm mặc định bằng 0 cho từng môn và đầu điểm
@@ -729,7 +725,7 @@ namespace API.Controllers
                          new Claim("nameab",data.FullName.ToString()),
                          new Claim("Id",student.Name.ToString()),
                          new Claim("Idteacher",teacherId.Id.ToString()),
-                         new Claim("emailclam",data.Email.ToString()),
+                         new Claim("email",data.Email.ToString()),
                          new Claim("numberPhone",data.PhoneNumber.ToString()),
                          //new Claim("avatar",data.Avartar.ToString()),
                          
@@ -1215,12 +1211,6 @@ namespace API.Controllers
         {
             try
             {
-                // Kiểm tra trùng lặp
-                var isDuplicateUserName = await _db.Users.AnyAsync(u => u.UserName == user.UserName);
-                if (isDuplicateUserName)
-                {
-                    return BadRequest("UserName đã tồn tại.");
-                }
 
                 var isDuplicateEmail = await _db.Users.AnyAsync(u => u.Email == user.Email);
                 if (isDuplicateEmail)
@@ -1232,12 +1222,6 @@ namespace API.Controllers
                 if (isDuplicatePhoneNumber)
                 {
                     return BadRequest("PhoneNumber đã tồn tại.");
-                }
-
-                var isDuplicatePasswordHash = await _db.Users.AnyAsync(u => u.PasswordHash == user.PasswordHash);
-                if (isDuplicatePasswordHash)
-                {
-                    return BadRequest("PasswordHash đã tồn tại.");
                 }
 
                 var roleTeacher = await _db.Roles.Where(x => x.Name == "Teacher").Select(x => x.Id).FirstOrDefaultAsync();
@@ -1260,7 +1244,10 @@ namespace API.Controllers
                         avatarPath = uploadResult.SecureUrl.ToString();
                     }
                 }
-
+                if (string.IsNullOrEmpty(avatarPath))
+                {
+                    avatarPath = "https://res.cloudinary.com/dbhqjvozb/image/upload/v1735837528/qolucruwvl86djlfvz4n.png";
+                }
                 // Cập nhật thời gian thay đổi cuối cùng
                 var currentDateTime = DateTime.UtcNow;
 

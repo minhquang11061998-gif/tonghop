@@ -16,14 +16,9 @@
                 <button class="btn btn-primary btn-sm rounded-pill shadow" @onclick="()=>showexam(ModalTypeExam.Add)">
                     <i class="bi bi-plus-circle"></i> Tạo mới
                 </button>
-                <button class="btn btn-danger btn-sm rounded-pill shadow" @onclick="deleteexam" disabled="@(idexam == Guid.Empty && SelectedTest == Guid.Empty)">
+                <button class="btn btn-danger btn-sm rounded-pill shadow" @onclick="deleteexam" disabled="@( SelectedTest == Guid.Empty)">
                     <i class="bi bi-trash"></i> Xóa
                 </button>
-
-                <button class="btn btn-warning btn-sm rounded-pill shadow" @onclick="()=>showexam(ModalTypeExam.Edit)" disabled="@(idexam == Guid.Empty)">
-                    <i class="bi bi-pencil"></i> Chỉnh sửa
-                </button>
-
             </div>
 
             <!-- Search Bar -->
@@ -49,7 +44,7 @@
                 <thead class="table-primary">
                     <tr>
                         <th style="width: 40px; text-align: center;">
-                            <input type="checkbox" @onchange="ToggleSelectAll" title="Chọn tất cả" />
+                           
                         </th>
                         <th class="text-start" style="width: 300px;">Tên bài thi</th>
                         <th style="width: 200px;">Môn</th>
@@ -64,7 +59,7 @@
                         {
                             <tr class="@(idexam == exam.Id ? "table-info" : "")">
                                 <td>
-                                    <input type="checkbox" checked="@(idexam == exam.Id)" @onchange="() => SelectTestexam(exam.Id)" title="Chọn đề thi này" />
+                                   
                                 </td>
                                 <td class="text-start">
                                     <span class="btn btn-link p-0 text-decoration-none text-primary fw-bold" @onclick="() => ToggleTreestudent(exam.Id)">
