@@ -16,9 +16,9 @@
                 <button class="btn btn-primary btn-sm rounded-pill shadow" @onclick="()=>showexam(ModalTypeExam.Add)">
                     <i class="bi bi-plus-circle"></i> Tạo mới
                 </button>
-                <button class="btn btn-danger btn-sm rounded-pill shadow" @onclick="deleteexam" disabled="@( SelectedTest == Guid.Empty)">
+               @*  <button class="btn btn-danger btn-sm rounded-pill shadow" @onclick="deleteexam" disabled="@( SelectedTest == Guid.Empty)">
                     <i class="bi bi-trash"></i> Xóa
-                </button>
+                </button> *@
             </div>
 
             <!-- Search Bar -->
@@ -38,13 +38,13 @@
                 <caption class="text-end bg-light p-2">
                     <div class="d-flex justify-content-between align-items-center">
                         <span class="fw-bold">Danh sách bài thi</span>
-                       
+
                     </div>
                 </caption>
                 <thead class="table-primary">
                     <tr>
                         <th style="width: 40px; text-align: center;">
-                           
+
                         </th>
                         <th class="text-start" style="width: 300px;">Tên bài thi</th>
                         <th style="width: 200px;">Môn</th>
@@ -59,7 +59,7 @@
                         {
                             <tr class="@(idexam == exam.Id ? "table-info" : "")">
                                 <td>
-                                   
+
                                 </td>
                                 <td class="text-start">
                                     <span class="btn btn-link p-0 text-decoration-none text-primary fw-bold" @onclick="() => ToggleTreestudent(exam.Id)">
@@ -88,7 +88,7 @@
                                                             <td></td>
                                                             <td></td>
                                                             <td>
-                                                                <input type="checkbox" checked="@(SelectedTest == test.Id)" @onchange="() => SelectTest(test.Id)" title="Chọn đề thi này" />
+                                                               @*  <input type="checkbox" checked="@(SelectedTest == test.Id)" @onchange="() => SelectTest(test.Id)" title="Chọn đề thi này" /> *@
                                                             </td>
                                                             <td>@test.Name</td>
                                                             <td>@test.Minute (phút)</td>
@@ -529,6 +529,7 @@
                 <div class="mb-3">
                     <label for="questionType" class="form-label">Loại câu hỏi:</label>
                     <select id="questionType" @onchange="ChangeQuestionType" class="form-select" disabled="@(modalTypeQuestion==ModalTypeQuestion.Edit)">
+                        <option value="0">-- Chọn loại câu hỏi --</option>
                         <option value="1">Trắc nghiệm 1 đáp án</option>
                         <option value="2">Trắc nghiệm nhiều đáp án</option>
                         <option value="3">Đúng/Sai</option>
@@ -846,6 +847,11 @@
     }
     private async Task createExam(){
         if(idexam==Guid.Empty){
+            if (getAllExamDTOs.Any(x => x.idsubject == examDTO.idsubject))
+            {
+                await Jsruntime.InvokeVoidAsync("alert", "Tên bài thi đã tồn tại");
+                return;
+            }
             var respon = await client.PostAsJsonAsync("https://localhost:7046/api/Exam/create-exam", examDTO);
             if (respon.IsSuccessStatusCode)
             {
@@ -1474,14 +1480,27 @@
 
     private void ResetForm()
     {
-        testQuestion = new TestQuestion_TestQuestionAnswersDTO
-            {
-                QuestionType = 1,
-                Answers = new List<string> { "" },
-                CorrectAnswers = new List<string>()
-            };
+
+        if (testQuestion.QuestionType == 1 || testQuestion.QuestionType == 2)
+        {
+            testQuestion.QuestionName = string.Empty;
+            testQuestion.Level = 0;
+            testQuestion.Answers = new List<string> { "" }; 
+            testQuestion.CorrectAnswers = new List<string>(); 
+        }
+        else
+        {
+            testQuestion.QuestionName = string.Empty;
+            testQuestion.Level = 0;
+            testQuestion.Answers = new List<string> { "True", "False" }; 
+            testQuestion.CorrectAnswers = new List<string>();
+
+        }
+
+        // Xóa thông báo lỗi hoặc trạng thái cũ
         Message = string.Empty;
     }
+
         
 }
 

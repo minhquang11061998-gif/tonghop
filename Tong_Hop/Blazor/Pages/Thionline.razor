@@ -129,12 +129,14 @@
         if (!string.IsNullOrEmpty(code) && code.Length == 6 && await VerifyCode())
         {
             navigate.NavigateTo($"/exam/{code}");
+            await jsruntime.InvokeVoidAsync("enterExamMode");
         }
         else
         {
 
             await jsruntime.InvokeVoidAsync("alert", "Mã không hợp lệ!");
         }
+        StateHasChanged();
     }
 
     private async Task<bool> VerifyCode()
