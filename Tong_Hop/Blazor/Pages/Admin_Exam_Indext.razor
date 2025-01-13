@@ -303,7 +303,7 @@
     }
     private async Task sentemail(string code){
         var email = Email;
-        var respon = await client.PostAsJsonAsync($"https://localhost:7046/api/Test/send?email={email}&code={code}",new { });
+        var respon = await client.PostAsJsonAsync($"https://localhost:7046/api/Test/send?email={email}&code={code}", new { });
         if(respon.IsSuccessStatusCode){
             await Jsruntime.InvokeVoidAsync("alert", "Gửi mã code thành công hãy kiểm tra email của bạn!");
         }else{
