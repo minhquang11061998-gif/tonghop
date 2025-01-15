@@ -129,7 +129,8 @@
     private async Task HandleSubmit()
     {
         code = await jsruntime.InvokeAsync<string>("getCode");
-        if (!string.IsNullOrEmpty(code) && code.Length == 6 && await VerifyCode())
+        string formattedScore = code.ToString().PadLeft(6, '0');
+        if (!string.IsNullOrEmpty(formattedScore) && code.Length == 6 && await VerifyCode())
         {
             navigate.NavigateTo($"/exam/{code}");
             await jsruntime.InvokeVoidAsync("enterExamMode");
@@ -157,14 +158,6 @@
     }
 }
 <script>
-    function reloadCameraFeed() {
-        const cameraImage = document.querySelector("#cameraImage");
-        if (cameraImage) {
-            cameraImage.src = "https://localhost:7046/api/FaceId/camera-stream?" + new Date().getTime();
-            console.log("Camera feed reloaded.");
-        } else {
-            console.error("Element with ID 'cameraImage' not found.");
-        }
-    }
+   
 
 </script>

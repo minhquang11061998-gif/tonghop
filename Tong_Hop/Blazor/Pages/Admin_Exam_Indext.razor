@@ -26,9 +26,7 @@
             <table class="table table-hover table-bordered align-middle">
                 <thead class="table-primary text-center">
                     <tr>
-                        <th style="width: 50px;">
-                           
-                        </th>
+                        <th style="width: 50px;"></th>
                         <th>Tên bài thi</th>
                         <th>Phòng thi</th>
                         <th>Môn</th>
@@ -40,58 +38,62 @@
                         <th style="width: 300px;">Hành động</th>
                     </tr>
                 </thead>
-                <tbody>
-                    @if (filteredExamRooms.Any())
-                    {
-                        @foreach (var examroom in filteredExamRooms)
+            </table>
+            <div class="overflow-auto" style="max-height: 500px;">
+                <table class="table table-hover table-bordered align-middle mb-0">
+                    <tbody>
+                        @if (filteredExamRooms.Any())
                         {
-                            <tr class="@(idtest == examroom.IdTest ? "table-info" : "")">
-                                <td class="text-center">
-                                    <input type="checkbox"
-                                    checked="@(idtest == examroom.IdTest)"
-                                    @onchange="() => SelectExamRoom(examroom.IdTest)"
-                                    title="Chọn phòng thi này">
-                                </td>
-                                <td>@examroom.Name</td>
-                                <td>@examroom.Nameroom</td>
-                                <td>@examroom.NameSubject</td>
-                                <td>@examroom.StartTime</td>
-                                <td>@examroom.EndTime</td>
-                                <td>@examroom.NameTeacher1</td>
-                                <td>@examroom.NameTeacher2</td>
-                                <td class="text-center">
-                                    <span class="badge @(examroom.Status == 1 ? "bg-success" :
+                            @foreach (var examroom in filteredExamRooms)
+                            {
+                                <tr class="@(idtest == examroom.IdTest ? "table-info" : "")">
+                                    <td class="text-center">
+                                        <input type="checkbox"
+                                               checked="@(idtest == examroom.IdTest)"
+                                               @onchange="() => SelectExamRoom(examroom.IdTest)"
+                                               title="Chọn phòng thi này">
+                                    </td>
+                                    <td>@examroom.Name</td>
+                                    <td>@examroom.Nameroom</td>
+                                    <td>@examroom.NameSubject</td>
+                                    <td>@examroom.StartTime</td>
+                                    <td>@examroom.EndTime</td>
+                                    <td>@examroom.NameTeacher1</td>
+                                    <td>@examroom.NameTeacher2</td>
+                                    <td class="text-center">
+                                        <span class="badge @(examroom.Status == 1 ? "bg-success" :
                                                         examroom.Status == 2 ? "bg-warning" : "bg-secondary")">
-                                        @(
-                                            examroom.Status == 1 ? "Đang thi" :
-                                            examroom.Status == 2 ? "Chưa đến giờ" :
-                                            "Quá thời gian"
-                                            )
-                                    </span>
-                                </td>
-
-                                <td class="text-center">
-                                    <!-- Xem chi tiết -->
-                                    <button class="btn btn-info btn-sm" @onclick="() => OpenDetailExamModal(examroom.IdTest)" title="Xem chi tiết">
-                                        <i class="bi bi-eye"></i> Xem
-                                    </button>
-                                    <!-- Gửi email -->
-                                    <button class="btn btn-primary btn-sm ms-2" @onclick="()=>sentemail(examroom.CodeTest)" title="Gửi email thông báo">
-                                        <i class="bi bi-envelope"></i> Gửi mã code
-                                    </button>
-                                </td>
+                                            @(
+                                                examroom.Status == 1 ? "Đang thi" :
+                                                examroom.Status == 2 ? "Chưa đến giờ" :
+                                                "Quá thời gian"
+                                                )
+                                        </span>
+                                    </td>
+                                    <td class="text-center">
+                                        <!-- Xem chi tiết -->
+                                        <button class="btn btn-info btn-sm" @onclick="() => OpenDetailExamModal(examroom.IdTest)" title="Xem chi tiết">
+                                            <i class="bi bi-eye"></i> Xem
+                                        </button>
+                                        <!-- Gửi email -->
+                                        <button class="btn btn-primary btn-sm ms-2" @onclick="()=>sentemail(examroom.CodeTest)" title="Gửi email thông báo">
+                                            <i class="bi bi-envelope"></i> Gửi mã code
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="11" class="text-center text-muted">Không tìm thấy phòng thi nào</td>
                             </tr>
                         }
-                    }
-                    else
-                    {
-                        <tr>
-                            <td colspan="11" class="text-center text-muted">Không tìm thấy phòng thi nào</td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
+                    </tbody>
+                </table>
+            </div>
         </div>
+
     </div>
 </div>
 

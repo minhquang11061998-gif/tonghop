@@ -98,7 +98,7 @@ else
 												   name="answer_@currentQuestion.QuestionId"
 												   value="@answer.AnswerId"
 												   @onchange="() => UpdateAndSaveAnswer(currentQuestion.QuestionId, answer.AnswerId)"
-												   checked="@(selectedAnswerIds.ContainsKey(currentQuestion.QuestionId) && selectedAnswerIds[currentQuestion.QuestionId].Contains(answer.AnswerId))" />
+												   checked="@(selectedAnswerIds.ContainsKey(currentQuestion.QuestionId) && selectedAnswerIds[currentQuestion.QuestionId] == answer.AnswerId)" />
 										}
 										else
 										{
@@ -108,7 +108,7 @@ else
 												   name="answer_@currentQuestion.QuestionId"
 												   value="@answer.AnswerId"
 												   @onchange="() => UpdateAndSaveAnswer(currentQuestion.QuestionId, answer.AnswerId)"
-												   checked="@(selectedAnswerIds.ContainsKey(currentQuestion.QuestionId) && selectedAnswerIds[currentQuestion.QuestionId].Contains(answer.AnswerId))" />
+												   checked="@(selectedAnswerIds.ContainsKey(currentQuestion.QuestionId) && selectedAnswerIds[currentQuestion.QuestionId] == answer.AnswerId)" />
 										}
 										<label class="form-check-label" for="answer_@answer.AnswerId">
 											@answer.AnswerText
@@ -146,7 +146,7 @@ else
 	private Exam_Room_Histories_DTO examhistories = new Exam_Room_Histories_DTO();
 	private List<infomationDTO> infomationDTOs = new List<infomationDTO>();
 	// Lưu trữ ID của các câu trả lời đã chọn cho mỗi câu hỏi
-	private Dictionary<Guid, List<Guid>?> selectedAnswerIds = new Dictionary<Guid, List<Guid>?>();
+	private Dictionary<Guid, Guid?> selectedAnswerIds = new Dictionary<Guid, Guid?>();
 	private TimeSpan remainingTime;  // Thời gian còn lại
 	private bool isTimeUp = false;   // Trạng thái hết giờ
 
@@ -182,13 +182,13 @@ else
 	private Guid? Id_dap_an_duoc_tron;
 	private Guid? Id_cau_hoi_duoc_tron;
 
-	// private void UpdateSelectedAnswer(Guid questionId, Guid answerId)
-	// {
-	// 	// Cập nhật giá trị đã chọn cho câu hỏi
-	// 	selectedAnswerIds[questionId] = answerId;
-	// 	Id_dap_an_duoc_tron = answerId;
-	// 	Id_cau_hoi_duoc_tron = questionId;
-	// }
+	private void UpdateSelectedAnswer(Guid questionId, Guid answerId)
+	{
+		// Cập nhật giá trị đã chọn cho câu hỏi
+		selectedAnswerIds[questionId] = answerId;
+		Id_dap_an_duoc_tron = answerId;
+		Id_cau_hoi_duoc_tron = questionId;
+	}
 
 	protected override async Task OnInitializedAsync()
 	{
@@ -206,9 +206,8 @@ else
 		try
 		{
 			isLoading = true;
-			string formattedScore = CodeTest.ToString().PadLeft(6, '0');
-			hist = await client.GetFromJsonAsync<HistDTO>($"api/ViewExam/test-testcode-question-await?CodeTest={formattedScore}");
-			infomationDTOs = await client.GetFromJsonAsync<List<infomationDTO>>($"https://localhost:7046/api/ViewExam/information_exam?code={formattedScore}&id={isdtudent}");
+			hist = await client.GetFromJsonAsync<HistDTO>($"api/ViewExam/test-testcode-question-await?CodeTest={CodeTest}");
+			infomationDTOs = await client.GetFromJsonAsync<List<infomationDTO>>($"https://localhost:7046/api/ViewExam/information_exam?code={CodeTest}&id={isdtudent}");
 		}
 		catch (Exception ex)
 		{
@@ -224,45 +223,32 @@ else
 	{
 		try
 		{
-			// Khởi tạo danh sách đáp án cho questionId nếu chưa tồn tại
-			if (!selectedAnswerIds.ContainsKey(questionId))
-			{
-				selectedAnswerIds[questionId] = new List<Guid>();
-			}
+			// Cập nhật đáp án vào bộ nhớ tạm
+			selectedAnswerIds[questionId] = answerId;
+			Id_dap_an_duoc_tron = answerId; // Lưu ID đáp án hiện tại
+			Id_cau_hoi_duoc_tron = questionId;
 
-			// Chọn/bỏ chọn đáp án
-			if (selectedAnswerIds[questionId].Contains(answerId))
-			{
-				selectedAnswerIds[questionId].Remove(answerId);  // Bỏ chọn nếu đã chọn
-			}
-			else
-			{
-				selectedAnswerIds[questionId].Add(answerId);  // Thêm vào nếu chưa chọn
-			}
-
-			// Kiểm tra số lượng đáp án đã lưu
+			// Gọi API kiểm tra lịch sử đáp án
 			var answerHistoryCount = await CheckAnswerHistory(CodeTest, questionId, isdtudent);
-			if (answerHistoryCount >= 2)
+
+			if (answerHistoryCount >= 1)
 			{
-				await DeleteHisst(CodeTest, questionId);  // Xóa các đáp án cũ nếu cần
+				// Nếu đã có 2 đáp án trong lịch sử, xóa đáp án cũ
+				await DeleteHisst(CodeTest, questionId);
 			}
 
-			// Lưu từng đáp án trong danh sách đã chọn
-			foreach (var id in selectedAnswerIds[questionId])
-			{
-				await CreateHist(CodeTest, id);
-			}
+			// Lưu đáp án mới vào API
+			await CreateHist(CodeTest, answerId);
 		}
 		catch (Exception ex)
 		{
+			// Xử lý lỗi khi lưu
 			await jsruntime.InvokeVoidAsync("alert", $"Lỗi khi lưu đáp án: {ex.Message}");
 		}
 	}
-
 	private async Task DeleteHisst(int codetest, Guid idquest)
 	{
-		string formattedScore = CodeTest.ToString().PadLeft(6, '0');
-		var res = await client.DeleteAsync($"api/ViewExam/Delete_hist?Cotesst={formattedScore}&IDQuestion={idquest}&IDStudent={isdtudent}");
+		var res = await client.DeleteAsync($"api/ViewExam/Delete_hist?Cotesst={codetest}&IDQuestion={idquest}&IDStudent={isdtudent}");
 
 		if (!res.IsSuccessStatusCode)
 		{
@@ -278,10 +264,9 @@ else
 			examhistories.TestQuestionAnswerId = idAnswer;
 			examhistories.Id = Guid.NewGuid(); // Tạo ID duy nhất cho lịch sử
 
-			string formattedScore = CodeTest.ToString().PadLeft(6, '0');
 			// Gửi yêu cầu POST
 			var response = await client.PostAsJsonAsync(
-				$"api/ViewExam/create-hist?CodeTesst={formattedScore}&GuidId={isdtudent}&answerId={idAnswer}",
+				$"api/ViewExam/create-hist?CodeTesst={codetest}&GuidId={isdtudent}&answerId={idAnswer}",
 				examhistories
 			);
 
@@ -304,13 +289,9 @@ else
 		{
 			currentQuestionIndex++;
 			var questionId = hist.Questions[currentQuestionIndex].QuestionId;
-
-			if (selectedAnswerIds.ContainsKey(questionId) && selectedAnswerIds[questionId].Any())
+			if (selectedAnswerIds.ContainsKey(questionId))
 			{
-				// Lưu danh sách các đáp án đã chọn cho câu hỏi hiện tại
-				Id_dap_an_duoc_tron = selectedAnswerIds[questionId].FirstOrDefault();  // Dùng 1 đáp án nếu cần logic cũ
-																								// Hoặc lấy toàn bộ danh sách nếu cần xử lý danh sách
-				var selectedAnswersForQuestion = selectedAnswerIds[questionId];
+				Id_dap_an_duoc_tron = selectedAnswerIds[questionId];
 			}
 			else
 			{
@@ -329,9 +310,8 @@ else
 	{
 		try
 		{
-			string formattedScore = CodeTest.ToString().PadLeft(6, '0');
-			var score = await client.GetAsync($"api/ViewExam/Exam_results_storage?CodeTest={formattedScore}&ExamResultStorage={STFDto.TotalScore}&IdStudent={isdtudent}");
-			var examhistory = await client.PostAsync($"api/ViewExam/Exam_Histories?CodeTest={formattedScore}&ExamResultStorage={STFDto.TotalScore}&IdStudent={isdtudent}", null);
+			var score = await client.GetAsync($"api/ViewExam/Exam_results_storage?CodeTest={CodeTest}&ExamResultStorage={STFDto.TotalScore}&IdStudent={isdtudent}");
+			var examhistory = await client.GetAsync($"api/ViewExam/Exam_Histories?ExamResultStorage={STFDto.TotalScore}&examRoomStudentId={isdtudent}");
 		}
 		catch (Exception)
 		{
@@ -342,8 +322,7 @@ else
 	// Hàm kiểm tra xem câu hỏi đã có bao nhiêu đáp án được lưu cho sinh viên
 	private async Task<int> CheckAnswerHistory(int codetest, Guid questionId, string studentId)
 	{
-		string formattedScore = CodeTest.ToString().PadLeft(6, '0');
-		var response = await client.GetAsync($"api/ViewExam/check-answer-history?codetest={formattedScore}&questionId={questionId}&studentId={studentId}");
+		var response = await client.GetAsync($"api/ViewExam/check-answer-history?codetest={codetest}&questionId={questionId}&studentId={studentId}");
 
 		if (response.IsSuccessStatusCode)
 		{
@@ -368,7 +347,7 @@ else
 			var questionId = hist.Questions[currentQuestionIndex].QuestionId;
 			if (selectedAnswerIds.ContainsKey(questionId))
 			{
-				Id_dap_an_duoc_tron = selectedAnswerIds[questionId].FirstOrDefault();
+				Id_dap_an_duoc_tron = selectedAnswerIds[questionId];
 			}
 			else
 			{
@@ -385,8 +364,7 @@ else
 			isLoading = true;
 
 			// Gọi API lấy thời gian làm bài
-			string formattedScore = CodeTest.ToString().PadLeft(6, '0');
-			var response = await client.GetAsync($"https://localhost:7046/api/ViewExam/GetExamDuration?codeTest={formattedScore}");
+			var response = await client.GetAsync($"https://localhost:7046/api/ViewExam/GetExamDuration?codeTest={CodeTest}");
 			if (response.IsSuccessStatusCode)
 			{
 				var durationMinutes = await response.Content.ReadFromJsonAsync<int>();

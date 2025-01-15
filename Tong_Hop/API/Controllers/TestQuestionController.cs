@@ -300,6 +300,7 @@ namespace API.Controllers
                 .Where(tc => tc.TestId == testId)
                 .ToListAsync();
 
+
             if (allTestCodes == null || allTestCodes.Count == 0)
             {
                 return NotFound("Không tìm thấy mã kiểm tra liên quan đến bài thi.");
@@ -313,92 +314,595 @@ namespace API.Controllers
             var veryHardQuestions = questions.Where(x => x.Level == 4).ToList();
 
             // Kiểm tra số lượng câu hỏi đủ cho mỗi mức độ
-            if (easyQuestions.Count < easyCount || mediumQuestions.Count < mediumCount ||
-                hardQuestions.Count < hardCount || veryHardQuestions.Count < veryHardCount)
+            if (easyQuestions.Count <= easyCount || mediumQuestions.Count <= mediumCount ||
+                hardQuestions.Count <= hardCount || veryHardQuestions.Count <= veryHardCount)
             {
                 return BadRequest("Không đủ số câu hỏi cho một hoặc nhiều mức độ.");
             }
 
-            // Giới hạn số lần mỗi câu hỏi có thể được sử dụng trong tổng số TestCode
-            // Giả sử bạn muốn mỗi câu hỏi được sử dụng tối đa trong 4 TestCode
-            int MaxTestCode = allTestCodes.Count;
-
-			int maxUsagePerQuestion = (MaxTestCode / 100) * 30;
-
-            // Theo dõi số lần mỗi câu hỏi đã được sử dụng
-            var questionUsageCount = new Dictionary<Guid, int>();
-
-            // Khởi tạo dictionary với giá trị 0 cho mỗi câu hỏi
-            foreach (var question in questions)
+            if (allTestCodes.Count() <= 10)
             {
-                questionUsageCount[question.Id] = 0;
-            }
+                int maxUsagePerQuestion = 1;
 
-            Random globalRandom = new Random();
-
-            foreach (var testCode in allTestCodes)
-            {
-                var selectedQuestionsForTestCode = new List<TestQuestions>();
-
-                // Hàm để chọn câu hỏi cho mỗi mức độ
-                List<TestQuestions> SelectQuestions(List<TestQuestions> pool, int count)
+                if (easyQuestions.Count() * maxUsagePerQuestion < allTestCodes.Count())
                 {
-                    // Lọc các câu hỏi chưa vượt quá giới hạn sử dụng và chưa được chọn cho TestCode hiện tại
-                    var availableQuestions = pool
-                        .Where(q => questionUsageCount[q.Id] < maxUsagePerQuestion &&
-                                    !selectedQuestionsForTestCode.Any(sq => sq.Id == q.Id))
-                        .OrderBy(q => globalRandom.Next())
-                        .Take(count)
-                        .ToList();
+                    int thieu = allTestCodes.Count() - (easyQuestions.Count() * maxUsagePerQuestion);
+                    return BadRequest($"Số lượng câu hỏi dễ không đủ : thiếu {thieu} câu");
+                }
+                if (mediumQuestions.Count() * maxUsagePerQuestion < allTestCodes.Count())
+                {
+                    int thieu = allTestCodes.Count() - (mediumQuestions.Count() * maxUsagePerQuestion);
+                    return BadRequest($"Số lượng câu hỏi dễ không đủ : thiếu {thieu} câu");
+                }
+                if (hardQuestions.Count() * maxUsagePerQuestion < allTestCodes.Count())
+                {
+                    int thieu = allTestCodes.Count() - (hardQuestions.Count() * maxUsagePerQuestion);
+                    return BadRequest($"Số lượng câu hỏi dễ không đủ : thiếu {thieu} câu");
+                }
+                if (veryHardQuestions.Count() * maxUsagePerQuestion < allTestCodes.Count())
+                {
+                    int thieu = allTestCodes.Count() - (veryHardQuestions.Count() * maxUsagePerQuestion);
+                    return BadRequest($"Số lượng câu hỏi dễ không đủ : thiếu {thieu} câu");
+                }
+                // Theo dõi số lần mỗi câu hỏi đã được sử dụng
+                var questionUsageCount = new Dictionary<Guid, int>();
 
-                    if (availableQuestions.Count < count)
+                // Khởi tạo dictionary với giá trị 0 cho mỗi câu hỏi
+                foreach (var question in questions)
+                {
+                    questionUsageCount[question.Id] = 0;
+                }
+
+                Random globalRandom = new Random();
+
+                foreach (var testCode in allTestCodes)
+                {
+                    var selectedQuestionsForTestCode = new List<TestQuestions>();
+
+                    // Hàm để chọn câu hỏi cho mỗi mức độ
+                    List<TestQuestions> SelectQuestions(List<TestQuestions> pool, int count)
                     {
-                        throw new InvalidOperationException("Không đủ câu hỏi để phân bổ cho TestCode.");
+                        // Lọc các câu hỏi chưa vượt quá giới hạn sử dụng và chưa được chọn cho TestCode hiện tại
+                        var availableQuestions = pool
+                            .Where(q => questionUsageCount[q.Id] < maxUsagePerQuestion &&
+                                        !selectedQuestionsForTestCode.Any(sq => sq.Id == q.Id))
+                            .OrderBy(q => globalRandom.Next())
+                            .Take(count)
+                            .ToList();
+
+                        if (availableQuestions.Count < count)
+                        {
+                            throw new InvalidOperationException("Không đủ câu hỏi để phân bổ cho TestCode.");
+                        }
+
+                        // Cập nhật số lần sử dụng và thêm vào danh sách đã chọn
+                        foreach (var q in availableQuestions)
+                        {
+                            selectedQuestionsForTestCode.Add(q);
+                            questionUsageCount[q.Id]++;
+                        }
+
+                        return availableQuestions;
                     }
 
-                    // Cập nhật số lần sử dụng và thêm vào danh sách đã chọn
-                    foreach (var q in availableQuestions)
+                    try
                     {
-                        selectedQuestionsForTestCode.Add(q);
-                        questionUsageCount[q.Id]++;
+                        // Chọn câu hỏi cho mỗi mức độ
+                        SelectQuestions(easyQuestions, easyCount);
+                        SelectQuestions(mediumQuestions, mediumCount);
+                        SelectQuestions(hardQuestions, hardCount);
+                        SelectQuestions(veryHardQuestions, veryHardCount);
+                    }
+                    catch (InvalidOperationException ex)
+                    {
+                        return BadRequest($"Lỗi khi phân bổ câu hỏi: {ex.Message}");
                     }
 
-                    return availableQuestions;
-                }
+                    // Shuffle câu hỏi trong TestCode hiện tại
+                    var shuffledQuestions = selectedQuestionsForTestCode.OrderBy(q => globalRandom.Next()).ToList();
 
-                try
-                {
-                    // Chọn câu hỏi cho mỗi mức độ
-                    SelectQuestions(easyQuestions, easyCount);
-                    SelectQuestions(mediumQuestions, mediumCount);
-                    SelectQuestions(hardQuestions, hardCount);
-                    SelectQuestions(veryHardQuestions, veryHardCount);
-                }
-                catch (InvalidOperationException ex)
-                {
-                    return BadRequest($"Lỗi khi phân bổ câu hỏi: {ex.Message}");
-                }
-
-                // Shuffle câu hỏi trong TestCode hiện tại
-                var shuffledQuestions = selectedQuestionsForTestCode.OrderBy(q => globalRandom.Next()).ToList();
-
-                // Thêm các câu hỏi vào TestCode_TestQuestion
-                foreach (var question in shuffledQuestions)
-                {
-                    var testCodeQuestion = new TestCode_TestQuestion
+                    // Thêm các câu hỏi vào TestCode_TestQuestion
+                    foreach (var question in shuffledQuestions)
                     {
-                        TestCodeId = testCode.Id,
-                        TestQuestionId = question.Id
-                    };
+                        var testCodeQuestion = new TestCode_TestQuestion
+                        {
+                            TestCodeId = testCode.Id,
+                            TestQuestionId = question.Id
+                        };
 
-                    _db.TestCode_TestQuestion.Add(testCodeQuestion);
+                        _db.TestCode_TestQuestion.Add(testCodeQuestion);
+                    }
+                    await _db.SaveChangesAsync();
                 }
-                await _db.SaveChangesAsync();
-
-                
             }
+            else if (allTestCodes.Count() > 10 && allTestCodes.Count() <= 20)
+            {
+                int maxUsagePerQuestion = 2;
+
+                if (easyQuestions.Count() * maxUsagePerQuestion < allTestCodes.Count())
+                {
+                    int thieu = allTestCodes.Count() - (easyQuestions.Count() * maxUsagePerQuestion);
+                    return BadRequest($"Số lượng câu hỏi dễ không đủ : thiếu {thieu} câu");
+                }
+                if (mediumQuestions.Count() * maxUsagePerQuestion < allTestCodes.Count())
+                {
+                    int thieu = allTestCodes.Count() - (mediumQuestions.Count() * maxUsagePerQuestion);
+                    return BadRequest($"Số lượng câu hỏi dễ không đủ : thiếu {thieu} câu");
+                }
+                if (hardQuestions.Count() * maxUsagePerQuestion < allTestCodes.Count())
+                {
+                    int thieu = allTestCodes.Count() - (hardQuestions.Count() * maxUsagePerQuestion);
+                    return BadRequest($"Số lượng câu hỏi dễ không đủ : thiếu {thieu} câu");
+                }
+                if (veryHardQuestions.Count() * maxUsagePerQuestion < allTestCodes.Count())
+                {
+                    int thieu = allTestCodes.Count() - (veryHardQuestions.Count() * maxUsagePerQuestion);
+                    return BadRequest($"Số lượng câu hỏi dễ không đủ : thiếu {thieu} câu");
+                }
+
+                // Theo dõi số lần mỗi câu hỏi đã được sử dụng
+                var questionUsageCount = new Dictionary<Guid, int>();
+
+                // Khởi tạo dictionary với giá trị 0 cho mỗi câu hỏi
+                foreach (var question in questions)
+                {
+                    questionUsageCount[question.Id] = 0;
+                }
+
+                Random globalRandom = new Random();
+
+                foreach (var testCode in allTestCodes)
+                {
+                    var selectedQuestionsForTestCode = new List<TestQuestions>();
+
+                    // Hàm để chọn câu hỏi cho mỗi mức độ
+                    List<TestQuestions> SelectQuestions(List<TestQuestions> pool, int count)
+                    {
+                        // Lọc các câu hỏi chưa vượt quá giới hạn sử dụng và chưa được chọn cho TestCode hiện tại
+                        var availableQuestions = pool
+                            .Where(q => questionUsageCount[q.Id] < maxUsagePerQuestion &&
+                                        !selectedQuestionsForTestCode.Any(sq => sq.Id == q.Id))
+                            .OrderBy(q => globalRandom.Next())
+                            .Take(count)
+                            .ToList();
+
+                        if (availableQuestions.Count < count)
+                        {
+                            throw new InvalidOperationException("Không đủ câu hỏi để phân bổ cho TestCode.");
+                        }
+
+                        // Cập nhật số lần sử dụng và thêm vào danh sách đã chọn
+                        foreach (var q in availableQuestions)
+                        {
+                            selectedQuestionsForTestCode.Add(q);
+                            questionUsageCount[q.Id]++;
+                        }
+
+                        return availableQuestions;
+                    }
+
+                    try
+                    {
+                        // Chọn câu hỏi cho mỗi mức độ
+                        SelectQuestions(easyQuestions, easyCount);
+                        SelectQuestions(mediumQuestions, mediumCount);
+                        SelectQuestions(hardQuestions, hardCount);
+                        SelectQuestions(veryHardQuestions, veryHardCount);
+                    }
+                    catch (InvalidOperationException ex)
+                    {
+                        return BadRequest($"Lỗi khi phân bổ câu hỏi: {ex.Message}");
+                    }
+
+                    // Shuffle câu hỏi trong TestCode hiện tại
+                    var shuffledQuestions = selectedQuestionsForTestCode.OrderBy(q => globalRandom.Next()).ToList();
+
+                    // Thêm các câu hỏi vào TestCode_TestQuestion
+                    foreach (var question in shuffledQuestions)
+                    {
+                        var testCodeQuestion = new TestCode_TestQuestion
+                        {
+                            TestCodeId = testCode.Id,
+                            TestQuestionId = question.Id
+                        };
+
+                        _db.TestCode_TestQuestion.Add(testCodeQuestion);
+                    }
+                    await _db.SaveChangesAsync();
+
+
+                }
+            }
+            else if (allTestCodes.Count() > 20 && allTestCodes.Count() <= 30)
+            {
+                int maxUsagePerQuestion = 3;
+
+                if (easyQuestions.Count() * maxUsagePerQuestion < allTestCodes.Count())
+                {
+                    int thieu = allTestCodes.Count() - (easyQuestions.Count() * maxUsagePerQuestion);
+                    return BadRequest($"Số lượng câu hỏi dễ không đủ : thiếu {thieu} câu");
+                }
+                if (mediumQuestions.Count() * maxUsagePerQuestion < allTestCodes.Count())
+                {
+                    int thieu = allTestCodes.Count() - (mediumQuestions.Count() * maxUsagePerQuestion);
+                    return BadRequest($"Số lượng câu hỏi dễ không đủ : thiếu {thieu} câu");
+                }
+                if (hardQuestions.Count() * maxUsagePerQuestion < allTestCodes.Count())
+                {
+                    int thieu = allTestCodes.Count() - (hardQuestions.Count() * maxUsagePerQuestion);
+                    return BadRequest($"Số lượng câu hỏi dễ không đủ : thiếu {thieu} câu");
+                }
+                if (veryHardQuestions.Count() * maxUsagePerQuestion < allTestCodes.Count())
+                {
+                    int thieu = allTestCodes.Count() - (veryHardQuestions.Count() * maxUsagePerQuestion);
+                    return BadRequest($"Số lượng câu hỏi dễ không đủ : thiếu {thieu} câu");
+                }
+                // Theo dõi số lần mỗi câu hỏi đã được sử dụng
+                var questionUsageCount = new Dictionary<Guid, int>();
+
+                // Khởi tạo dictionary với giá trị 0 cho mỗi câu hỏi
+                foreach (var question in questions)
+                {
+                    questionUsageCount[question.Id] = 0;
+                }
+
+                Random globalRandom = new Random();
+
+                foreach (var testCode in allTestCodes)
+                {
+                    var selectedQuestionsForTestCode = new List<TestQuestions>();
+
+                    // Hàm để chọn câu hỏi cho mỗi mức độ
+                    List<TestQuestions> SelectQuestions(List<TestQuestions> pool, int count)
+                    {
+                        // Lọc các câu hỏi chưa vượt quá giới hạn sử dụng và chưa được chọn cho TestCode hiện tại
+                        var availableQuestions = pool
+                            .Where(q => questionUsageCount[q.Id] < maxUsagePerQuestion &&
+                                        !selectedQuestionsForTestCode.Any(sq => sq.Id == q.Id))
+                            .OrderBy(q => globalRandom.Next())
+                            .Take(count)
+                            .ToList();
+
+                        if (availableQuestions.Count < count)
+                        {
+                            throw new InvalidOperationException("Không đủ câu hỏi để phân bổ cho TestCode.");
+                        }
+
+                        // Cập nhật số lần sử dụng và thêm vào danh sách đã chọn
+                        foreach (var q in availableQuestions)
+                        {
+                            selectedQuestionsForTestCode.Add(q);
+                            questionUsageCount[q.Id]++;
+                        }
+
+                        return availableQuestions;
+                    }
+
+                    try
+                    {
+                        // Chọn câu hỏi cho mỗi mức độ
+                        SelectQuestions(easyQuestions, easyCount);
+                        SelectQuestions(mediumQuestions, mediumCount);
+                        SelectQuestions(hardQuestions, hardCount);
+                        SelectQuestions(veryHardQuestions, veryHardCount);
+                    }
+                    catch (InvalidOperationException ex)
+                    {
+                        return BadRequest($"Lỗi khi phân bổ câu hỏi: {ex.Message}");
+                    }
+
+                    // Shuffle câu hỏi trong TestCode hiện tại
+                    var shuffledQuestions = selectedQuestionsForTestCode.OrderBy(q => globalRandom.Next()).ToList();
+
+                    // Thêm các câu hỏi vào TestCode_TestQuestion
+                    foreach (var question in shuffledQuestions)
+                    {
+                        var testCodeQuestion = new TestCode_TestQuestion
+                        {
+                            TestCodeId = testCode.Id,
+                            TestQuestionId = question.Id
+                        };
+
+                        _db.TestCode_TestQuestion.Add(testCodeQuestion);
+                    }
+                    await _db.SaveChangesAsync();
+
+
+                }
+            }
+            else if (allTestCodes.Count() > 30 && allTestCodes.Count() <= 40)
+            {
+                int maxUsagePerQuestion = 4;
+
+                if (easyQuestions.Count() * maxUsagePerQuestion < allTestCodes.Count())
+                {
+                    int thieu = allTestCodes.Count() - (easyQuestions.Count() * maxUsagePerQuestion);
+                    return BadRequest($"Số lượng câu hỏi dễ không đủ : thiếu {thieu} câu");
+                }
+                if (mediumQuestions.Count() * maxUsagePerQuestion < allTestCodes.Count())
+                {
+                    int thieu = allTestCodes.Count() - (mediumQuestions.Count() * maxUsagePerQuestion);
+                    return BadRequest($"Số lượng câu hỏi dễ không đủ : thiếu {thieu} câu");
+                }
+                if (hardQuestions.Count() * maxUsagePerQuestion < allTestCodes.Count())
+                {
+                    int thieu = allTestCodes.Count() - (hardQuestions.Count() * maxUsagePerQuestion);
+                    return BadRequest($"Số lượng câu hỏi dễ không đủ : thiếu {thieu} câu");
+                }
+                if (veryHardQuestions.Count() * maxUsagePerQuestion < allTestCodes.Count())
+                {
+                    int thieu = allTestCodes.Count() - (veryHardQuestions.Count() * maxUsagePerQuestion);
+                    return BadRequest($"Số lượng câu hỏi dễ không đủ : thiếu {thieu} câu");
+                }
+                // Theo dõi số lần mỗi câu hỏi đã được sử dụng
+                var questionUsageCount = new Dictionary<Guid, int>();
+
+                // Khởi tạo dictionary với giá trị 0 cho mỗi câu hỏi
+                foreach (var question in questions)
+                {
+                    questionUsageCount[question.Id] = 0;
+                }
+
+                Random globalRandom = new Random();
+
+                foreach (var testCode in allTestCodes)
+                {
+                    var selectedQuestionsForTestCode = new List<TestQuestions>();
+
+                    // Hàm để chọn câu hỏi cho mỗi mức độ
+                    List<TestQuestions> SelectQuestions(List<TestQuestions> pool, int count)
+                    {
+                        // Lọc các câu hỏi chưa vượt quá giới hạn sử dụng và chưa được chọn cho TestCode hiện tại
+                        var availableQuestions = pool
+                            .Where(q => questionUsageCount[q.Id] < maxUsagePerQuestion &&
+                                        !selectedQuestionsForTestCode.Any(sq => sq.Id == q.Id))
+                            .OrderBy(q => globalRandom.Next())
+                            .Take(count)
+                            .ToList();
+
+                        if (availableQuestions.Count < count)
+                        {
+                            throw new InvalidOperationException("Không đủ câu hỏi để phân bổ cho TestCode.");
+                        }
+
+                        // Cập nhật số lần sử dụng và thêm vào danh sách đã chọn
+                        foreach (var q in availableQuestions)
+                        {
+                            selectedQuestionsForTestCode.Add(q);
+                            questionUsageCount[q.Id]++;
+                        }
+
+                        return availableQuestions;
+                    }
+
+                    try
+                    {
+                        // Chọn câu hỏi cho mỗi mức độ
+                        SelectQuestions(easyQuestions, easyCount);
+                        SelectQuestions(mediumQuestions, mediumCount);
+                        SelectQuestions(hardQuestions, hardCount);
+                        SelectQuestions(veryHardQuestions, veryHardCount);
+                    }
+                    catch (InvalidOperationException ex)
+                    {
+                        return BadRequest($"Lỗi khi phân bổ câu hỏi: {ex.Message}");
+                    }
+
+                    // Shuffle câu hỏi trong TestCode hiện tại
+                    var shuffledQuestions = selectedQuestionsForTestCode.OrderBy(q => globalRandom.Next()).ToList();
+
+                    // Thêm các câu hỏi vào TestCode_TestQuestion
+                    foreach (var question in shuffledQuestions)
+                    {
+                        var testCodeQuestion = new TestCode_TestQuestion
+                        {
+                            TestCodeId = testCode.Id,
+                            TestQuestionId = question.Id
+                        };
+
+                        _db.TestCode_TestQuestion.Add(testCodeQuestion);
+                    }
+                    await _db.SaveChangesAsync();
+
+
+                }
+            }
+            else if (allTestCodes.Count() > 40 && allTestCodes.Count() <= 50)
+            {
+                int maxUsagePerQuestion = 5;
+
+                if (easyQuestions.Count() * maxUsagePerQuestion < allTestCodes.Count())
+                {
+                    int thieu = allTestCodes.Count() - (easyQuestions.Count() * maxUsagePerQuestion);
+                    return BadRequest($"Số lượng câu hỏi dễ không đủ : thiếu {thieu} câu");
+                }
+                if (mediumQuestions.Count() * maxUsagePerQuestion < allTestCodes.Count())
+                {
+                    int thieu = allTestCodes.Count() - (mediumQuestions.Count() * maxUsagePerQuestion);
+                    return BadRequest($"Số lượng câu hỏi dễ không đủ : thiếu {thieu} câu");
+                }
+                if (hardQuestions.Count() * maxUsagePerQuestion < allTestCodes.Count())
+                {
+                    int thieu = allTestCodes.Count() - (hardQuestions.Count() * maxUsagePerQuestion);
+                    return BadRequest($"Số lượng câu hỏi dễ không đủ : thiếu {thieu} câu");
+                }
+                if (veryHardQuestions.Count() * maxUsagePerQuestion < allTestCodes.Count())
+                {
+                    int thieu = allTestCodes.Count() - (veryHardQuestions.Count() * maxUsagePerQuestion);
+                    return BadRequest($"Số lượng câu hỏi dễ không đủ : thiếu {thieu} câu");
+                }
+                // Theo dõi số lần mỗi câu hỏi đã được sử dụng
+                var questionUsageCount = new Dictionary<Guid, int>();
+
+                // Khởi tạo dictionary với giá trị 0 cho mỗi câu hỏi
+                foreach (var question in questions)
+                {
+                    questionUsageCount[question.Id] = 0;
+                }
+
+                Random globalRandom = new Random();
+
+                foreach (var testCode in allTestCodes)
+                {
+                    var selectedQuestionsForTestCode = new List<TestQuestions>();
+
+                    // Hàm để chọn câu hỏi cho mỗi mức độ
+                    List<TestQuestions> SelectQuestions(List<TestQuestions> pool, int count)
+                    {
+                        // Lọc các câu hỏi chưa vượt quá giới hạn sử dụng và chưa được chọn cho TestCode hiện tại
+                        var availableQuestions = pool
+                            .Where(q => questionUsageCount[q.Id] < maxUsagePerQuestion &&
+                                        !selectedQuestionsForTestCode.Any(sq => sq.Id == q.Id))
+                            .OrderBy(q => globalRandom.Next())
+                            .Take(count)
+                            .ToList();
+
+                        if (availableQuestions.Count < count)
+                        {
+                            throw new InvalidOperationException("Không đủ câu hỏi để phân bổ cho TestCode.");
+                        }
+
+                        // Cập nhật số lần sử dụng và thêm vào danh sách đã chọn
+                        foreach (var q in availableQuestions)
+                        {
+                            selectedQuestionsForTestCode.Add(q);
+                            questionUsageCount[q.Id]++;
+                        }
+
+                        return availableQuestions;
+                    }
+
+                    try
+                    {
+                        // Chọn câu hỏi cho mỗi mức độ
+                        SelectQuestions(easyQuestions, easyCount);
+                        SelectQuestions(mediumQuestions, mediumCount);
+                        SelectQuestions(hardQuestions, hardCount);
+                        SelectQuestions(veryHardQuestions, veryHardCount);
+                    }
+                    catch (InvalidOperationException ex)
+                    {
+                        return BadRequest($"Lỗi khi phân bổ câu hỏi: {ex.Message}");
+                    }
+
+                    // Shuffle câu hỏi trong TestCode hiện tại
+                    var shuffledQuestions = selectedQuestionsForTestCode.OrderBy(q => globalRandom.Next()).ToList();
+
+                    // Thêm các câu hỏi vào TestCode_TestQuestion
+                    foreach (var question in shuffledQuestions)
+                    {
+                        var testCodeQuestion = new TestCode_TestQuestion
+                        {
+                            TestCodeId = testCode.Id,
+                            TestQuestionId = question.Id
+                        };
+
+                        _db.TestCode_TestQuestion.Add(testCodeQuestion);
+                    }
+                    await _db.SaveChangesAsync();
+
+
+                }
+            }
+            else
+            {
+                int maxUsagePerQuestion = 6;
+
+                if (easyQuestions.Count() * maxUsagePerQuestion < allTestCodes.Count())
+                {
+                    int thieu = allTestCodes.Count() - (easyQuestions.Count() * maxUsagePerQuestion);
+                    return BadRequest($"Số lượng câu hỏi dễ không đủ : thiếu {thieu} câu");
+                }
+                if (mediumQuestions.Count() * maxUsagePerQuestion < allTestCodes.Count())
+                {
+                    int thieu = allTestCodes.Count() - (mediumQuestions.Count() * maxUsagePerQuestion);
+                    return BadRequest($"Số lượng câu hỏi dễ không đủ : thiếu {thieu} câu");
+                }
+                if (hardQuestions.Count() * maxUsagePerQuestion < allTestCodes.Count())
+                {
+                    int thieu = allTestCodes.Count() - (hardQuestions.Count() * maxUsagePerQuestion);
+                    return BadRequest($"Số lượng câu hỏi dễ không đủ : thiếu {thieu} câu");
+                }
+                if (veryHardQuestions.Count() * maxUsagePerQuestion < allTestCodes.Count())
+                {
+                    int thieu = allTestCodes.Count() - (veryHardQuestions.Count() * maxUsagePerQuestion);
+                    return BadRequest($"Số lượng câu hỏi dễ không đủ : thiếu {thieu} câu");
+                }
+                // Theo dõi số lần mỗi câu hỏi đã được sử dụng
+                var questionUsageCount = new Dictionary<Guid, int>();
+
+                // Khởi tạo dictionary với giá trị 0 cho mỗi câu hỏi
+                foreach (var question in questions)
+                {
+                    questionUsageCount[question.Id] = 0;
+                }
+
+                Random globalRandom = new Random();
+
+                foreach (var testCode in allTestCodes)
+                {
+                    var selectedQuestionsForTestCode = new List<TestQuestions>();
+
+                    // Hàm để chọn câu hỏi cho mỗi mức độ
+                    List<TestQuestions> SelectQuestions(List<TestQuestions> pool, int count)
+                    {
+                        // Lọc các câu hỏi chưa vượt quá giới hạn sử dụng và chưa được chọn cho TestCode hiện tại
+                        var availableQuestions = pool
+                            .Where(q => questionUsageCount[q.Id] < maxUsagePerQuestion &&
+                                        !selectedQuestionsForTestCode.Any(sq => sq.Id == q.Id))
+                            .OrderBy(q => globalRandom.Next())
+                            .Take(count)
+                            .ToList();
+
+                        if (availableQuestions.Count < count)
+                        {
+                            throw new InvalidOperationException("Không đủ câu hỏi để phân bổ cho TestCode.");
+                        }
+
+                        // Cập nhật số lần sử dụng và thêm vào danh sách đã chọn
+                        foreach (var q in availableQuestions)
+                        {
+                            selectedQuestionsForTestCode.Add(q);
+                            questionUsageCount[q.Id]++;
+                        }
+
+                        return availableQuestions;
+                    }
+
+                    try
+                    {
+                        // Chọn câu hỏi cho mỗi mức độ
+                        SelectQuestions(easyQuestions, easyCount);
+                        SelectQuestions(mediumQuestions, mediumCount);
+                        SelectQuestions(hardQuestions, hardCount);
+                        SelectQuestions(veryHardQuestions, veryHardCount);
+                    }
+                    catch (InvalidOperationException ex)
+                    {
+                        return BadRequest($"Lỗi khi phân bổ câu hỏi: {ex.Message}");
+                    }
+
+                    // Shuffle câu hỏi trong TestCode hiện tại
+                    var shuffledQuestions = selectedQuestionsForTestCode.OrderBy(q => globalRandom.Next()).ToList();
+
+                    // Thêm các câu hỏi vào TestCode_TestQuestion
+                    foreach (var question in shuffledQuestions)
+                    {
+                        var testCodeQuestion = new TestCode_TestQuestion
+                        {
+                            TestCodeId = testCode.Id,
+                            TestQuestionId = question.Id
+                        };
+
+                        _db.TestCode_TestQuestion.Add(testCodeQuestion);
+                    }
+                    await _db.SaveChangesAsync();
+                }
+            }
+
             return Ok("THÀNH CÔNG");
         }
+    
         #endregion
 
         [HttpPut("update_question_answer")]
