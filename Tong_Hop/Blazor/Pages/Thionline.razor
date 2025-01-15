@@ -6,7 +6,7 @@
 @inject HttpClient Http
 @inject NavigationManager navigate
 
-@if (!isLoginFormVisible)
+@* @if (!isLoginFormVisible)
 {
     <div class="row mt-5 d-flex justify-content-center">
         <div class="rounded-3 bg-light shadow-lg p-4" style="width: 700px;">
@@ -31,10 +31,10 @@
             </div>
         </div>
     </div>
-}
+} *@
 
-@if (isLoginFormVisible && !isFaceScanComplete)
-{
+@* @if (isLoginFormVisible && !isFaceScanComplete)
+{ *@
     <div class="row mt-5 d-flex justify-content-center">
         <div class="rounded-3 bg-light shadow-lg p-4" style="width: 700px;">
             <div class="d-flex justify-content-center">
@@ -57,7 +57,7 @@
             </div>
         </div>
     </div>
-}
+@* } *@
 
 @if (isLoginFormVisible && isFaceScanComplete)
 {
@@ -126,7 +126,7 @@
     private async Task HandleSubmit()
     {
         code = await jsruntime.InvokeAsync<string>("getCode");
-        if (!string.IsNullOrEmpty(code) && code.Length == 6 && await VerifyCode())
+        if (!string.IsNullOrEmpty(code) && code.Length == 6 )
         {
             navigate.NavigateTo($"/exam/{code}");
             await jsruntime.InvokeVoidAsync("enterExamMode");

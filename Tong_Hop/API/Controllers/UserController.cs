@@ -1119,7 +1119,6 @@ namespace API.Controllers
         [HttpGet("export-sample")]
         public IActionResult ExportSampleExcel()
         {
-            // Tạo file Excel
             using (var package = new ExcelPackage())
             {
                 var worksheet = package.Workbook.Worksheets.Add("Mẫu Dữ Liệu");
@@ -1127,8 +1126,8 @@ namespace API.Controllers
                 // Tạo tiêu đề cột
                 var headers = new[]
                 {
-            "STT", "Họ và Tên", "Hình Ảnh", "Email", "UserName", "Password", "Ngày sinh", "Số Điện Thoại"
-        };
+    "STT", "Họ và Tên", "Hình Ảnh", "Email", "UserName", "Password", "Ngày sinh", "Số Điện Thoại"
+};
 
                 for (int col = 1; col <= headers.Length; col++)
                 {
@@ -1144,9 +1143,40 @@ namespace API.Controllers
                     range.Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
                     range.Style.VerticalAlignment = OfficeOpenXml.Style.ExcelVerticalAlignment.Center;
                     range.Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
-                    range.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.FromArgb(79, 129, 189)); // Màu xanh đậm
+                    range.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.FromArgb(79, 129, 189));
                 }
 
+                // Thêm Data Validation
+
+                // Validation cho "Họ và Tên": Không chứa số
+                var nameValidation = worksheet.DataValidations.AddCustomValidation("B2:B1000");
+                nameValidation.Formula.ExcelFormula = "ISERROR(FIND(1,B2)) * ISERROR(FIND(2,B2)) * ISERROR(FIND(3,B2)) * ISERROR(FIND(4,B2)) * ISERROR(FIND(5,B2)) * ISERROR(FIND(6,B2)) * ISERROR(FIND(7,B2)) * ISERROR(FIND(8,B2)) * ISERROR(FIND(9,B2)) * ISERROR(FIND(0,B2))";
+                nameValidation.ShowErrorMessage = true;
+                nameValidation.ErrorTitle = "Lỗi nhập liệu";
+                nameValidation.Error = "Tên không được chứa số.";
+
+                // Validation cho "Email": Định dạng email hợp lệ
+                var emailValidation = worksheet.DataValidations.AddCustomValidation("D2:D1000");
+                emailValidation.Formula.ExcelFormula = "ISNUMBER(FIND(\"@\",D2)) * ISNUMBER(FIND(\".\",D2))";
+                emailValidation.ShowErrorMessage = true;
+                emailValidation.ErrorTitle = "Lỗi nhập liệu";
+                emailValidation.Error = "Email không đúng định dạng. Hãy đảm bảo có '@' và '.'";
+
+                // Validation cho "Ngày sinh": Không vượt quá ngày hiện tại
+                var dateValidation = worksheet.DataValidations.AddDateTimeValidation("G2:G1000");
+                dateValidation.Operator = OfficeOpenXml.DataValidation.ExcelDataValidationOperator.between;
+                dateValidation.Formula.Value = new DateTime(1900, 1, 1);
+                dateValidation.Formula2.Value = DateTime.Now;
+                dateValidation.ShowErrorMessage = true;
+                dateValidation.ErrorTitle = "Lỗi nhập liệu";
+                dateValidation.Error = "Ngày sinh không được lớn hơn ngày hiện tại.";
+
+                // Validation cho "Số Điện Thoại": 10 chữ số
+                var phoneValidation = worksheet.DataValidations.AddCustomValidation("H2:H1000");
+                phoneValidation.Formula.ExcelFormula = "AND(ISNUMBER(H2),LEN(H2)=10)";
+                phoneValidation.ShowErrorMessage = true;
+                phoneValidation.ErrorTitle = "Lỗi nhập liệu";
+                phoneValidation.Error = "Số điện thoại phải là 10 chữ số.";
                 // Định dạng chiều rộng cột
                 worksheet.Column(1).Width = 10;
                 worksheet.Column(2).Width = 25;
@@ -1157,53 +1187,31 @@ namespace API.Controllers
                 worksheet.Column(7).Width = 25;
                 worksheet.Column(8).Width = 25;
 
-                // Dữ liệu mẫu
-                for (int row = 2; row <= 2; row++) // Dữ liệu mẫu từ hàng 2 đến hàng 6
+                // Dữ liệu mẫu (có thể để trống nếu không cần)
+                for (int row = 2; row <= 2; row++)
                 {
                     worksheet.Cells[row, 1].Value = row - 1; // STT
-                    worksheet.Cells[row, 2].Value = $"Nguyễn Văn {row - 1}"; // Họ và Tên
+                    worksheet.Cells[row, 2].Value = "Nguyễn Văn A"; // Họ và Tên
                     worksheet.Cells[row, 3].Value = "Ảnh nhúng tại đây"; // Hình ảnh
-                    worksheet.Cells[row, 4].Value = $"user{row - 1}@example.com"; // Email
-                    worksheet.Cells[row, 5].Value = $"user{row - 1}"; // UserName
+                    worksheet.Cells[row, 4].Value = "user@example.com"; // Email
+                    worksheet.Cells[row, 5].Value = "username"; // UserName
                     worksheet.Cells[row, 6].Value = "******"; // Password
                     worksheet.Cells[row, 7].Value = DateTime.Now.AddYears(-20).ToString("dd/MM/yyyy"); // Ngày sinh
                     worksheet.Cells[row, 8].Value = "0123456789"; // Số điện thoại
                 }
 
-                // Tự động điều chỉnh chiều cao của tất cả các dòng
-              
-
-
-                // Khóa tất cả các ô trong worksheet
-                worksheet.Cells.Style.Locked = true;
-
-                // Mở khóa các ô trong các cột cho phép nhập dữ liệu
-                for (int col = 1; col <= 8; col++)
-                {
-                    worksheet.Cells[2, col, 1000, col].Style.Locked = false;
-                }
-
-                // Bảo vệ worksheet
-                worksheet.Protection.IsProtected = true;
-                worksheet.Protection.AllowDeleteColumns = false;
-                worksheet.Protection.AllowInsertColumns = false;
-                worksheet.Protection.AllowDeleteRows = false;
-                worksheet.Protection.AllowInsertRows = true;
-                worksheet.Protection.AllowFormatRows = true;
-                worksheet.Protection.AllowSelectLockedCells = false;
-                worksheet.Protection.AllowSelectUnlockedCells = true;
-
+                // Lưu file và trả về client
                 var stream = new MemoryStream();
                 package.SaveAs(stream);
                 stream.Position = 0;
 
-                // Trả file về client
                 var fileName = $"Template_Sample_{DateTime.Now:yyyyMMddHHmmss}.xlsx";
                 var contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
                 return File(stream, contentType, fileName);
             }
         }
+
 
 
         [HttpPost("create-user-Teacher")]
