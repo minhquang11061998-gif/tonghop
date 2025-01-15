@@ -130,7 +130,7 @@ namespace API.Controllers
         }
 
         [HttpPost("create-hist")]
-        public async Task<ActionResult> CreateHistories(string CodeTesst, string GuidId, List<Guid> answerIds)
+        public async Task<ActionResult> CreateHistories(string CodeTesst, string GuidId, Guid answerId)
         {
             var examroomstudent = await (from a in _db.Tests
                                          join b in _db.Exam_Room_TestCodes on a.Id equals b.TestId
@@ -146,20 +146,49 @@ namespace API.Controllers
                 return NotFound("Exam room student not found");
             }
 
-            foreach (var answerId in answerIds)
+            var hist = new Exam_Room_Student_AnswerHistory
+            {
+                Id = Guid.NewGuid(),
+                TestQuestionAnswerId = answerId,
+                ExamRoomStudentId = examroomstudent.Id,
+            };
+            _db.Exam_Room_Student_AnswerHistories.Add(hist);
+            await _db.SaveChangesAsync();
+            return Ok("đã lưu");
+        }
+
+        [HttpPost("create-hist-pass2")]
+        public async Task<ActionResult> CreateHistoriesList([FromBody] AnswerHistoryRequest request)
+        {
+            var examroomstudent = await (from a in _db.Tests
+                                         join b in _db.Exam_Room_TestCodes on a.Id equals b.TestId
+                                         join c in _db.Exam_Room_Students on b.Id equals c.ExamRoomTestCodeId
+                                         where a.Code == request.CodeTest && c.StudentId == Guid.Parse(request.StudentId)
+                                         select new
+                                         {
+                                             c.Id
+                                         }).FirstOrDefaultAsync();
+
+            if (examroomstudent == null)
+            {
+                return NotFound("Exam room student not found");
+            }
+
+            foreach (var answer in request.AnswerIds)
             {
                 var hist = new Exam_Room_Student_AnswerHistory
                 {
                     Id = Guid.NewGuid(),
-                    TestQuestionAnswerId = answerId,
+                    TestQuestionAnswerId = answer,
                     ExamRoomStudentId = examroomstudent.Id,
                 };
                 _db.Exam_Room_Student_AnswerHistories.Add(hist);
             }
 
             await _db.SaveChangesAsync();
-            return Ok("Đã lưu tất cả đáp án");
+            return Ok("Đã lưu thành công");
         }
+
 
         [HttpDelete("Delete_hist")]
         public async Task<ActionResult> DeleteHist(string Cotesst, Guid IDQuestion, Guid IDStudent)
@@ -276,7 +305,7 @@ namespace API.Controllers
             }
         }
 
-        [HttpPost("Exam_results_storage")]
+        [HttpGet("Exam_results_storage")]
         public async Task<ActionResult> ExamResultsStorage(string CodeTest, double ExamResultStorage, Guid IdStudent)
         {
             try
@@ -346,7 +375,7 @@ namespace API.Controllers
             public Guid ExamRoomStudentId { get; set; }
         }
 
-        //[HttpPost("Exam_Histories")]
+        //[HttpGet("Exam_Histories")]
         //public async Task<ActionResult> ExamHistories(string CodeTesst, double ExamResultStorage, Guid IdStudent)
         //{
         //    try
@@ -365,7 +394,7 @@ namespace API.Controllers
         //            Id = Guid.NewGuid(),
         //            Score = ExamResultStorage,
         //            CreationTime = DateTime.Now,
-        //            ExamRoomStudentId = IdStudent
+        //            ExamRoomStudentId = examroomstudent.Id
         //        };
 
         //        _db.ExamHistorys.Add(data);
