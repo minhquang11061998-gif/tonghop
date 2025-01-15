@@ -16,19 +16,19 @@
     <div class="border rounded shadow-sm p-3">
         <!-- Tạo đề thi -->
         <div class="d-flex justify-content-start mb-3">
-            <button class="btn btn-warning btn-sm" @onclick="OpenCreateExamModal"  title="Tạo đề thi" disabled="@(idtest==Guid.Empty)">
+            <button class="btn btn-warning btn-sm" @onclick="OpenCreateExamModal" title="Tạo đề thi" disabled="@(idtest==Guid.Empty)">
                 <i class="bi bi-file-earmark"></i> Tạo đề thi
             </button>
         </div>
 
         <!-- Rooms Table -->
-        <div class="table-responsive">
+        <div class="table-responsive" style="max-height: 500px; overflow: auto;">
             <table class="table table-hover table-bordered align-middle">
-                <thead class="table-primary text-center">
+                <thead class="table-primary text-center" style="position: sticky; top: 0; z-index: 2;">
                     <tr>
-                        <th style="width: 50px;"></th>
+                        <th style="width: 50px;">#</th>
                         <th>Tên bài thi</th>
-                        <th>Phòng thi</th>
+                        <th style="width: 100px">Phòng thi</th>
                         <th>Môn</th>
                         <th>Thời gian bắt đầu</th>
                         <th>Thời gian kết thúc</th>
@@ -38,66 +38,67 @@
                         <th style="width: 300px;">Hành động</th>
                     </tr>
                 </thead>
-            </table>
-            <div class="overflow-auto" style="max-height: 500px;">
-                <table class="table table-hover table-bordered align-middle mb-0">
-                    <tbody>
-                        @if (filteredExamRooms.Any())
+                <tbody>
+                    @if (filteredExamRooms.Any())
+                    {
+                        @foreach (var examroom in filteredExamRooms)
                         {
-                            @foreach (var examroom in filteredExamRooms)
-                            {
-                                <tr class="@(idtest == examroom.IdTest ? "table-info" : "")">
-                                    <td class="text-center">
-                                        <input type="checkbox"
-                                               checked="@(idtest == examroom.IdTest)"
-                                               @onchange="() => SelectExamRoom(examroom.IdTest)"
-                                               title="Chọn phòng thi này">
-                                    </td>
-                                    <td>@examroom.Name</td>
-                                    <td>@examroom.Nameroom</td>
-                                    <td>@examroom.NameSubject</td>
-                                    <td>@examroom.StartTime</td>
-                                    <td>@examroom.EndTime</td>
-                                    <td>@examroom.NameTeacher1</td>
-                                    <td>@examroom.NameTeacher2</td>
-                                    <td class="text-center">
-                                        <span class="badge @(examroom.Status == 1 ? "bg-success" :
-                                                        examroom.Status == 2 ? "bg-warning" : "bg-secondary")">
-                                            @(
-                                                examroom.Status == 1 ? "Đang thi" :
-                                                examroom.Status == 2 ? "Chưa đến giờ" :
-                                                "Quá thời gian"
-                                                )
-                                        </span>
-                                    </td>
-                                    <td class="text-center">
+                            <tr class="@(idtest == examroom.IdTest ? "table-info" : "")">
+                                <td class="text-center align-middle">
+                                    <input type="checkbox"
+                                           checked="@(idtest == examroom.IdTest)"
+                                           @onchange="() => SelectExamRoom(examroom.IdTest)"
+                                           title="Chọn phòng thi này">
+                                </td>
+                                <td class="align-middle">@examroom.Name</td>
+                                <td class="align-middle">@examroom.Nameroom</td>
+                                <td class="align-middle">@examroom.NameSubject</td>
+                                <td class="align-middle">@examroom.StartTime</td>
+                                <td class="align-middle">@examroom.EndTime</td>
+                                <td class="align-middle">@examroom.NameTeacher1</td>
+                                <td class="align-middle">@examroom.NameTeacher2</td>
+                                <td class="text-center align-middle">
+                                    <span class="badge @(examroom.Status == 1 ? "bg-success" :
+                                        examroom.Status == 2 ? "bg-warning" : "bg-secondary")">
+                                        @(
+                                            examroom.Status == 1 ? "Đang thi" :
+                                            examroom.Status == 2 ? "Chưa đến giờ" :
+                                            "Quá thời gian"
+                                            )
+                                    </span>
+                                </td>
+                                <td class="text-center align-middle">
+                                    <div class="d-flex justify-content-center">
                                         <!-- Xem chi tiết -->
-                                        <button class="btn btn-info btn-sm" @onclick="() => OpenDetailExamModal(examroom.IdTest)" title="Xem chi tiết">
+                                        <button class="btn btn-info btn-sm me-2"
+                                                @onclick="() => OpenDetailExamModal(examroom.IdTest)"
+                                                title="Xem chi tiết">
                                             <i class="bi bi-eye"></i> Xem
                                         </button>
                                         <!-- Gửi email -->
-                                        <button class="btn btn-primary btn-sm ms-2" @onclick="()=>sentemail(examroom.CodeTest)" title="Gửi email thông báo">
+                                        <button class="btn btn-primary btn-sm"
+                                                @onclick="() => sentemail(examroom.CodeTest)"
+                                                title="Gửi email thông báo">
                                             <i class="bi bi-envelope"></i> Gửi mã code
                                         </button>
-                                    </td>
-                                </tr>
-                            }
-                        }
-                        else
-                        {
-                            <tr>
-                                <td colspan="11" class="text-center text-muted">Không tìm thấy phòng thi nào</td>
+                                    </div>
+                                </td>
                             </tr>
                         }
-                    </tbody>
-                </table>
-            </div>
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="10" class="text-center text-muted">Không tìm thấy phòng thi nào</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
         </div>
+
 
     </div>
 </div>
-
-<!-- Modal for Creating Exam Session -->
 <div class="modal fade @(isCreateExamModalVisible ? "show" : "")" tabindex="-1" style="display:@(isCreateExamModalVisible ? "block" : "none");">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -155,10 +156,10 @@
             </div>
         </div>
     </div>
+
+
 </div>
 
-
-<!-- Modal for Viewing Details -->
 <div class="modal fade @(isDetailModalVisible ? "show" : "")" tabindex="-1" style="display:@(isDetailModalVisible ? "block" : "none");">
     <div class="modal-dialog modal-lg modal-dialog-centered" style="width:1000px">
         <div class="modal-content">
@@ -250,7 +251,7 @@
        .Where(r => string.IsNullOrEmpty(searchRoom) || r.Name.Contains(searchRoom, StringComparison.OrdinalIgnoreCase))
        .ToList();
 
-   
+
     private bool isCreateExamModalVisible = false;
     private bool isDetailModalVisible = false;
 
@@ -272,8 +273,7 @@
             }
             else
             {
-                var errorMessage = await response.Content.ReadAsStringAsync();
-                await Jsruntime.InvokeVoidAsync("alert", $"Tạo ca thi thất bại: {errorMessage}");
+                await ShowErrorMessage($"Có lỗi xảy ra. Mã lỗi: {response.StatusCode}");
             }
         }
         catch (Exception ex)
@@ -304,24 +304,31 @@
             }
         }
     }
-    private async Task sentemail(string code){
+    private async Task sentemail(string code)
+    {
         var email = Email;
         var respon = await client.PostAsJsonAsync($"https://localhost:7046/api/Test/send?email={email}&code={code}", new { });
-        if(respon.IsSuccessStatusCode){
+        if (respon.IsSuccessStatusCode)
+        {
             await Jsruntime.InvokeVoidAsync("alert", "Gửi mã code thành công hãy kiểm tra email của bạn!");
-        }else{
+        }
+        else
+        {
             await Jsruntime.InvokeVoidAsync("alert", "Gửi mã code Thất bại");
         }
     }
     protected override async Task OnInitializedAsync()
     {
-        try{
+        try
+        {
             await LoadExamRooms();
             await LoadTestList();
-        }catch(Exception){
+        }
+        catch (Exception)
+        {
 
         }
-        
+
     }
 
     private async Task LoadExamRooms()
@@ -348,7 +355,7 @@
         selectedTestId = selectedTestId == id ? null : id;
     }
 
-   
+
 
     private void ToggleSelectAll(ChangeEventArgs e)
     {
