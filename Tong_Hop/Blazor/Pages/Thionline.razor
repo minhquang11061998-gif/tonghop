@@ -15,9 +15,8 @@
             </div>
             <div class="d-flex justify-content-center mt-3">
                 <img id="cameraImage" src="https://localhost:7046/api/FaceId/camera-stream"
-                     alt="Camera Feed"
-                     class="rounded border border-primary"
-                     style="width: 50%; max-height: 300px; object-fit: cover;" />
+                     alt="Alternate Text"
+                     style="width: 50%; max-height: 300px; object-fit: cover; border-radius: 10px; border-color:blue" />
             </div>
             <div class="d-flex justify-content-center py-3">
                 @if (isLoading)
@@ -107,15 +106,19 @@
                     await jsruntime.InvokeVoidAsync("alert", "Nhận diện thành công!");
                     isLoginFormVisible = true;
                 }
-                else
-                {
-                    await jsruntime.InvokeVoidAsync("alert", "Nhận diện không thành công. Thử lại!");
-                }
+                
+            }
+            else
+            {
+                await jsruntime.InvokeVoidAsync("alert", "Nhận diện không thành công. Thử lại!");
+                await jsruntime.InvokeVoidAsync("reloadCameraFeed");
+
             }
         }
         catch
         {
             await jsruntime.InvokeVoidAsync("alert", "Đã xảy ra lỗi trong quá trình quét khuôn mặt.");
+            await jsruntime.InvokeVoidAsync("reloadCameraFeed");
         }
         finally
         {
@@ -153,3 +156,15 @@
         return await jsruntime.InvokeAsync<string>("localStorage.getItem", "YourSuperSecretKeyHere");
     }
 }
+<script>
+    function reloadCameraFeed() {
+        const cameraImage = document.querySelector("#cameraImage");
+        if (cameraImage) {
+            cameraImage.src = "https://localhost:7046/api/FaceId/camera-stream?" + new Date().getTime();
+            console.log("Camera feed reloaded.");
+        } else {
+            console.error("Element with ID 'cameraImage' not found.");
+        }
+    }
+
+</script>

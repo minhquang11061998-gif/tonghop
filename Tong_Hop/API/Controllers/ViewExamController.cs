@@ -33,7 +33,7 @@ namespace API.Controllers
                      nametesst= test.Name,
                      Namesubject = subject.Name,
                      codesubject = subject.Code,
-                     timeexam = test.Minute ?? 0, // Xử lý nếu Minute có thể null
+                     timeexam = test.Minute ?? 0, 
                      namestudent = user.FullName,
                      codestudent = student.Code,
                      email = user.Email

@@ -9,12 +9,7 @@
     });
 }
 
-function reloadCameraFeed() {
-    const cameraImage = document.querySelector("#cameraImage");
-    if (cameraImage) {
-        cameraImage.src = "https://localhost:7046/api/FaceId/camera-stream?" + new Date().getTime();
-    }
-}
+
 function getCode() {
     let code = '';
     for (let i = 1; i <= 6; i++) {

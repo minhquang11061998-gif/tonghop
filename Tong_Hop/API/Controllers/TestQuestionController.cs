@@ -321,7 +321,9 @@ namespace API.Controllers
 
             // Giới hạn số lần mỗi câu hỏi có thể được sử dụng trong tổng số TestCode
             // Giả sử bạn muốn mỗi câu hỏi được sử dụng tối đa trong 4 TestCode
-            int maxUsagePerQuestion = 4;
+            int MaxTestCode = allTestCodes.Count;
+
+			int maxUsagePerQuestion = (MaxTestCode / 100) * 30;
 
             // Theo dõi số lần mỗi câu hỏi đã được sử dụng
             var questionUsageCount = new Dictionary<Guid, int>();
@@ -495,93 +497,123 @@ namespace API.Controllers
             return Ok("Cập nhật câu hỏi thành công");
         }
 
-        [HttpGet("export-template")]
-        public IActionResult ExportExcelTemplate()
-        {
-            using (var package = new ExcelPackage())
-            {
-                var worksheet = package.Workbook.Worksheets.Add("Câu hỏi");
+		[HttpGet("export-template")]
+		public IActionResult ExportExcelTemplate()
+		{
+			using (var package = new ExcelPackage())
+			{
+				var worksheet = package.Workbook.Worksheets.Add("Câu hỏi");
 
-                var headers = new List<string>
-                {
-                    "STT", "Kiểu câu hỏi", "Nội dung câu hỏi", "Mức độ tư duy",
-                    "Đáp án đúng", "Câu A", "Câu B", "Câu C", "Câu D", "Câu E", "Câu F"
-                };
+				// Tạo header row - Tiêu đề lớn
+				worksheet.Cells[1, 1].Value = "Danh sách câu hỏi";
+				worksheet.Cells[1, 1, 1, 11].Merge = true; // Gộp các ô từ cột 1 đến cột 11
+				worksheet.Cells[1, 1, 1, 11].Style.Font.Bold = true; // Chữ đậm
+				worksheet.Cells[1, 1, 1, 11].Style.Font.Size = 16; // Tăng kích thước chữ
+				worksheet.Cells[1, 1, 1, 11].Style.HorizontalAlignment = ExcelHorizontalAlignment.Center; // Căn giữa ngang
+				worksheet.Cells[1, 1, 1, 11].Style.VerticalAlignment = ExcelVerticalAlignment.Center; // Căn giữa dọc
+				worksheet.Row(1).Height = 40; // Đặt chiều cao hàng tiêu đề
+				using (var range = worksheet.Cells[1, 1, 1, 11]) // Áp dụng từ cột 1 đến cột 11 của hàng 1
+				{
+					range.Style.Border.Top.Style = ExcelBorderStyle.Thin;
+					range.Style.Border.Bottom.Style = ExcelBorderStyle.Thin;
+					range.Style.Border.Left.Style = ExcelBorderStyle.Thin;
+					range.Style.Border.Right.Style = ExcelBorderStyle.Thin;
+				}
 
-                // Ghi tiêu đề vào hàng đầu tiên
-                for (int i = 0; i < headers.Count; i++)
-                {
-                    worksheet.Cells[1, i + 1].Value = headers[i];
-                }
+				// Tạo tiêu đề bảng chính
+				var headers = new List<string>
+		        {
+			        "STT", "Kiểu câu hỏi", "Nội dung câu hỏi", "Mức độ tư duy",
+			        "Đáp án đúng", "Câu A", "Câu B", "Câu C", "Câu D", "Câu E", "Câu F"
+		        };
 
-                // Thiết lập độ rộng cho các cột
-                worksheet.Column(1).Width = 5;   // STT
-                worksheet.Column(2).Width = 20;  // Kiểu câu hỏi
-                worksheet.Column(3).Width = 30;  // Nội dung câu hỏi
-                worksheet.Column(4).Width = 15;  // Mức độ tư duy
-                worksheet.Column(5).Width = 15;  // Đáp án đúng
-                worksheet.Column(6).Width = 10;  // Câu A
-                worksheet.Column(7).Width = 10;  // Câu B
-                worksheet.Column(8).Width = 10;  // Câu C
-                worksheet.Column(9).Width = 10;  // Câu D
-                worksheet.Column(10).Width = 10; // Câu E
-                worksheet.Column(11).Width = 10; // Câu F
-                using (var headerRange = worksheet.Cells[1, 1, 1, headers.Count])
-                {
-                    headerRange.Style.Fill.PatternType = ExcelFillStyle.Solid;
-                    headerRange.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.RoyalBlue);
-                    headerRange.Style.Font.Color.SetColor(System.Drawing.Color.White);
-                    headerRange.Style.Font.Bold = true;
-                }
+				for (int i = 0; i < headers.Count; i++)
+				{
+					worksheet.Cells[2, i + 1].Value = headers[i];
+				}
+
+				// Định dạng tiêu đề bảng chính
+				using (var headerRange = worksheet.Cells[2, 1, 2, headers.Count])
+				{
+					headerRange.Style.Fill.PatternType = ExcelFillStyle.Solid;
+					headerRange.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.RoyalBlue);
+					headerRange.Style.Font.Color.SetColor(System.Drawing.Color.White);
+					headerRange.Style.Font.Bold = true;
+					headerRange.Style.HorizontalAlignment = ExcelHorizontalAlignment.Center; // Căn giữa ngang
+					headerRange.Style.VerticalAlignment = ExcelVerticalAlignment.Center; // Căn giữa dọc
+					headerRange.Style.Border.Top.Style = ExcelBorderStyle.Thin;
+					headerRange.Style.Border.Bottom.Style = ExcelBorderStyle.Thin;
+					headerRange.Style.Border.Left.Style = ExcelBorderStyle.Thin;
+					headerRange.Style.Border.Right.Style = ExcelBorderStyle.Thin;
+				}
+				worksheet.Row(2).Height = 20; // Đặt chiều cao hàng
+
+				// Thiết lập độ rộng cho các cột
+				worksheet.Column(1).Width = 5;   // STT
+				worksheet.Column(2).Width = 20;  // Kiểu câu hỏi
+				worksheet.Column(3).Width = 30;  // Nội dung câu hỏi
+				worksheet.Column(4).Width = 15;  // Mức độ tư duy
+				worksheet.Column(5).Width = 15;  // Đáp án đúng
+				worksheet.Column(6).Width = 10;  // Câu A
+				worksheet.Column(7).Width = 10;  // Câu B
+				worksheet.Column(8).Width = 10;  // Câu C
+				worksheet.Column(9).Width = 10;  // Câu D
+				worksheet.Column(10).Width = 10; // Câu E
+				worksheet.Column(11).Width = 10; // Câu F
+
+				// Tạo dropdown list cho "Kiểu câu hỏi"
+				var questionTypeList = new List<string> { "Trắc nghiệm 1 đáp án", "Trắc nghiệm nhiều đáp án", "Đúng/sai" };
+				CreateDropdownList(worksheet, questionTypeList, 3, 2, 100, 2); // Áp dụng cho cột 2 (Kiểu câu hỏi)
+
+				// Tạo dropdown list cho "Mức độ tư duy"
+				var thinkingLevelList = new List<string> { "Dễ", "Trung bình", "Khó", "Rất khó" };
+				CreateDropdownList(worksheet, thinkingLevelList, 3, 4, 100, 4); // Áp dụng cho cột 4 (Mức độ tư duy)
+
+				// Khóa các ô và chỉ cho phép chỉnh sửa các ô dữ liệu
+				worksheet.Cells.Style.Locked = true;
+				for (int col = 1; col <= 11; col++)
+				{
+					worksheet.Cells[3, col, 1000, col].Style.Locked = false;
+				}
+
+				// Bật chế độ bảo vệ
+				worksheet.Protection.IsProtected = true;
+				worksheet.Protection.AllowDeleteColumns = false;
+				worksheet.Protection.AllowInsertColumns = false;
+				worksheet.Protection.AllowDeleteRows = false;
+				worksheet.Protection.AllowInsertRows = true;
+				worksheet.Protection.AllowFormatRows = true;
+				worksheet.Protection.AllowSelectLockedCells = false;
+				worksheet.Protection.AllowSelectUnlockedCells = true;
+
+				// Lưu file vào MemoryStream
+				var stream = new MemoryStream();
+				package.SaveAs(stream);
+				stream.Position = 0;
+				return File(stream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "Template_Cauhoi.xlsx");
+			}
+		}
+
+		private void CreateDropdownList(ExcelWorksheet worksheet, List<string> options, int fromRow, int fromCol, int toRow, int toCol)
+		{
+			// Tạo một List Validation trong khoảng ô được chỉ định
+			var validation = worksheet.DataValidations.AddListValidation(worksheet.Cells[fromRow, fromCol, toRow, toCol].Address);
+
+			// Thêm các giá trị từ danh sách 'options' vào dropdown list
+			foreach (var option in options)
+			{
+				validation.Formula.Values.Add(option);
+			}
+
+			// Cấu hình thêm cho dropdown list
+			validation.ShowErrorMessage = true;
+			validation.ErrorTitle = "Giá trị không hợp lệ"; // Tiêu đề thông báo lỗi
+			validation.Error = "Vui lòng chọn một giá trị từ danh sách."; // Nội dung thông báo lỗi
+		}
 
 
-                var questionTypeList = new List<string> { "Trắc nghiệm 1 Đáp án", "Trắc nghiệm nhiều đáp án", "Đúng/sai"};
-                CreateDropdownList(worksheet, questionTypeList, 2, 2, 100, 2); // Áp dụng cho cột 2 (Kiểu câu hỏi)
 
-                // Tạo dropdown list cho "Mức độ tư duy"
-                var thinkingLevelList = new List<string> { "Dễ", "Trung bình", "Khó", "Rất khó" };
-                CreateDropdownList(worksheet, thinkingLevelList, 2, 4, 100, 4); // Áp dụng cho cột 4 (Mức độ tư duy)
-                worksheet.Cells.Style.Locked = true;
-                for (int col = 1; col <= 11; col++)
-                {
-                    worksheet.Cells[2, col, 1000, col].Style.Locked = false;
-                }
-                worksheet.Protection.IsProtected = true;
-                worksheet.Protection.AllowDeleteColumns = false;
-                worksheet.Protection.AllowInsertColumns = false;
-                worksheet.Protection.AllowDeleteRows = false;
-                worksheet.Protection.AllowInsertRows = true;
-                worksheet.Protection.AllowFormatRows = true;
-                worksheet.Protection.AllowSelectLockedCells = false;
-                worksheet.Protection.AllowSelectUnlockedCells = true;
-                // Lưu file vào MemoryStream
-                var stream = new MemoryStream();
-                package.SaveAs(stream);
-                stream.Position = 0;
-                return File(stream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "Template_Cauhoi.xlsx");
-            }
-        }
-
-        private void CreateDropdownList(ExcelWorksheet worksheet, List<string> options, int fromRow, int fromCol, int toRow, int toCol)
-        {
-            // Tạo một List Validation trong khoảng ô được chỉ định
-            var validation = worksheet.DataValidations.AddListValidation(worksheet.Cells[fromRow, fromCol, toRow, toCol].Address);
-
-            // Thêm các giá trị từ danh sách 'options' vào dropdown list
-            foreach (var option in options)
-            {
-                validation.Formula.Values.Add(option);
-            }
-
-            // Cấu hình thêm cho dropdown list
-            validation.ShowErrorMessage = true;
-            validation.ErrorTitle = "Giá trị không hợp lệ"; // Tiêu đề thông báo lỗi
-            validation.Error = "Vui lòng chọn một giá trị từ danh sách."; // Nội dung thông báo lỗi
-        }
-
-
-
-        [HttpPost("import_questions")]
+		[HttpPost("import_questions")]
         public async Task<IActionResult> ImportQuestionsFromExcel(IFormFile file, Guid id)
         {
             if (file == null || file.Length == 0)
@@ -611,20 +643,22 @@ namespace API.Controllers
                     var worksheet = package.Workbook.Worksheets[0];
                     int rowCount = worksheet.Dimension.Rows;
 
-                    for (int row = 2; row <= rowCount; row++)
+                    for (int row = 3; row <= rowCount; row++)
                     {
                         string typeText = worksheet.Cells[row, 2].Text.Trim();
                         string levelText = worksheet.Cells[row, 4].Text.Trim();
                         string questionName = worksheet.Cells[row, 3].Text;
-
-                        int convertype(string typetext)
+						int convertype(string typetext)
                         {
-                            switch (typetext.ToLower())
+							if (string.IsNullOrWhiteSpace(typetext))
+							{
+								return -1; // Phải trả về -1 nếu giá trị không hợp lệ
+							}
+							switch (typetext.ToLower())
                             {
                                 case "trắc nghiệm 1 đáp án": return 1;
                                 case "trắc nghiệm nhiều đáp án": return 2;
                                 case "đúng/sai": return 3;
-                                case "điền vào chỗ trống": return 4;
                                 default:
                                     errorMessages.Add($"Giá trị type không hợp lệ ở hàng {row}: {typetext}");
                                     return -1;
@@ -633,7 +667,11 @@ namespace API.Controllers
 
                         int ConvertLevel(string levelText)
                         {
-                            switch (levelText.ToLower())
+							if (string.IsNullOrWhiteSpace(levelText))
+							{
+								return -1; // Phải trả về -1 nếu giá trị không hợp lệ
+							}
+							switch (levelText.ToLower())
                             {
                                 case "dễ": return 1;
                                 case "trung bình": return 2;
@@ -654,20 +692,20 @@ namespace API.Controllers
                         }
 
                         // Lấy danh sách câu trả lời từ file Excel
-                        var answers = new List<string>
-                {
-                    worksheet.Cells[row, 6].Text,
-                    worksheet.Cells[row, 7].Text,
-                    worksheet.Cells[row, 8].Text,
-                    worksheet.Cells[row, 9].Text,
-                    worksheet.Cells[row, 10].Text,
-                    worksheet.Cells[row, 11].Text
-                }.Where(x => !string.IsNullOrEmpty(x)).OrderBy(a => a).ToList();
+                                var answers = new List<string>
+                        {
+                            worksheet.Cells[row, 6].Text,
+                            worksheet.Cells[row, 7].Text,
+                            worksheet.Cells[row, 8].Text,
+                            worksheet.Cells[row, 9].Text,
+                            worksheet.Cells[row, 10].Text,
+                            worksheet.Cells[row, 11].Text
+                        }.Where(x => !string.IsNullOrEmpty(x)).OrderBy(a => a).ToList();
 
                         // Tạo chuỗi để kiểm tra trùng lặp
                         string questionAndAnswers = questionName + "|" + string.Join(",", answers);
 
-                        // Kiểm tra trùng lặp
+                       
                         if (existingQuestionsAndAnswers.Contains(questionAndAnswers) || !uniqueQuestions.Add(questionAndAnswers))
                         {
                             errorMessages.Add($"Câu hỏi '{questionName}' với các câu trả lời tương ứng đã tồn tại.");
