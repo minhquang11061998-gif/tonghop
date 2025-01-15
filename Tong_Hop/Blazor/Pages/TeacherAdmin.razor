@@ -5,22 +5,21 @@
 @inject IJSRuntime jsruntime
 
 <div class="container-fluid mt-3">
-
     <div class="d-flex  shadow-sm p-4">
         <div class="d-flex flex-wrap gap-2">
-            <button class="btn btn-primary btn-sm" @onclick="AddOrder" disabled="@(SelectedOrder != Guid.Empty)">
+            <button class="btn btn-primary btn-sm" @onclick="AddOrder" hidden="@(role=="1")">
                 <i class="bi bi-plus-circle"></i> Tạo mới
             </button>
-            <button class="btn btn-warning btn-sm" @onclick="EditOrder" disabled="@(SelectedOrder == Guid.Empty)">
+            <button class="btn btn-warning btn-sm" @onclick="EditOrder" hidden="@(role=="1")">
                 <i class="bi bi-pencil-square"></i> Chỉnh sửa
             </button>
-            <button class="btn btn-danger btn-sm" @onclick="DeleteOrder" disabled="@(SelectedOrder == Guid.Empty)">
+            <button class="btn btn-danger btn-sm" @onclick="DeleteOrder" hidden="@(role=="1")">
                 <i class="bi bi-trash"></i> Xóa
             </button>
-            <button class="btn btn-success btn-sm" @onclick="showexcel">
+            <button class="btn btn-success btn-sm" @onclick="showexcel" hidden="@(role=="1")">
                 <i class="bi bi-file-earmark-excel"></i> Thêm file Excel
             </button>
-            <button class="btn btn-success btn-sm" @onclick="dowloadexcel">
+            <button class="btn btn-success btn-sm" @onclick="dowloadexcel" hidden="@(role=="1")">
                 <i class="bi bi-file-earmark-excel"></i> Tải file mẫu Excel
             </button>
         </div>
@@ -54,24 +53,24 @@
                     <th style="width: 120px;">Trạng thái</th>
                 </tr>
             </thead>
-            <tbody >
+            <tbody>
                 @if (FilteredOrders.Any())
                 {
                     @foreach (var order in FilteredOrders)
                     {
                         <tr class="@(SelectedOrder == order.Id ? "table-primary" : "")"
-                        style="cursor: pointer;"
-                        @onclick="() => SelectOrder(order.Id)">
+                            style="cursor: pointer;"
+                            @onclick="() => SelectOrder(order.Id)">
                             <td>
                                 <input type="checkbox"
-                                checked="@(SelectedOrder == order.Id)"
-                                @onchange="() => SelectOrder(order.Id)"
-                                title="Chọn tài khoản này" />
+                                       checked="@(SelectedOrder == order.Id)"
+                                       @onchange="() => SelectOrder(order.Id)"
+                                       title="Chọn tài khoản này" />
                             </td>
                             <td>
                                 <img src="@order.Avartar" alt="Avatar"
-                                class="img-thumbnail rounded-circle"
-                                style="width: 40px; height: 40px;" />
+                                     class="img-thumbnail rounded-circle"
+                                     style="width: 40px; height: 40px;" />
                             </td>
                             <td>@order.FullName</td>
                             <td>@order.Email</td>
@@ -236,25 +235,37 @@
     private int TotalPages => (int)Math.Ceiling((double)FilteredOrders.Count() / ItemsPerPage);
     protected override async Task OnInitializedAsync()
     {
-        await getuser();    
+        await getuser();
+
     }
-    private void PreviousPage()
+    private string? role;
+    private TokenResponse tokenResponse;
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (CanGoPrevious)
+        if (firstRender)
         {
-            CurrentPage--;
+            var token = await jsruntime.InvokeAsync<string>("localStorage.getItem", "YourSuperSecretKeyHere");
+
+            if (!string.IsNullOrEmpty(token))
+            {
+                tokenResponse = new TokenResponse { Token = token };
+                var handler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
+                var jsonToken = handler.ReadToken(token) as System.IdentityModel.Tokens.Jwt.JwtSecurityToken;
+                role = jsonToken?.Claims.FirstOrDefault(c => c.Type == "rolecheck")?.Value;
+
+                // Cập nhật giao diện
+                await InvokeAsync(StateHasChanged);
+            }
+            else
+            {
+                Console.WriteLine("Token không tồn tại hoặc rỗng trong localStorage");
+            }
         }
     }
 
-    private void NextPage()
-    {
-        if (CanGoNext)
-        {
-            CurrentPage++;
-        }
-    }
     private void showexcel()
     {
+
         isExcelModalVisible = true;
     }
     private async Task dowloadexcel()
@@ -326,6 +337,7 @@
 
     private void AddOrder()
     {
+        jsruntime.InvokeVoidAsync("alert", $"{role}");
         usercreate = new UserDTOTEACHER();
         ShowModal = true;
     }
@@ -364,8 +376,9 @@
         Console.WriteLine("Export to Excel functionality is triggered.");
     }
     private const long MaxFileSize = 10 * 1024 * 1024;
-    private async void HandfileAvatarTeacher(InputFileChangeEventArgs e){
-        avatarTeacher = e.File; 
+    private async void HandfileAvatarTeacher(InputFileChangeEventArgs e)
+    {
+        avatarTeacher = e.File;
         var file = e.File;
         if (file == null || file.Size > MaxFileSize)
         {
@@ -653,7 +666,7 @@
                 });
                 await getuser();
                 CloseModal();
-                SelectedOrder = Guid.Empty ;
+                SelectedOrder = Guid.Empty;
             }
             else
             {
@@ -709,7 +722,7 @@
     .table thead th {
         border-top: none; /* Bỏ viền trên */
         border-bottom: none; /* Bỏ viền dưới */
-         /* Giảm độ đậm của chữ */
+        /* Giảm độ đậm của chữ */
     }
 
 </style>
