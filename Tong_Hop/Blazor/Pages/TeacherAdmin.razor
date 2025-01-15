@@ -6,7 +6,7 @@
 
 <div class="container-fluid mt-3">
 
-    <div class="d-flex  shadow-sm">
+    <div class="d-flex  shadow-sm p-4">
         <div class="d-flex flex-wrap gap-2">
             <button class="btn btn-primary btn-sm" @onclick="AddOrder" disabled="@(SelectedOrder != Guid.Empty)">
                 <i class="bi bi-plus-circle"></i> Tạo mới
@@ -433,7 +433,17 @@
             });
             return false; // Dừng nếu không hợp lệ
         }
-
+        if (usercreate.DateOfBirth > DateTime.Now)
+        {
+            await jsruntime.InvokeVoidAsync("Swal.fire", new
+            {
+                title = "Lỗi!",
+                text = "Ngày tháng năm sinh không hợp lệ",
+                icon = "error",
+                confirmButtonText = "OK"
+            });
+            return false; // Dừng nếu không hợp lệ
+        }
         if (string.IsNullOrWhiteSpace(usercreate.Email))
         {
             await jsruntime.InvokeVoidAsync("Swal.fire", new
