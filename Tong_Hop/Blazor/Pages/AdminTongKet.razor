@@ -78,7 +78,6 @@
 			<div class="modal-body">
 				<div class="summary-header mb-4">
 					<p><strong>Lớp:</strong> <span class="highlight-text">@className</span></p>
-					<p><strong>Kỳ hiện tại:</strong> <span class="highlight-text">@currentSemesterName</span></p>
 
 				</div>
 				<table class="table table-striped table-hover table-bordered custom-table">
@@ -146,9 +145,6 @@
 	private string className;
 	private bool IsModalOpen = false;
 	private ClassesDTO selectedClass = null;
-	private string selectedSemesterId; // Biến lưu kỳ học đã chọn
-	private string currentSemesterName; // Lưu tên kỳ hiện tại
-	private Dictionary<Guid, string> semesterMapping = new();
 	private bool showCalculationMessage = false;
 	private Guid? CurrentClassId { get; set; } // Lưu ClassID
 	private Guid? CurrentTeacherId { get; set; } // Lưu TeacherID
@@ -157,7 +153,6 @@
 	protected override async Task OnInitializedAsync()
 	{
 		await LoadClass();
-		await LoadSemesters();
 
 	}
 
@@ -242,27 +237,6 @@
 		}
 	}
 
-	private async Task LoadSemesters()
-	{
-		var semesterUrl = "https://localhost:7046/api/Semesters/get-all";
-		var semesters = await client.GetFromJsonAsync<List<SemesterDTO>>(semesterUrl);
-
-		if (semesters != null)
-		{
-			semesterMapping = semesters.ToDictionary(s => s.Id, s => s.Name);
-			Console.WriteLine("Danh sách kỳ học đã tải:");
-			foreach (var semester in semesters)
-			{
-				Console.WriteLine($"ID: {semester.Id}, Name: {semester.Name}");
-			}
-		}
-		else
-		{
-			Console.WriteLine("Không thể tải danh sách kỳ học.");
-		}
-	}
-
-
 	private async Task LoadAndCalculateLearningSummary(Guid classId)
 	{
 		try
@@ -312,7 +286,7 @@
 								StudentId = g.Key,
 								StudentName = g.First().StudentName,
 								SubjectScores = g.Where(x => x.SubjectName != null)
-												 .ToDictionary(x => x.SubjectName, x => x.Point_Summary),
+													 .ToDictionary(x => x.SubjectName, x => x.Point_Summary),
 								SemesterID = g.First().SemesterID
 							})
 						.OrderBy(summary => summary.StudentName)
@@ -323,24 +297,11 @@
 						.Distinct()
 						.ToList();
 
-					var firstSummary = result.FirstOrDefault();
-					if (firstSummary != null && firstSummary.SemesterID.HasValue && semesterMapping.TryGetValue(firstSummary.SemesterID.Value, out var semesterName))
-					{
-						currentSemesterName = semesterName;
-					}
-					else
-					{
-						currentSemesterName = "Không xác định";
-					}
-
-
-
 				}
 				else
 				{
 					learningSummaryList = new List<Learning_SummaryDTO>();
 					Subjects = new List<string>();
-					currentSemesterName = "Không xác định";
 				}
 
 				className = classInfo.Name;
@@ -352,7 +313,6 @@
 				await jsRuntime.InvokeVoidAsync("alert", "Lớp này chưa có điểm tổng kết.");
 				learningSummaryList = new List<Learning_SummaryDTO>();
 				Subjects = new List<string>();
-				currentSemesterName = "Không xác định";
 			}
 			else
 			{

@@ -98,7 +98,7 @@ else
 												   name="answer_@currentQuestion.QuestionId"
 												   value="@answer.AnswerId"
 												   @onchange="() => UpdateAndSaveAnswer(currentQuestion.QuestionId, answer.AnswerId)"
-												   checked="@(selectedAnswerIds.ContainsKey(currentQuestion.QuestionId) && selectedAnswerIds[currentQuestion.QuestionId] == answer.AnswerId)" />
+												   checked="@(selectedAnswerIds.ContainsKey(currentQuestion.QuestionId) && selectedAnswerIds[currentQuestion.QuestionId].Contains(answer.AnswerId))" />
 										}
 										else
 										{
@@ -108,7 +108,7 @@ else
 												   name="answer_@currentQuestion.QuestionId"
 												   value="@answer.AnswerId"
 												   @onchange="() => UpdateAndSaveAnswer(currentQuestion.QuestionId, answer.AnswerId)"
-												   checked="@(selectedAnswerIds.ContainsKey(currentQuestion.QuestionId) && selectedAnswerIds[currentQuestion.QuestionId] == answer.AnswerId)" />
+												   checked="@(selectedAnswerIds.ContainsKey(currentQuestion.QuestionId) && selectedAnswerIds[currentQuestion.QuestionId].Contains(answer.AnswerId))" />
 										}
 										<label class="form-check-label" for="answer_@answer.AnswerId">
 											@answer.AnswerText
@@ -146,7 +146,7 @@ else
 	private Exam_Room_Histories_DTO examhistories = new Exam_Room_Histories_DTO();
 	private List<infomationDTO> infomationDTOs = new List<infomationDTO>();
 	// Lưu trữ ID của các câu trả lời đã chọn cho mỗi câu hỏi
-	private Dictionary<Guid, Guid?> selectedAnswerIds = new Dictionary<Guid, Guid?>();
+	private Dictionary<Guid, List<Guid>?> selectedAnswerIds = new Dictionary<Guid, List<Guid>?>();
 	private TimeSpan remainingTime;  // Thời gian còn lại
 	private bool isTimeUp = false;   // Trạng thái hết giờ
 
@@ -182,13 +182,13 @@ else
 	private Guid? Id_dap_an_duoc_tron;
 	private Guid? Id_cau_hoi_duoc_tron;
 
-	private void UpdateSelectedAnswer(Guid questionId, Guid answerId)
-	{
-		// Cập nhật giá trị đã chọn cho câu hỏi
-		selectedAnswerIds[questionId] = answerId;
-		Id_dap_an_duoc_tron = answerId;
-		Id_cau_hoi_duoc_tron = questionId;
-	}
+	// private void UpdateSelectedAnswer(Guid questionId, Guid answerId)
+	// {
+	// 	// Cập nhật giá trị đã chọn cho câu hỏi
+	// 	selectedAnswerIds[questionId] = answerId;
+	// 	Id_dap_an_duoc_tron = answerId;
+	// 	Id_cau_hoi_duoc_tron = questionId;
+	// }
 
 	protected override async Task OnInitializedAsync()
 	{
@@ -224,29 +224,41 @@ else
 	{
 		try
 		{
-			// Cập nhật đáp án vào bộ nhớ tạm
-			selectedAnswerIds[questionId] = answerId;
-			Id_dap_an_duoc_tron = answerId; // Lưu ID đáp án hiện tại
-			Id_cau_hoi_duoc_tron = questionId;
-
-			// Gọi API kiểm tra lịch sử đáp án
-			var answerHistoryCount = await CheckAnswerHistory(CodeTest, questionId, isdtudent);
-
-			if (answerHistoryCount >= 1)
+			// Khởi tạo danh sách đáp án cho questionId nếu chưa tồn tại
+			if (!selectedAnswerIds.ContainsKey(questionId))
 			{
-				// Nếu đã có 2 đáp án trong lịch sử, xóa đáp án cũ
-				await DeleteHisst(CodeTest, questionId);
+				selectedAnswerIds[questionId] = new List<Guid>();
 			}
 
-			// Lưu đáp án mới vào API
-			await CreateHist(CodeTest, answerId);
+			// Chọn/bỏ chọn đáp án
+			if (selectedAnswerIds[questionId].Contains(answerId))
+			{
+				selectedAnswerIds[questionId].Remove(answerId);  // Bỏ chọn nếu đã chọn
+			}
+			else
+			{
+				selectedAnswerIds[questionId].Add(answerId);  // Thêm vào nếu chưa chọn
+			}
+
+			// Kiểm tra số lượng đáp án đã lưu
+			var answerHistoryCount = await CheckAnswerHistory(CodeTest, questionId, isdtudent);
+			if (answerHistoryCount >= 2)
+			{
+				await DeleteHisst(CodeTest, questionId);  // Xóa các đáp án cũ nếu cần
+			}
+
+			// Lưu từng đáp án trong danh sách đã chọn
+			foreach (var id in selectedAnswerIds[questionId])
+			{
+				await CreateHist(CodeTest, id);
+			}
 		}
 		catch (Exception ex)
 		{
-			// Xử lý lỗi khi lưu
 			await jsruntime.InvokeVoidAsync("alert", $"Lỗi khi lưu đáp án: {ex.Message}");
 		}
 	}
+
 	private async Task DeleteHisst(int codetest, Guid idquest)
 	{
 		string formattedScore = CodeTest.ToString().PadLeft(6, '0');
@@ -269,15 +281,15 @@ else
 			string formattedScore = CodeTest.ToString().PadLeft(6, '0');
 			// Gửi yêu cầu POST
 			var response = await client.PostAsJsonAsync(
-				$"api/ViewExam/create-hist?CodeTesst={formattedScore}&GuidId={isdtudent}&answerId={idAnswer}",
+				$"api/ViewExam/Exam_results_storage?CodeTesst={formattedScore}&GuidId={isdtudent}&answerId={idAnswer}",
 				examhistories
 			);
 
-			if (!response.IsSuccessStatusCode)
-			{
-				var error = await response.Content.ReadAsStringAsync();
-				throw new Exception($"Lỗi lưu dữ liệu: {error}");
-			}
+			// if (!response.IsSuccessStatusCode)
+			// {
+			// 	var error = await response.Content.ReadAsStringAsync();
+			// 	throw new Exception($"Lỗi lưu dữ liệu: {error}");
+			// }
 		}
 		catch (Exception ex)
 		{
@@ -292,9 +304,13 @@ else
 		{
 			currentQuestionIndex++;
 			var questionId = hist.Questions[currentQuestionIndex].QuestionId;
-			if (selectedAnswerIds.ContainsKey(questionId))
+
+			if (selectedAnswerIds.ContainsKey(questionId) && selectedAnswerIds[questionId].Any())
 			{
-				Id_dap_an_duoc_tron = selectedAnswerIds[questionId];
+				// Lưu danh sách các đáp án đã chọn cho câu hỏi hiện tại
+				Id_dap_an_duoc_tron = selectedAnswerIds[questionId].FirstOrDefault();  // Dùng 1 đáp án nếu cần logic cũ
+																								// Hoặc lấy toàn bộ danh sách nếu cần xử lý danh sách
+				var selectedAnswersForQuestion = selectedAnswerIds[questionId];
 			}
 			else
 			{
@@ -352,7 +368,7 @@ else
 			var questionId = hist.Questions[currentQuestionIndex].QuestionId;
 			if (selectedAnswerIds.ContainsKey(questionId))
 			{
-				Id_dap_an_duoc_tron = selectedAnswerIds[questionId];
+				Id_dap_an_duoc_tron = selectedAnswerIds[questionId].FirstOrDefault();
 			}
 			else
 			{

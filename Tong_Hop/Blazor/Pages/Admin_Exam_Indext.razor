@@ -270,7 +270,8 @@
             }
             else
             {
-                await ShowErrorMessage($"Có lỗi xảy ra. Mã lỗi: {response.StatusCode}");
+                var errorMessage = await response.Content.ReadAsStringAsync();
+                await Jsruntime.InvokeVoidAsync("alert", $"Tạo ca thi thất bại: {errorMessage}");
             }
         }
         catch (Exception ex)
