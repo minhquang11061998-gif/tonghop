@@ -1126,8 +1126,8 @@ namespace API.Controllers
 				// Tạo tiêu đề cột
 				var headers = new[]
 				{
-			"STT", "Họ và Tên", "Hình Ảnh", "Email", "UserName", "Password", "Ngày sinh", "Số Điện Thoại"
-		};
+			        "STT", "Họ và Tên", "Hình Ảnh", "Email", "UserName", "Password", "Ngày sinh", "Số Điện Thoại"
+		        };
 
 				for (int col = 1; col <= headers.Length; col++)
 				{
@@ -1145,7 +1145,21 @@ namespace API.Controllers
 					range.Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
 					range.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.FromArgb(79, 129, 189));
 				}
+				worksheet.Cells.Style.Locked = true;
+				for (int col = 1; col <= 8; col++)
+				{
+					worksheet.Cells[2, col, 1000, col].Style.Locked = false;
+				}
 
+				// Bật chế độ bảo vệ
+				worksheet.Protection.IsProtected = true;
+				worksheet.Protection.AllowDeleteColumns = false;
+				worksheet.Protection.AllowInsertColumns = false;
+				worksheet.Protection.AllowDeleteRows = false;
+				worksheet.Protection.AllowInsertRows = true;
+				worksheet.Protection.AllowFormatRows = true;
+				worksheet.Protection.AllowSelectLockedCells = false;
+				worksheet.Protection.AllowSelectUnlockedCells = true;
 				// Thêm Data Validation
 
 				// Validation cho "Họ và Tên": Không chứa số
