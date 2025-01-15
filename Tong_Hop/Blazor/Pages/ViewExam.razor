@@ -281,15 +281,15 @@ else
 			string formattedScore = CodeTest.ToString().PadLeft(6, '0');
 			// Gửi yêu cầu POST
 			var response = await client.PostAsJsonAsync(
-				$"api/ViewExam/create-hist?CodeTesst={formattedScore}&GuidId={isdtudent}&answerId={idAnswer}",
+				$"api/ViewExam/Exam_results_storage?CodeTesst={formattedScore}&GuidId={isdtudent}&answerId={idAnswer}",
 				examhistories
 			);
 
-			if (!response.IsSuccessStatusCode)
-			{
-				var error = await response.Content.ReadAsStringAsync();
-				throw new Exception($"Lỗi lưu dữ liệu: {error}");
-			}
+			// if (!response.IsSuccessStatusCode)
+			// {
+			// 	var error = await response.Content.ReadAsStringAsync();
+			// 	throw new Exception($"Lỗi lưu dữ liệu: {error}");
+			// }
 		}
 		catch (Exception ex)
 		{
