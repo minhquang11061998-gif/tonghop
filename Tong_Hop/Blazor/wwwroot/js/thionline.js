@@ -13,6 +13,9 @@ function reloadCameraFeed() {
     const cameraImage = document.querySelector("#cameraImage");
     if (cameraImage) {
         cameraImage.src = "https://localhost:7046/api/FaceId/camera-stream?" + new Date().getTime();
+        console.log("Camera feed reloaded.");
+    } else {
+        console.error("Element with ID 'cameraImage' not found.");
     }
 }
 function getCode() {
