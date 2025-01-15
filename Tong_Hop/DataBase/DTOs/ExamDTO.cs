@@ -19,4 +19,58 @@ namespace DataBase.DTOs
         public Guid TeacherId1 { get; set; }
         public Guid TeacherId2 { get; set; }
     }
+    public class GetAllExamDTO
+    {
+        public Guid Id { get; set; }
+        
+        public string? Name { get; set; }
+        public int Status { get; set; }
+        public string?  NameSubject { get; set; }
+        public Guid idsubject { get; set; }
+        public string? Nameroom { get; set; }
+        public Guid idrom { get; set; }
+        public string? NameTeacher1 { get; set; }
+        public Guid idteacher1 { get; set; }
+        public string? NameTeacher2 { get; set; }
+        public Guid idteacher2 { get; set; }
+        public DateTime StartTime { get; set; }
+        public DateTime EndTime { get; set; }
+        public DateTime CreationTime { get; set; }
+        public Guid IdEaxmRoom { get; set; }
+    }
+    public class UpdateExamDTO
+    {
+        public Guid Id { get; set; }
+        public string? Name { get; set; }
+        public int Status { get; set; }
+
+        public Guid idsubject { get; set; }
+
+        public Guid idrom { get; set; }
+
+        public Guid idteacher1 { get; set; }
+
+        public Guid idteacher2 { get; set; }
+    }
+
+    public class GetAllExamCaThiDTO
+    {
+        public Guid Id { get; set; }
+        public string? Name { get; set; }
+        public int Status { get; set; }
+        public string? NameSubject { get; set; }
+        public Guid idsubject { get; set; }
+        public string? Nameroom { get; set; }
+        public Guid idrom { get; set; }
+        public string? NameTeacher1 { get; set; }
+        public Guid idteacher1 { get; set; }
+        public string? NameTeacher2 { get; set; }
+        public Guid idteacher2 { get; set; }
+        public DateTime StartTime { get; set; }
+        public DateTime EndTime { get; set; }
+        public DateTime CreationTime { get; set; }
+        public Guid IdEaxmRoom { get; set; }
+        public Guid IdTest { get; set; }
+        public string? CodeTest { get; set; }
+    }
 }

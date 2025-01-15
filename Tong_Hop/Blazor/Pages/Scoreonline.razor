@@ -10,116 +10,127 @@
 
 @page "/studentscores"
 
-<div class="container mt-5">
-    <div class="card shadow-sm">
-        <div class="card-header bg-info text-white text-center">
-            <h3 class="m-0">Bảng điểm của sinh viên</h3>
-        </div>
-        <div class="card-body">
-            <!-- Hiển thị giá trị CodeStudent -->
-            <p class="text-center font-weight-bold">Code sinh viên: <strong>@id</strong></p>
-
-            @if (scoreslist.Any())
-            {
-                <div class="table-responsive">
-                    <table class="table table-bordered table-hover text-center">
-                        <thead class="bg-primary text-white font-weight-bold">
-                            <tr>
-                                <th rowspan="2" class="align-middle">Môn</th>
-                                @foreach (var ptq in scoreslist.GroupBy(x => x.PointTypeName).Select(g => g.First()))
-                                {
-                                    <th colspan="@ptq.Quantity" class="align-middle">@ptq.PointTypeName</th>
-                                }
-                            </tr>
-                            <tr>
-                                @foreach (var ptq1 in scoreslist.GroupBy(x => x.PointTypeName).Select(g => g.First()))
-                                {
-                                    for (int i = 0; i < ptq1.Quantity; i++)
-                                    {
-                                        <th>@("Point " + (i + 1))</th>
-                                    }
-                                }
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var subjectGroup in scoreslist.GroupBy(x => x.SubjectName))
-                            {
-                                <tr>
-                                    <td class="align-middle font-weight-bold">@subjectGroup.Key</td> <!-- Hiển thị Môn một lần -->
-                                    @foreach (var ptq in scoreslist.GroupBy(x => x.PointTypeName).Select(g => g.First()))
-                                    {
-                                        <!-- Lấy danh sách điểm của từng loại điểm -->
-                                        var scores = subjectGroup
-                                        .Where(x => x.PointTypeName == ptq.PointTypeName)
-                                        .SelectMany(x => x.Scores.Split(','))
-                                        .ToList();
-
-                                        for (int i = 0; i < ptq.Quantity; i++)
-                                        {
-                                            <td>@(scores.Count > i ? scores[i].Trim() : "0")</td> <!-- Điểm hoặc 0 nếu không có -->
-                                        }
-                                    }
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
-            }
-            else
-            {
-                <p class="text-center text-muted">Không có dữ liệu để hiển thị.</p>
-            }
-        </div>
-    </div>
-</div>
-
-<!-- Style to further enhance the visual -->
-<style>
-    .card {
-        border-radius: 10px;
-    }
-
-    .card-header {
-        border-radius: 10px 10px 0 0;
-    }
-
-    table thead th {
-        text-transform: uppercase;
-        letter-spacing: 1px;
-    }
-
-    table th, table td {
-        vertical-align: middle;
-    }
-
-    .table-bordered th, .table-bordered td {
-        border: 1px solid #dee2e6;
-    }
-</style>
-
-
-
-
 @code {
     private List<PointTypeQuantityDTO> scoreslist = new List<PointTypeQuantityDTO>();
     private TokenResponse tokenResponse;
     private string id;
+    private string errorMessage;
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        
         if (firstRender)
         {
             var token = await jsRuntime.InvokeAsync<string>("localStorage.getItem", "YourSuperSecretKeyHere");
             if (!string.IsNullOrEmpty(token))
             {
-                tokenResponse = new TokenResponse { Token = token };
-                var handler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
-                var jsonToken = handler.ReadToken(token) as System.IdentityModel.Tokens.Jwt.JwtSecurityToken;
-                id = jsonToken?.Claims.FirstOrDefault(c => c.Type == "CodeStudent")?.Value;
-                scoreslist = await Client.GetFromJsonAsync<List<PointTypeQuantityDTO>>($"api/Score/GetScores_code?code={id}");
+                try
+                {
+                    tokenResponse = new TokenResponse { Token = token };
+                    var handler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
+                    var jsonToken = handler.ReadToken(token) as System.IdentityModel.Tokens.Jwt.JwtSecurityToken;
+                    id = jsonToken?.Claims.FirstOrDefault(c => c.Type == "CodeStudent")?.Value;
+                    scoreslist = await Client.GetFromJsonAsync<List<PointTypeQuantityDTO>>($"api/Score/GetScores_code?code={id}");
+
+                    if (scoreslist == null || !scoreslist.Any())
+                    {
+                        errorMessage = "Không tìm thấy dữ liệu điểm.";
+                    }
+
+                    StateHasChanged();
+                }
+                catch (Exception ex)
+                {
+                    errorMessage = $"Đã xảy ra lỗi: {ex.Message}";
+                    StateHasChanged();
+                }
+            }
+            else
+            {
+                errorMessage = "Không tìm thấy token.";
                 StateHasChanged();
             }
         }
-
     }
+}
+
+@* Mã học sinh *@
+<h2 class="text-center">Điểm số của học sinh: @id</h2>
+
+@* Thông báo lỗi *@
+@if (errorMessage != null)
+{
+    <p class="alert alert-danger">@errorMessage</p>
+}
+else if (scoreslist != null && scoreslist.Any())
+{
+    <table class="table table-striped table-bordered table-hover custom-table">
+        <thead>
+            <tr>
+                <th rowspan="2">Môn học</th>
+                <th colspan="3">Điểm miệng</th>
+                <th colspan="3">Điểm 15p</th>
+                <th colspan="2">Điểm 45p</th>
+                <th rowspan="2">Điểm giữa kỳ</th>
+                <th rowspan="2">Điểm cuối kỳ</th>
+                <th rowspan="2">Tổng điểm</th>
+            </tr>
+            <tr>
+                <th>Điểm 1</th>
+                <th>Điểm 2</th>
+                <th>Điểm 3</th>
+                <th>Điểm 1</th>
+                <th>Điểm 2</th>
+                <th>Điểm 3</th>
+                <th>Điểm 1</th>
+                <th>Điểm 2</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var score in scoreslist)
+            {
+                <tr>
+                    <td class="font-weight-bold">@score.SubjectName</td>
+
+                    <!-- Điểm miệng -->
+                    @for (int i = 0; i < 3; i++)
+                    {
+                        <td class="@(score.Miệng != null && score.Miệng.Count > i ? "" : "bg-warning")">
+                            @(score.Miệng != null && score.Miệng.Count > i ? score.Miệng[i].ToString() : "")
+                        </td>
+                    }
+
+                    <!-- Điểm 15p -->
+                    @for (int i = 0; i < 3; i++)
+                    {
+                        <td class="@(score.FifteenMinutes != null && score.FifteenMinutes.Count > i ? "" : "bg-warning")">
+                            @(score.FifteenMinutes != null && score.FifteenMinutes.Count > i ? score.FifteenMinutes[i].ToString() : "")
+                        </td>
+                    }
+
+                    <!-- Điểm 45p -->
+                    @for (int i = 0; i < 2; i++)
+                    {
+                        <td class="@(score.FortyFiveMinutes != null && score.FortyFiveMinutes.Count > i ? "" : "bg-warning")">
+                            @(score.FortyFiveMinutes != null && score.FortyFiveMinutes.Count > i ? score.FortyFiveMinutes[i].ToString() : "")
+                        </td>
+                    }
+
+                    <!-- Điểm giữa kỳ -->
+                    <td class="@(score.MidTerm != null && score.MidTerm.Count > 0 ? "" : "bg-warning")">
+                        @(score.MidTerm != null && score.MidTerm.Count > 0 ? score.MidTerm[0].ToString() : "")
+                    </td>
+
+                    <!-- Điểm cuối kỳ -->
+                    <td class="@(score.Final != null && score.Final.Count > 0 ? "" : "bg-warning")">
+                        @(score.Final != null && score.Final.Count > 0 ? score.Final[0].ToString() : "")
+                    </td>
+
+                    <!-- Tổng điểm -->
+                    <td>
+                        @((score.FifteenMinutes.Sum() + score.Miệng.Sum() + score.FortyFiveMinutes.Sum() + score.MidTerm.Sum() + score.Final.Sum()).ToString())
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
 }

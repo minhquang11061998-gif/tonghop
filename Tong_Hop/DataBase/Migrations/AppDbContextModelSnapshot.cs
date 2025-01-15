@@ -213,6 +213,11 @@ namespace DataBase.Migrations
                     b.Property<DateTime>("CreationTime")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
@@ -274,7 +279,7 @@ namespace DataBase.Migrations
                     b.Property<double>("Point_Summary")
                         .HasColumnType("float");
 
-                    b.Property<Guid>("SemesterID")
+                    b.Property<Guid?>("SemesterID")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("StudentId")
@@ -787,8 +792,9 @@ namespace DataBase.Migrations
                     b.Property<Guid?>("ClassesId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<int>("Code")
-                        .HasColumnType("int");
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("CreationTime")
                         .HasColumnType("datetime2");
@@ -1014,9 +1020,7 @@ namespace DataBase.Migrations
 
                     b.HasOne("DataBase.Models.Semesters", "Semester")
                         .WithMany("Learning_Summarys")
-                        .HasForeignKey("SemesterID")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("SemesterID");
 
                     b.HasOne("DataBase.Models.Students", "Student")
                         .WithMany("Learning_Summaries")

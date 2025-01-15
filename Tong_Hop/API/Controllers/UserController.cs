@@ -226,35 +226,55 @@ namespace API.Controllers
             }
         }
 
-      
+
         [HttpPost("create-user")]
-        public async Task<IActionResult> Create([FromForm] UserDTO user, IFormFile avatarFile,Guid id)
+        public async Task<IActionResult> Create([FromForm] UserDTO user, IFormFile? avatarFile, Guid id)
         {
-        
             try
             {
+
+                // Kiểm tra trùng lặp
+                var isDuplicateUserName = await _db.Users.AnyAsync(u => u.UserName == user.UserName);
+                if (isDuplicateUserName)
+                {
+                    return BadRequest("UserName đã tồn tại.");
+                }
+
+                var isDuplicateEmail = await _db.Users.AnyAsync(u => u.Email == user.Email);
+                if (isDuplicateEmail)
+                {
+                    return BadRequest("Email đã tồn tại.");
+                }
+
+                var isDuplicatePhoneNumber = await _db.Users.AnyAsync(u => u.PhoneNumber == user.PhoneNumber);
+                if (isDuplicatePhoneNumber)
+                {
+                    return BadRequest("PhoneNumber đã tồn tại.");
+                }
                 var roleStudent = await _db.Roles.Where(x => x.Name == "Student").Select(x => x.Id).FirstOrDefaultAsync();
                 var userId = Guid.NewGuid();
-                string avatarPath=null;
-                if (avatarFile == null || avatarFile.Length == 0)
+                string avatarPath = null;
+
+                // Kiểm tra nếu có file ảnh, tiến hành tải lên, nếu không có ảnh thì avatarPath sẽ là null
+                if (avatarFile != null && avatarFile.Length > 0)
                 {
-                    return BadRequest("No file uploaded.");
+                    var uploadParams = new ImageUploadParams
+                    {
+                        File = new FileDescription(avatarFile.FileName, avatarFile.OpenReadStream()),
+                        Transformation = new Transformation().Width(500).Height(500).Crop("fill").Gravity("face")
+                    };
+
+                    var uploadResult = await _cloud.UploadAsync(uploadParams);
+
+                    if (uploadResult.StatusCode == System.Net.HttpStatusCode.OK)
+                    {
+                        avatarPath = uploadResult.SecureUrl.ToString();
+                    }
                 }
-
-                var uploadParams = new ImageUploadParams
+                if (string.IsNullOrEmpty(avatarPath))
                 {
-                    File = new FileDescription(avatarFile.FileName, avatarFile.OpenReadStream()),
-                    Transformation = new Transformation().Width(500).Height(500).Crop("fill").Gravity("face")
-                };
-
-                var uploadResult = await _cloud.UploadAsync(uploadParams);
-
-                if (uploadResult.StatusCode == System.Net.HttpStatusCode.OK)
-                {
-                    avatarPath= uploadResult.SecureUrl.ToString();
+                    avatarPath = "https://res.cloudinary.com/dbhqjvozb/image/upload/v1735837528/qolucruwvl86djlfvz4n.png";
                 }
-
-               
                 // Cập nhật thời gian thay đổi cuối cùng
                 var currentDateTime = DateTime.UtcNow;
 
@@ -263,7 +283,7 @@ namespace API.Controllers
                 {
                     Id = userId, // Sử dụng userId vừa tạo
                     FullName = user.FullName,
-                    Avartar = avatarPath, // Đường dẫn ảnh lưu trong thuộc tính Avatar
+                    Avartar = avatarPath, // Đường dẫn ảnh lưu trong thuộc tính Avatar (null nếu không có ảnh)
                     Email = user.Email,
                     UserName = user.UserName,
                     PasswordHash = user.PasswordHash,
@@ -307,12 +327,10 @@ namespace API.Controllers
                             ClassId = id
                         };
                         await _db.Student_Classes.AddAsync(studentClass);
-                        
+                        await _db.SaveChangesAsync();
                         await updateclass(id);
-
                         await MaxScor_Subj(student.Id, studentClass.ClassId);
                         await _db.SaveChangesAsync();
-
                     }
                     else if (role.Name == "Teacher")
                     {
@@ -325,7 +343,6 @@ namespace API.Controllers
                         await _db.Teachers.AddAsync(teacher);
                         await _db.SaveChangesAsync();
                     }
-                   
                 }
 
                 return Ok("Them thanh cong");
@@ -335,6 +352,8 @@ namespace API.Controllers
                 return BadRequest(ex.ToString());
             }
         }
+
+
 
         #region thêm điểm mặc định bằng 0 cho từng môn và đầu điểm
         private async Task MaxScor_Subj(Guid IdStudent, Guid IdClass)
@@ -644,10 +663,14 @@ namespace API.Controllers
             }
             _db.Users.Remove(user);
             await _db.SaveChangesAsync();
-            var publicId = user.Avartar
-            .Split('/').Last().Split('.').First(); 
-            var deletionParams = new DeletionParams(publicId);
-            var deletionResult = await _cloud.DestroyAsync(deletionParams);
+            if(user.Avartar!=null)
+            {
+                var publicId = user.Avartar
+                 .Split('/').Last().Split('.').First();
+                var deletionParams = new DeletionParams(publicId);
+                var deletionResult = await _cloud.DestroyAsync(deletionParams);
+            }
+          
             return Ok("Xóa thành công");
         }
         
@@ -655,12 +678,12 @@ namespace API.Controllers
         [HttpPost("login")]
         public IActionResult Login([FromBody] LoginModelDTO model)
         {
-            var data = _db.Users.FirstOrDefault(temp => temp.UserName == model.Username);
+            var data = _db.Users.FirstOrDefault(temp => temp.Email == model.Email);
             var student = _db.Roles.FirstOrDefault(temp => temp.Id == data.RoleId);
             var studentId = _db.Students.FirstOrDefault(temp => temp.UserId == data.Id);
             var teacherId = _db.Teachers.FirstOrDefault(temp => temp.UserId == data.Id);
 
-            if (model.Username == data.UserName && model.Password == data.PasswordHash)
+            if (model.Email == data.Email && model.Password == data.PasswordHash)         
             {
                 if (student.Name == "Student")
                 {
@@ -677,7 +700,7 @@ namespace API.Controllers
                          new Claim("email",data.Email.ToString()),
                          new Claim("numberPhone",data.PhoneNumber.ToString()),
                          new Claim("CodeStudent", studentId.Code.ToString()),
-                         
+
                         }),
                         Expires = DateTime.UtcNow.AddMinutes(15),
                         SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature),
@@ -704,7 +727,7 @@ namespace API.Controllers
                          new Claim("Idteacher",teacherId.Id.ToString()),
                          new Claim("email",data.Email.ToString()),
                          new Claim("numberPhone",data.PhoneNumber.ToString()),
-                         new Claim("avatar",data.Avartar.ToString()),
+                         //new Claim("avatar",data.Avartar.ToString()),
                          
                          new Claim("CodeTeacher", teacherId.Code.ToString())
                             
@@ -731,10 +754,10 @@ namespace API.Controllers
 
             return Ok(new { message = "Logout successful" });
         }
-        [HttpPost("import-excel")]
-        public async Task<IActionResult> ImportUsersFromExcel(IFormFile file , Guid id)
+        [HttpPost("import-excel-teacher")]
+        public async Task<IActionResult> ImportTeacherFromExcel(IFormFile file)
         {
-            var roleStudent = await _db.Roles.Where(x => x.Name == "Student").Select(x => x.Id).FirstOrDefaultAsync();
+            var roleStudent = await _db.Roles.Where(x => x.Name == "Teacher").Select(x => x.Id).FirstOrDefaultAsync();
             if (file == null || file.Length == 0)
             {
                 return BadRequest("File không hợp lệ.");
@@ -752,14 +775,16 @@ namespace API.Controllers
                     {
                         return BadRequest("File Excel không chứa dữ liệu.");
                     }
+
                     for (int row = 2; row <= worksheet.Dimension.Rows; row++)
                     {
                         // Tạo ID user trước
                         var userId = Guid.NewGuid();
                         string imagePath = null;
 
+                        // Kiểm tra và lấy ảnh nếu có
                         var pictures = worksheet.Drawings
-                            .Where(d => d.From.Row + 1 == row && d.From.Column + 1 == 3) 
+                            .Where(d => d.From.Row + 1 == row && d.From.Column + 1 == 3)
                             .ToList();
 
                         if (pictures.Count > 0 && pictures.FirstOrDefault() is ExcelPicture excelPicture)
@@ -777,38 +802,191 @@ namespace API.Controllers
                                     imagePath = uploadResult.SecureUrl.ToString();
                                 }
                             }
+                        }
 
-                           
+                        // Nếu không có ảnh, có thể gán một ảnh mặc định
+                        if (string.IsNullOrEmpty(imagePath))
+                        {
+                            imagePath = "https://res.cloudinary.com/dbhqjvozb/image/upload/v1735837528/qolucruwvl86djlfvz4n.png"; // Đường dẫn ảnh mặc định
+                        }
+
+                        // Kiểm tra và xử lý dữ liệu trống hoặc không hợp lệ
+                        var fullName = worksheet.Cells[row, 2]?.Value?.ToString();
+                        var email = worksheet.Cells[row, 4]?.Value?.ToString();
+                        var userName = worksheet.Cells[row, 5]?.Value?.ToString();
+                        var passwordHash = worksheet.Cells[row, 6]?.Value?.ToString();
+                        var dateOfBirthString = worksheet.Cells[row, 7]?.Value?.ToString();
+                        var phoneNumber = worksheet.Cells[row, 8]?.Value?.ToString();
+
+                        // Kiểm tra dữ liệu trống
+                        if (string.IsNullOrWhiteSpace(fullName) || string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(userName))
+                        {
+                            continue; // Bỏ qua dòng này nếu có trường dữ liệu quan trọng trống
+                        }
+
+                        // Kiểm tra và chuyển đổi ngày sinh
+                        DateTime? dateOfBirth = null;
+                        if (!string.IsNullOrEmpty(dateOfBirthString))
+                        {
+                            if (DateTime.TryParseExact(dateOfBirthString, "dd/MM/yyyy", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime parsedDate))
+                            {
+                                dateOfBirth = parsedDate;
+                            }
+                            else
+                            {
+                                // Xử lý lỗi nếu ngày tháng không hợp lệ
+                                dateOfBirth = null; // Hoặc bạn có thể sử dụng giá trị mặc định
+                            }
                         }
 
                         var user = new Users
                         {
-                            Id = userId, 
-                            FullName = worksheet.Cells[row, 2]?.Value?.ToString(),
+                            Id = userId,
+                            FullName = fullName,
                             Avartar = imagePath,
-                            Email = worksheet.Cells[row, 4]?.Value?.ToString(),
-                            UserName = worksheet.Cells[row, 5]?.Value?.ToString(),
-                            PasswordHash = worksheet.Cells[row, 6]?.Value?.ToString(),
-                            DateOfBirth = DateTime.ParseExact(worksheet.Cells[row, 7]?.Value?.ToString(), "dd/MM/yyyy", CultureInfo.InvariantCulture),
-                            PhoneNumber = worksheet.Cells[row, 8]?.Value?.ToString(),
+                            Email = email,
+                            UserName = userName,
+                            PasswordHash = passwordHash,
+                            DateOfBirth = dateOfBirth ?? DateTime.Now, // Nếu không có ngày sinh hợp lệ, sử dụng ngày hiện tại
+                            PhoneNumber = phoneNumber,
                             IsLocked = true,
                             LockedEndTime = DateTime.Now,
                             CreationTime = DateTime.Now,
                             Status = 1,
                             RoleId = roleStudent
                         };
-                        await _db.Users.AddAsync(user);
-                        await _db.SaveChangesAsync();
 
-                        var student = new Students
+                        await _db.Users.AddAsync(user);
+
+                        var teacher = new Teachers
                         {
                             Id = Guid.NewGuid(),
                             Code = RandomCode(8),
                             UserId = user.Id,
                         };
-                        await _db.Students.AddAsync(student);
-                        await _db.SaveChangesAsync();
-                        var studentclass = new Student_Class
+                        await _db.Teachers.AddAsync(teacher);
+                    }
+                }
+
+                // Lưu tất cả dữ liệu sau khi vòng lặp kết thúc
+                await _db.SaveChangesAsync();
+            }
+            return Ok(new { Message = "Thêm dữ liệu thành công." });
+        }
+
+        [HttpPost("import-excel")]
+        public async Task<IActionResult> ImportUsersFromExcel(IFormFile file, Guid id)
+        {
+            var roleStudent = await _db.Roles
+                .Where(x => x.Name == "Student")
+                .Select(x => x.Id)
+                .FirstOrDefaultAsync();
+
+            if (file == null || file.Length == 0)
+            {
+                return BadRequest("File không hợp lệ.");
+            }
+
+            var users = new List<Users>();
+            var students = new List<Students>();
+            var studentClasses = new List<Student_Class>();
+
+            using (var stream = new MemoryStream())
+            {
+                await file.CopyToAsync(stream);
+                using (var package = new ExcelPackage(stream))
+                {
+                    var worksheet = package.Workbook.Worksheets.FirstOrDefault();
+                    if (worksheet == null)
+                    {
+                        return BadRequest("File Excel không chứa dữ liệu.");
+                    }
+
+                    for (int row = 2; row <= worksheet.Dimension.Rows; row++)
+                    {
+                        // Tạo ID user trước
+                        var userId = Guid.NewGuid();
+                        string? imagePath = null;
+
+                        // Kiểm tra và lấy ảnh nếu có
+                        var pictures = worksheet.Drawings
+                            .Where(d => d.From.Row + 1 == row && d.From.Column + 1 == 3)
+                            .ToList();
+
+                        if (pictures.Count > 0 && pictures.FirstOrDefault() is ExcelPicture excelPicture)
+                        {
+                            using (var imageStream = new MemoryStream(excelPicture.Image.ImageBytes))
+                            {
+                                var uploadimg = new ImageUploadParams
+                                {
+                                    File = new FileDescription(userId.ToString(), imageStream),
+                                    Transformation = new Transformation().Width(500).Height(500).Crop("fill").Gravity("face")
+                                };
+                                var uploadResult = await _cloud.UploadAsync(uploadimg);
+                                if (uploadResult.StatusCode == System.Net.HttpStatusCode.OK)
+                                {
+                                    imagePath = uploadResult.SecureUrl.ToString();
+                                }
+                            }
+                        }
+
+                        // Nếu không có ảnh, gán ảnh mặc định
+                        if (string.IsNullOrEmpty(imagePath))
+                        {
+                            imagePath = "https://res.cloudinary.com/dbhqjvozb/image/upload/v1735837528/qolucruwvl86djlfvz4n.png";
+                        }
+
+                        // Kiểm tra và xử lý dữ liệu trống hoặc không hợp lệ
+                        var fullName = worksheet.Cells[row, 2]?.Value?.ToString();
+                        var email = worksheet.Cells[row, 4]?.Value?.ToString();
+                        var userName = worksheet.Cells[row, 5]?.Value?.ToString();
+                        var passwordHash = worksheet.Cells[row, 6]?.Value?.ToString();
+                        var dateOfBirthString = worksheet.Cells[row, 7]?.Value?.ToString();
+                        var phoneNumber = worksheet.Cells[row, 8]?.Value?.ToString();
+
+                        // Kiểm tra dữ liệu trống
+                        if (string.IsNullOrWhiteSpace(fullName) || string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(userName))
+                        {
+                            continue; // Bỏ qua dòng này nếu có trường dữ liệu quan trọng trống
+                        }
+
+                        // Kiểm tra và chuyển đổi ngày sinh
+                        DateTime? dateOfBirth = null;
+                        if (!string.IsNullOrEmpty(dateOfBirthString))
+                        {
+                            if (DateTime.TryParseExact(dateOfBirthString, "dd/MM/yyyy", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime parsedDate))
+                            {
+                                dateOfBirth = parsedDate;
+                            }
+                        }
+
+                        var user = new Users
+                        {
+                            Id = userId,
+                            FullName = fullName,
+                            Avartar = imagePath,
+                            Email = email,
+                            UserName = userName,
+                            PasswordHash = passwordHash,
+                            DateOfBirth = dateOfBirth ?? DateTime.Now,
+                            PhoneNumber = phoneNumber,
+                            IsLocked = true,
+                            LockedEndTime = DateTime.Now,
+                            CreationTime = DateTime.Now,
+                            Status = 1,
+                            RoleId = roleStudent
+                        };
+                        users.Add(user);
+
+                        var student = new Students
+                        {
+                            Id = Guid.NewGuid(),
+                            Code = RandomCode(8),
+                            UserId = userId,
+                        };
+                        students.Add(student);
+
+                        var studentClass = new Student_Class
                         {
                             Id = Guid.NewGuid(),
                             JoinTime = DateTime.Now,
@@ -816,16 +994,49 @@ namespace API.Controllers
                             StudentId = student.Id,
                             ClassId = id
                         };
-                        await _db.Student_Classes.AddAsync(studentclass);
-                        await _db.SaveChangesAsync();
-                        await updateclass(id);
-
-                        MaxScor_Subj(student.Id, id);
+                        studentClasses.Add(studentClass);
                     }
                 }
             }
+
+            // Lưu toàn bộ dữ liệu vào DB
+            using (var transaction = await _db.Database.BeginTransactionAsync())
+            {
+                try
+                {
+                    // Gộp dữ liệu trước khi lưu
+                    await _db.Users.AddRangeAsync(users);
+                    await _db.Students.AddRangeAsync(students);
+                    await _db.Student_Classes.AddRangeAsync(studentClasses);
+
+                    // Lưu tất cả thay đổi một lần
+                    await _db.SaveChangesAsync();
+
+                    // Cập nhật lớp và điểm số
+                    await updateclass(id);
+
+                    // Gọi MaxScor_Subj cho từng sinh viên
+                    foreach (var student in students)
+                    {
+                        await MaxScor_Subj(student.Id, id);
+                    }
+
+                    // Commit transaction
+                    await transaction.CommitAsync();
+                }
+                catch (Exception ex)
+                {
+                    // Rollback nếu có lỗi
+                    await transaction.RollbackAsync();
+                    return BadRequest($"Đã xảy ra lỗi: {ex.Message}");
+                }
+            }
+
+
             return Ok(new { Message = "Thêm dữ liệu thành công." });
         }
+
+
         #region updeteClass
 
         private string RamdomCodeTestCode(int length)
@@ -903,102 +1114,148 @@ namespace API.Controllers
             }
             
         }
-        #endregion
+		#endregion
 
-        [HttpGet("export-sample")]
-        public IActionResult ExportSampleExcel()
+		[HttpGet("export-sample")]
+		public IActionResult ExportSampleExcel()
+		{
+			using (var package = new ExcelPackage())
+			{
+				var worksheet = package.Workbook.Worksheets.Add("Mẫu Dữ Liệu");
+
+				// Tạo tiêu đề cột
+				var headers = new[]
+				{
+			"STT", "Họ và Tên", "Hình Ảnh", "Email", "UserName", "Password", "Ngày sinh", "Số Điện Thoại"
+		};
+
+				for (int col = 1; col <= headers.Length; col++)
+				{
+					worksheet.Cells[1, col].Value = headers[col - 1];
+				}
+
+				// Định dạng tiêu đề
+				using (var range = worksheet.Cells[1, 1, 1, headers.Length])
+				{
+					range.Style.Font.Bold = true;
+					range.Style.Font.Size = 12;
+					range.Style.Font.Color.SetColor(System.Drawing.Color.White);
+					range.Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+					range.Style.VerticalAlignment = OfficeOpenXml.Style.ExcelVerticalAlignment.Center;
+					range.Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
+					range.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.FromArgb(79, 129, 189));
+				}
+
+				// Thêm Data Validation
+
+				// Validation cho "Họ và Tên": Không chứa số
+				var nameValidation = worksheet.DataValidations.AddCustomValidation("B2:B1000");
+				nameValidation.Formula.ExcelFormula = "ISERROR(FIND(1,B2)) * ISERROR(FIND(2,B2)) * ISERROR(FIND(3,B2)) * ISERROR(FIND(4,B2)) * ISERROR(FIND(5,B2)) * ISERROR(FIND(6,B2)) * ISERROR(FIND(7,B2)) * ISERROR(FIND(8,B2)) * ISERROR(FIND(9,B2)) * ISERROR(FIND(0,B2))";
+				nameValidation.ShowErrorMessage = true;
+				nameValidation.ErrorTitle = "Lỗi nhập liệu";
+				nameValidation.Error = "Tên không được chứa số.";
+
+				// Validation cho "Email": Định dạng email hợp lệ
+				var emailValidation = worksheet.DataValidations.AddCustomValidation("D2:D1000");
+				emailValidation.Formula.ExcelFormula = "ISNUMBER(FIND(\"@\",D2)) * ISNUMBER(FIND(\".\",D2))";
+				emailValidation.ShowErrorMessage = true;
+				emailValidation.ErrorTitle = "Lỗi nhập liệu";
+				emailValidation.Error = "Email không đúng định dạng. Hãy đảm bảo có '@' và '.'";
+
+				// Validation cho "Ngày sinh": Không vượt quá ngày hiện tại
+				var dateValidation = worksheet.DataValidations.AddDateTimeValidation("G2:G1000");
+				dateValidation.Operator = OfficeOpenXml.DataValidation.ExcelDataValidationOperator.between;
+				dateValidation.Formula.Value = new DateTime(1900, 1, 1);
+				dateValidation.Formula2.Value = DateTime.Now;
+				dateValidation.ShowErrorMessage = true;
+				dateValidation.ErrorTitle = "Lỗi nhập liệu";
+				dateValidation.Error = "Ngày sinh không được lớn hơn ngày hiện tại.";
+
+				// Validation cho "Số Điện Thoại": 10 chữ số
+				var phoneValidation = worksheet.DataValidations.AddCustomValidation("H2:H1000");
+				phoneValidation.Formula.ExcelFormula = "AND(ISNUMBER(H2),LEN(H2)=10)";
+				phoneValidation.ShowErrorMessage = true;
+				phoneValidation.ErrorTitle = "Lỗi nhập liệu";
+				phoneValidation.Error = "Số điện thoại phải là 10 chữ số.";
+
+				// Định dạng chiều rộng cột
+				worksheet.Column(1).Width = 10;
+				worksheet.Column(2).Width = 25;
+				worksheet.Column(3).Width = 25;
+				worksheet.Column(4).Width = 25;
+				worksheet.Column(5).Width = 25;
+				worksheet.Column(6).Width = 25;
+				worksheet.Column(7).Width = 25;
+				worksheet.Column(8).Width = 25;
+
+				// Dữ liệu mẫu (có thể để trống nếu không cần)
+				for (int row = 2; row <= 2; row++)
+				{
+					worksheet.Cells[row, 1].Value = row - 1; // STT
+					worksheet.Cells[row, 2].Value = "Nguyễn Văn A"; // Họ và Tên
+					worksheet.Cells[row, 3].Value = "Ảnh nhúng tại đây"; // Hình ảnh
+					worksheet.Cells[row, 4].Value = "user@example.com"; // Email
+					worksheet.Cells[row, 5].Value = "username"; // UserName
+					worksheet.Cells[row, 6].Value = "******"; // Password
+					worksheet.Cells[row, 7].Value = DateTime.Now.AddYears(-20).ToString("dd/MM/yyyy"); // Ngày sinh
+					worksheet.Cells[row, 8].Value = "0123456789"; // Số điện thoại
+				}
+
+				// Lưu file và trả về client
+				var stream = new MemoryStream();
+				package.SaveAs(stream);
+				stream.Position = 0;
+
+				var fileName = $"Template_Sample_{DateTime.Now:yyyyMMddHHmmss}.xlsx";
+				var contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+
+				return File(stream, contentType, fileName);
+			}
+		}
+
+
+		[HttpPost("create-user-Teacher")]
+        public async Task<IActionResult> CreateTeachre([FromForm] UserDTOTEACHER user, IFormFile? avatarTeacher)
         {
-            // Tạo file Excel
-            using (var package = new ExcelPackage())
-            {
-                var worksheet = package.Workbook.Worksheets.Add("Mẫu Dữ Liệu");
-
-                // Tạo tiêu đề cột
-                var headers = new[]
-                {
-                    "STT", "Họ và Tên", "Hình Ảnh", "Email", "UserName", "Password", "Ngày sinh", "Số Điện Thoại"
-                };
-
-                for (int col = 1; col <= headers.Length; col++)
-                {
-                    worksheet.Cells[1, col].Value = headers[col - 1];
-                }
-
-                // Định dạng tiêu đề
-                using (var range = worksheet.Cells[1, 1, 1, headers.Length])
-                {
-                    range.Style.Font.Bold = true;
-                    range.Style.Font.Size = 12;
-                    range.Style.Font.Color.SetColor(System.Drawing.Color.White);
-                    range.Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
-                    range.Style.VerticalAlignment = OfficeOpenXml.Style.ExcelVerticalAlignment.Center;
-                    range.Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
-                    range.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.FromArgb(79, 129, 189)); // Màu xanh đậm
-                }
-
-                // Định dạng chiều rộng cột
-                worksheet.Column(1).Width = 10; 
-                worksheet.Column(2).Width = 25; 
-                worksheet.Column(3).Width = 25; 
-                worksheet.Column(4).Width = 25; 
-                worksheet.Column(5).Width = 25; 
-                worksheet.Column(6).Width = 25; 
-                worksheet.Column(7).Width = 25; 
-                worksheet.Column(8).Width = 25; 
-             
-
-                // Dữ liệu mẫu (nếu cần)
-                for (int row = 2; row <= 2; row++) // Dữ liệu mẫu từ hàng 2 đến hàng 6
-                {
-                    worksheet.Cells[row, 1].Value = row - 1; // STT
-                    worksheet.Cells[row, 2].Value = $"Nguyễn Văn {row - 1}"; // Họ và Tên
-                    worksheet.Cells[row, 3].Value = "Ảnh nhúng tại đây"; // Hình ảnh
-                    worksheet.Cells[row, 4].Value = $"user{row - 1}@example.com"; // Email
-                    worksheet.Cells[row, 5].Value = $"user{row - 1}"; // UserName
-                    worksheet.Cells[row, 6].Value = "******"; // Password
-                    worksheet.Cells[row, 7].Value = DateTime.Now.AddYears(-20).ToString("dd/MM/yyyy"); // Ngày sinh
-                    worksheet.Cells[row, 8].Value = "0123456789"; // Số điện thoại
-                }
-                var stream = new MemoryStream();
-                package.SaveAs(stream);
-                stream.Position = 0;
-
-                // Trả file về client
-                var fileName = $"Template_Sample_{DateTime.Now:yyyyMMddHHmmss}.xlsx";
-                var contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-
-                return File(stream, contentType, fileName);
-            }
-        }
-
-        [HttpPost("create-user-Teacher")]
-        public async Task<IActionResult> CreateTeachre([FromForm] UserDTOTEACHER user, IFormFile avatarTeacher)
-        {
-
             try
             {
-                var roleStudent = await _db.Roles.Where(x => x.Name == "Teacher").Select(x => x.Id).FirstOrDefaultAsync();
+
+                var isDuplicateEmail = await _db.Users.AnyAsync(u => u.Email == user.Email);
+                if (isDuplicateEmail)
+                {
+                    return BadRequest("Email đã tồn tại.");
+                }
+
+                var isDuplicatePhoneNumber = await _db.Users.AnyAsync(u => u.PhoneNumber == user.PhoneNumber);
+                if (isDuplicatePhoneNumber)
+                {
+                    return BadRequest("PhoneNumber đã tồn tại.");
+                }
+
+                var roleTeacher = await _db.Roles.Where(x => x.Name == "Teacher").Select(x => x.Id).FirstOrDefaultAsync();
                 var userId = Guid.NewGuid();
                 string avatarPath = null;
-                if (avatarTeacher == null || avatarTeacher.Length == 0)
+
+                // Kiểm tra nếu có file ảnh thì upload, nếu không có thì giữ avatarPath là null
+                if (avatarTeacher != null && avatarTeacher.Length > 0)
                 {
-                    return BadRequest("No file uploaded.");
+                    var uploadParams = new ImageUploadParams
+                    {
+                        File = new FileDescription(avatarTeacher.FileName, avatarTeacher.OpenReadStream()),
+                        Transformation = new Transformation().Width(500).Height(500).Crop("fill").Gravity("face")
+                    };
+
+                    var uploadResult = await _cloud.UploadAsync(uploadParams);
+
+                    if (uploadResult.StatusCode == System.Net.HttpStatusCode.OK)
+                    {
+                        avatarPath = uploadResult.SecureUrl.ToString();
+                    }
                 }
-
-                var uploadParams = new ImageUploadParams
+                if (string.IsNullOrEmpty(avatarPath))
                 {
-                    File = new FileDescription(avatarTeacher.FileName, avatarTeacher.OpenReadStream()),
-                    Transformation = new Transformation().Width(500).Height(500).Crop("fill").Gravity("face")
-                };
-
-                var uploadResult = await _cloud.UploadAsync(uploadParams);
-
-                if (uploadResult.StatusCode == System.Net.HttpStatusCode.OK)
-                {
-                    avatarPath = uploadResult.SecureUrl.ToString();
+                    avatarPath = "https://res.cloudinary.com/dbhqjvozb/image/upload/v1735837528/qolucruwvl86djlfvz4n.png";
                 }
-
-
                 // Cập nhật thời gian thay đổi cuối cùng
                 var currentDateTime = DateTime.UtcNow;
 
@@ -1007,7 +1264,7 @@ namespace API.Controllers
                 {
                     Id = userId, // Sử dụng userId vừa tạo
                     FullName = user.FullName,
-                    Avartar = avatarPath, // Đường dẫn ảnh lưu trong thuộc tính Avatar
+                    Avartar = avatarPath, // Đường dẫn ảnh lưu trong thuộc tính Avatar, nếu không có ảnh thì sẽ là null
                     Email = user.Email,
                     UserName = user.UserName,
                     PasswordHash = user.PasswordHash,
@@ -1018,39 +1275,35 @@ namespace API.Controllers
                     CreationTime = currentDateTime, // Mặc định là thời gian hiện tại
                     LastMordificationTime = currentDateTime, // Mặc định là thời gian hiện tại
                     Status = user.Status,
-                    RoleId = roleStudent,
+                    RoleId = roleTeacher,
                 };
 
                 // Thêm User mới vào database
                 await _db.Users.AddAsync(data);
                 await _db.SaveChangesAsync();
 
-                // Kiểm tra và tạo thông tin tương ứng cho Student hoặc Teacher
+                // Kiểm tra và tạo thông tin tương ứng cho Teacher
                 var role = _db.Roles.FirstOrDefault(x => x.Id == data.RoleId);
-                if (role != null)
+                if (role != null && role.Name == "Teacher")
                 {
-                    
-                    if (role.Name == "Teacher")
+                    var teacher = new Teachers
                     {
-                        var teacher = new Teachers
-                        {
-                            Id = Guid.NewGuid(),
-                            Code = RandomCode(8),
-                            UserId = data.Id
-                        };
-                        await _db.Teachers.AddAsync(teacher);
-                        await _db.SaveChangesAsync();
-                    }
-
+                        Id = Guid.NewGuid(),
+                        Code = RandomCode(8),
+                        UserId = data.Id
+                    };
+                    await _db.Teachers.AddAsync(teacher);
+                    await _db.SaveChangesAsync();
                 }
 
-                return Ok("Them thanh cong");
+                return Ok("Thêm thành công");
             }
             catch (Exception ex)
             {
                 return BadRequest(ex.ToString());
             }
         }
+
 
     }
 }

@@ -375,81 +375,82 @@ namespace API.Controllers
                 var studentIdFromToken = claimsPrincipal.Claims.First(claim => claim.Type == "Idstudent").Value;
 
                 // Kiểm tra mã code và IdStudent từ cơ sở dữ liệu
-                var code = _db.Tests.FirstOrDefault(x => x.Code == login.codelogin);
-                var student = _db.Students.FirstOrDefault(x => x.Id.ToString() == studentIdFromToken);
-
-                if (code != null && student != null)
+                var test = _db.Tests.FirstOrDefault(x => x.Code == login.codelogin);
+                if (test == null)
                 {
-                    var listStudentClass = (from t in _db.Tests
-                                                  join c in _db.Classes on t.ClassId equals c.Id
-                                                  join sc in _db.Student_Classes on c.Id equals sc.ClassId
-                                                  where t.Code == login.codelogin
-                                                  select new
-                                                  {
-                                                      sc.StudentId
-                                                  }).ToList();
-
-                    foreach (var item in listStudentClass)
-                    {
-                        if (item.StudentId.ToString() == studentIdFromToken)
-                        {
-                            var examRoomTestCodeId = (from exam in _db.Exam_Room_TestCodes
-                                                      join test in _db.Tests
-                                                      on exam.TestId equals test.Id
-                                                      where test.Code == login.codelogin
-                                                      select exam.Id).FirstOrDefault();
-
-                            if (examRoomTestCodeId != Guid.Empty)
-                            {
-                                var data = (from a in _db.Tests
-                                            join b in _db.Exam_Room_TestCodes on a.Id equals b.TestId
-                                            join c in _db.Exam_Room_Students on b.Id equals c.ExamRoomTestCodeId
-                                            where a.Code == login.codelogin
-                                            select new
-                                            {
-                                                IdStudent = c.StudentId,
-                                                IdERTC = b.Id
-                                            }).ToList();
-
-                                foreach (var item_data in data)
-                                {
-                                    if (item_data.IdStudent.ToString() == studentIdFromToken)
-                                    {
-                                        return BadRequest("Bạn đã là bài thi rồi");
-                                    }
-                                    else
-                                    {
-                                        var examRoomStudentEntity = new Exam_Room_Student
-                                        {
-                                            Id = Guid.NewGuid(),
-                                            ChenkTime = DateTime.Now,
-                                            Status = 1,
-                                            ExamRoomTestCodeId = item_data.IdERTC,
-                                            StudentId = item_data.IdStudent
-                                        };
-
-                                        _db.Exam_Room_Students.Add(examRoomStudentEntity);
-                                        _db.SaveChanges();
-                                        return Ok("thành công ");
-                                    }
-                                }
-                                
-                            }
-                        }
-                        else
-                        {
-                            return BadRequest("Ko phải học sinh lớp tham ra thi");
-                        }
-                    }
+                    return BadRequest("Mã code không tồn tại.");
                 }
-            }
-            catch (Exception)
-            {
-                return Unauthorized("Token không hợp lệ hoặc hết hạn");
-            }
 
-            return Unauthorized("Code hoặc ID sai");
+                var student = _db.Students.FirstOrDefault(x => x.Id.ToString() == studentIdFromToken);
+                if (student == null)
+                {
+                    return BadRequest("ID sinh viên không hợp lệ.");
+                }
+                var status = await (from a in _db.Tests
+                                    join b in _db.Subjects on a.SubjectId equals b.Id
+                                    join c in _db.Exams on b.Id equals c.SubjectId
+                                    join d in _db.Exam_Rooms on c.Id equals d.ExamId
+                                    where a.Code==login.codelogin
+                                    select d.Status).FirstOrDefaultAsync();
+                if(status== 2)
+                {
+                    return BadRequest("Chưa đến giờ thi");
+                }else if(status== 0)
+                {
+                    return BadRequest("Mã code đã hết hạn");
+                }
+                // Kiểm tra xem học sinh có thuộc lớp của bài thi không
+                var isStudentInClass = _db.Student_Classes.Any(sc =>
+                    sc.StudentId.ToString() == studentIdFromToken &&
+                    sc.ClassId == test.ClassId);
+
+                if (!isStudentInClass)
+                {
+                    return BadRequest("Học sinh không thuộc lớp tham gia thi.");
+                }
+
+                // Kiểm tra xem học sinh đã tham gia bài thi này chưa
+                var existingExamRoomStudent = (from exam in _db.Exam_Room_TestCodes
+                                               join testCode in _db.Tests on exam.TestId equals test.Id
+                                               join studentExam in _db.Exam_Room_Students on exam.Id equals studentExam.ExamRoomTestCodeId
+                                               where test.Code == login.codelogin && studentExam.StudentId.ToString() == studentIdFromToken
+                                               select studentExam).FirstOrDefault();
+
+                if (existingExamRoomStudent != null)
+                {
+                    return BadRequest("Bạn đã làm bài thi này rồi.");
+                }
+
+                // Thêm học sinh vào bài thi
+                var examRoomTestCode = (from exam in _db.Exam_Room_TestCodes
+                                        where exam.TestId == test.Id
+                                        select exam).FirstOrDefault();
+
+                if (examRoomTestCode == null)
+                {
+                    return BadRequest("Không tìm thấy bài thi phòng thi tương ứng.");
+                }
+
+                var newExamRoomStudent = new Exam_Room_Student
+                {
+                    Id = Guid.NewGuid(),
+                    ChenkTime = DateTime.Now,
+                    Status = 1,
+                    ExamRoomTestCodeId = examRoomTestCode.Id,
+                    StudentId = student.Id
+                };
+
+                _db.Exam_Room_Students.Add(newExamRoomStudent);
+                await _db.SaveChangesAsync();
+
+                return Ok("Thành công.");
+            }
+            catch (Exception ex)
+            {
+                return Unauthorized("Token không hợp lệ hoặc hết hạn: " + ex.Message);
+            }
         }
+
 
     }
 }

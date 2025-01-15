@@ -21,7 +21,7 @@ namespace DataBase.Models
         public double Point_Summary { get; set; }
         public bool IsView { get; set; } = false;
         [ForeignKey("Id")]
-        public Guid SemesterID { get; set; }
+        public Guid? SemesterID { get; set; }
         [ForeignKey("Id")]
         public Guid StudentId { get; set; }
         [ForeignKey("Id")]

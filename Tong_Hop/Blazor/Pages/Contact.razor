@@ -3,7 +3,8 @@
 @using global::Data.DTOs
 @inject IJSRuntime jsruntime
 @inject HttpClient http
-<PageTitle>Contact</PageTitle>
+<PageTitle>Thông tin liên hệ</PageTitle>
+
 <div class="py-5">
     <div class="columns-widget columns6-6 container">
         <div class="row">
@@ -22,25 +23,25 @@
                                         <div class="row border">
                                             <div class="col-md-12 container">
                                                 <p><i>Liên hệ trực tiếp:</i></p>
-                                                <p></p><h2>Trường Tiểu Học Cam Phú</h2><p></p>
+                                                <p></p><h2>Trường xxxxxxxxxxxxxx</h2><p></p>
                                                 <div class="row">
                                                     <div class="col-md-3">
                                                         <label class="contact-addr">Địa chỉ:</label>
                                                     </div>
-                                                    <div class="col-md-9">   Phường Cam Phú, Thành Phố Cam Ranh, Tỉnh Khánh Hòa  </div>
+                                                    <div class="col-md-9">   Phường xxxxxx, Thành Phố xxxxx, Tỉnh xxxxx </div>
                                                 </div>
                                                 <div class="row">
                                                     <div class="col-md-3">
                                                         <label class="contact-phone">Điện thoại:</label>
                                                     </div>  <div class="col-md-9">
-                                                        583862626
+                                                        091.xxxx.xxxx
                                                     </div>
                                                 </div>
                                                 <div class="row">
                                                     <div class="col-md-3">
                                                         <label class="contact-email">Email:</label>
                                                     </div>  <div class="col-md-9">
-                                                        c1cphu.cr@khanhhoa.edu.vn
+                                                      xxxxxxxxxxxx@xxxxx.edu.vn
                                                     </div>
                                                 </div>
                                                 <p>Cám ơn quý khách đã gửi ý kiến. Chúng tôi sẽ phản hồi trong thời gian sớm nhất !</p>
@@ -69,7 +70,7 @@
                                                 <ValidationSummary />
                                             <div class="row mb-10 p-2">
                                                 <div class="col-md-12">
-                                                    <input class="form-control" type="text" placeholder="Họ và tên *"  @bind-value="systemConfigDTO.Name">
+                                                    <input class="form-control" type="text" placeholder="Họ và tên *"  @bind-value="systemConfigDTO.Name" disabled>
                                                 </div>
                                             </div>
                                             <div class="row mb-10 p-2">
@@ -79,12 +80,12 @@
                                             </div>
                                             <div class="row mb-10 p-2">
                                                 <div class="col-md-12">
-                                                    <input class="form-control"  type="text" placeholder="Số điện thoại *" @bind-value="systemConfigDTO.PhoneNumber">
+                                                        <input class="form-control" type="text" placeholder="Số điện thoại *" @bind-value="systemConfigDTO.PhoneNumber" disabled>
                                                 </div>
                                             </div>
                                             <div class="row mb-10 p-2">
                                                 <div class="col-md-12">
-                                                    <input class="form-control" name="fields[email]"  type="text" placeholder="Email *" @bind-value="systemConfigDTO.Email">
+                                                        <input class="form-control" name="fields[email]" type="text" placeholder="Email *" @bind-value="systemConfigDTO.Email" disabled>
                                                 </div>
                                             </div>
                                             <div class="row mb-10 p-2">
@@ -116,7 +117,13 @@
                                                 </div>
                                                 <div class="row mb-10 p-2">
                                                     <div class="col-md-12">
-                                                        <input class="form-control" type="text" placeholder="Số điện thoại *" @bind-value="systemConfigDTO.PhoneNumber">
+                                                        <input class="form-control"
+                                                               type="text"
+                                                               placeholder="Số điện thoại *"
+                                                               @bind-value="systemConfigDTO.PhoneNumber"
+                                                               maxlength="10"
+                                                               oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10); if(this.value.length > 0 && this.value[0] !== '0') this.value = '0' + this.value.slice(1);" />
+
                                                     </div>
                                                 </div>
                                                 <div class="row mb-10 p-2">
@@ -151,9 +158,7 @@
                 </div>
             </div>
         </div>
-    </div><style>
-              /**/
-    </style>
+    </div>
 </div>
 @code {
     private TokenResponse tokenResponse;
@@ -162,8 +167,95 @@
     private string numberphone;
     private SystemConfigDTO systemConfigDTO = new SystemConfigDTO();
 
+    private async Task<bool> ValidateInputs()
+    {
+
+        @if (!string.IsNullOrWhiteSpace(systemConfigDTO.Name) && systemConfigDTO.Name.Any(char.IsDigit))
+        {
+            await jsruntime.InvokeVoidAsync("Swal.fire", new
+            {
+                title = "Lỗi!",
+                text = "Họ và tên không được chứa số.",
+                icon = "error",
+                confirmButtonText = "OK"
+            });
+            return false; // Dừng nếu không hợp lệ
+        }
+
+        if (string.IsNullOrWhiteSpace(systemConfigDTO.Name))
+        {
+            await jsruntime.InvokeVoidAsync("Swal.fire", new
+            {
+                title = "Lỗi!",
+                text = "Họ và tên không được để trống.",
+                icon = "error",
+                confirmButtonText = "OK"
+            });
+            return false; // Dừng nếu không hợp lệ
+        }
+
+        if (string.IsNullOrWhiteSpace(systemConfigDTO.Value))
+        {
+            await jsruntime.InvokeVoidAsync("Swal.fire", new
+            {
+                title = "Lỗi!",
+                text = "Nội dung liên hệ không được để trống.",
+                icon = "error",
+                confirmButtonText = "OK"
+            });
+            return false; // Dừng nếu không hợp lệ
+        }
+
+        if (string.IsNullOrWhiteSpace(systemConfigDTO.Email))
+        {
+            await jsruntime.InvokeVoidAsync("Swal.fire", new
+            {
+                title = "Lỗi!",
+                text = "Email không được để trống.",
+                icon = "error",
+                confirmButtonText = "OK"
+            });
+            return false; // Dừng nếu không hợp lệ
+        }
+
+        // Kiểm tra số điện thoại
+        var phoneRegex = new System.Text.RegularExpressions.Regex(@"^0\d{9}$");
+        if (string.IsNullOrWhiteSpace(systemConfigDTO.PhoneNumber) || !phoneRegex.IsMatch(systemConfigDTO.PhoneNumber))
+        {
+            await jsruntime.InvokeVoidAsync("Swal.fire", new
+            {
+                title = "Lỗi!",
+                text = "Số điện thoại phải bắt đầu bằng số 0 và gồm đúng 10 chữ số.",
+                icon = "error",
+                confirmButtonText = "OK"
+            });
+            return false; // Ngăn tiếp tục nếu số điện thoại không hợp lệ
+        }
+
+        // Kiểm tra email
+        if (string.IsNullOrWhiteSpace(systemConfigDTO.Email) ||
+            !new System.ComponentModel.DataAnnotations.EmailAddressAttribute().IsValid(systemConfigDTO.Email))
+        {
+            await jsruntime.InvokeVoidAsync("Swal.fire", new
+            {
+                title = "Lỗi!",
+                text = "Email không hợp lệ. Vui lòng nhập đúng định dạng email.",
+                icon = "error",
+                confirmButtonText = "OK"
+            });
+            return false; // Ngăn tiếp tục nếu email không hợp lệ
+        }
+
+        return true; // Dữ liệu hợp lệ
+    }
+
     private async Task SaveDataToApi()
     {
+        if (!await ValidateInputs())
+        {
+            return; // Dừng nếu dữ liệu không hợp lệ
+        }
+
         var response = await http.PostAsJsonAsync("api/SystemConfig/create- system", systemConfigDTO);
         if (response.IsSuccessStatusCode)
         {
@@ -199,7 +291,7 @@
                 tokenResponse = new TokenResponse { Token = token };
                 var handler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
                 var jsonToken = handler.ReadToken(token) as System.IdentityModel.Tokens.Jwt.JwtSecurityToken;
-                    systemConfigDTO.Name = jsonToken?.Claims.FirstOrDefault(c => c.Type == "name")?.Value;
+                systemConfigDTO.Name = jsonToken?.Claims.FirstOrDefault(c => c.Type == "nameab")?.Value;
                    systemConfigDTO.Email= jsonToken?.Claims.FirstOrDefault(temp => temp.Type == "email")?.Value;
                 systemConfigDTO.PhoneNumber = jsonToken?.Claims.FirstOrDefault(temp => temp.Type == "numberPhone")?.Value;
                 StateHasChanged();

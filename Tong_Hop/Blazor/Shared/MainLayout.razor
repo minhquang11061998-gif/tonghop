@@ -177,8 +177,8 @@
                             <DataAnnotationsValidator />
                             <ValidationSummary />
                             <div class="mb-3">
-                                <label for="username" class="form-label">Tên tài khoản hoặc Email</label>
-                                <InputText id="username" @bind-value="loginModel.Username" class="form-control" required />
+                                <label for="username" class="form-label">Email</label>
+                                <InputText id="username" @bind-Value="loginModel.Email" class="form-control" required />
                             </div>
                             <div class="mb-3">
                                 <label for="password" class="form-label">Mật khẩu</label>
@@ -193,10 +193,6 @@
                                     Đăng nhập
                                 </button>
                             </div>
-                            @if (!string.IsNullOrEmpty(errorMessage))
-                            {
-                                <div class="alert alert-danger mt-3" id="error">@errorMessage</div>
-                            }
                         </EditForm>
                     </div>
                 </div>
@@ -205,25 +201,38 @@
     }
 </main>
 
-<footer class="container-fluid mt-auto">
-    <div class="row bg-dark-subtle py-3">
-        <div class="col-4">
-            <img class="w-50 h-100" style="margin-left:100px" src="img/Rectangle89.png" alt="Alternate Text" />
+<footer class="bg-secondary text-light py-4">
+    <div class="container text-center">
+        <div class="row">
+            <div class="col-md-4">
+                <h5>Về Chúng Tôi</h5>
+                <p>SMART SCHOOL là giải pháp thi online hiện đại, an toàn và hiệu quả dành cho giáo dục.</p>
+            </div>
+            <div class="col-md-4">
+                <h5>Liên Kết Nhanh</h5>
+                <ul class="list-unstyled">
+                    <li><a href="#" class="text-light text-decoration-none">Trang Chủ</a></li>
+                    <li><a href="#" class="text-light text-decoration-none">Tính Năng</a></li>
+                    <li><a href="#" class="text-light text-decoration-none">Liên Hệ</a></li>
+                </ul>
+            </div>
+            <div class="col-md-4">
+                <h5>Kết Nối Với Chúng Tôi</h5>
+                <div>
+                    <a href="https://www.facebook.com/minhquang.ninh" target="_blank" class="text-light me-3">
+                        <i class="bi bi-facebook" style="font-size: 1.5rem;"></i>
+                    </a>
+                    <a href="https://zalo.me" target="_blank" class="text-light me-3">
+                        <i class="bi bi-chat-dots" style="font-size: 1.5rem;"></i>
+                    </a>
+                    <a href="https://www.instagram.com" target="_blank" class="text-light">
+                        <i class="bi bi-instagram" style="font-size: 1.5rem;"></i>
+                    </a>
+                </div>
+            </div>
         </div>
-        <div class="col-4 py-2">
-            <div class="row">
-                <p>Địa chỉ:</p>
-            </div>
-            <div class="row">
-                <p>Số điện thoại:</p>
-            </div>
-            <div class="row">
-                <p>Email:</p>
-            </div>
-            <div class="row">
-                <p>Website:</p>
-            </div>
-        </div>
+        <hr class="border-light">
+        <p class="mb-0">&copy; 2025 SMART SCHOOL. All rights reserved.</p>
     </div>
 </footer>
 
@@ -233,9 +242,10 @@
     private bool isLoginFormVisible = false;
     private bool isLoading = false;
     private LoginModelDTO loginModel = new LoginModelDTO();
-    private string errorMessage;
-    private string userName;
-    private TokenResponse tokenResponse;
+    private string? errorMessage;
+    private string? userName;
+    private string? avatar;
+    private TokenResponse? tokenResponse;
     private void ShowLoginForm() => isLoginFormVisible = true;
     private void HideLoginForm() => isLoginFormVisible = false;
     private bool notificationsLoaded = false;
@@ -299,6 +309,7 @@
                 if (role == "Student")
                 {
                     userName = jsonToken?.Claims.FirstOrDefault(c => c.Type == "nameab")?.Value;
+                    // avatar = jsonToken?.Claims.FirstOrDefault(c => c.Type == "avatar")?.Value;
                     var studentIdClaim = jsonToken?.Claims.FirstOrDefault(c => c.Type == "Idstudent")?.Value;
                     if (!string.IsNullOrEmpty(studentIdClaim) && Guid.TryParse(studentIdClaim, out Guid studentIdGuid))
                     {
@@ -371,9 +382,9 @@
         }
         else
         {
-            errorMessage = "Tên đăng nhập hoặc mật khẩu không chính xác.";
+            await jsRuntime.InvokeVoidAsync("alert", "Emai hoặc mật khẩu không chính xác");
             isLoading = false;
-            loginModel.Username = string.Empty;
+            loginModel.Email = string.Empty;
             loginModel.Password = string.Empty;
             StateHasChanged();
         }

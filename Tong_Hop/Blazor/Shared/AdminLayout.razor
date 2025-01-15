@@ -6,98 +6,87 @@
 
 <main class="d-flex flex-column fixed-top">
     <div class="row flex-grow-0">
-        <div class="col-2 border shadow">
-            <div class="min-vh-100">
-                <!-- Logo & Tên hệ thống -->
+        <div class="col-2 border shadow sidebar-container">
+            <div class="min-vh-100 overflow-auto sidebar">
                 <a class="navbar-brand d-flex align-items-center" href="/">
-                    <img src="img/Rectangle89.png" style="height:80px;" alt="Logo" class="me-2" />
-                    <span class="fw-semibold text-primary" style="font-size: 1.25rem;">Quản lý hệ thống</span>
+                    <img src="img/Rectangle89.png" class="logo-img me-2" alt="Logo" />
+                    <span class="navbar-text text-primary">Quản lý Hệ thống</span>
                 </a>
                 <ul class="nav flex-column p-3">
                     <li class="nav-item mb-4">
-                        <a class="nav-link" href="/adminIndex">
+                        <a class="nav-link" href="/adminIndex" @onclick="()=>ChangePageName(1)">
                             <i class="bi bi-house-door fs-3 me-2" style="color: #28a745;"></i>
                             <span class="fs-6" style="color: #333;">Trang chủ</span>
                         </a>
                     </li>
                     <li class="nav-item mb-4">
-                        <a class="nav-link" href="/face-registration">
+                        <a class="nav-link" href="/Faceid" @onclick="()=>ChangePageName(2)">
                             <i class="bi bi-camera-fill fs-3 me-2" style="color: #FF5722;"></i>
-                            <span class="fs-6" style="color: #333;">Quản lý faceID</span>
+                            <span class="fs-6" style="color: #333;">Quản lý FaceID</span>
                         </a>
                     </li>
                     <li class="nav-item mb-4">
-                        <a class="nav-link" href="/teacher">
+                        <a class="nav-link" href="/teacher" @onclick="()=>ChangePageName(3)">
                             <i class="bi bi-person-lines-fill fs-3 me-2" style="color: #007BFF;"></i>
-                            <span class="fs-6" style="color: #333;">Quản lý danh sách giáo viên</span>
+                            <span class="fs-6" style="color: #333;">Quản lý Danh sách Giáo viên</span>
                         </a>
                     </li>
                     <li class="nav-item mb-4">
-                        <!-- Checkbox ẩn để điều khiển menu -->
-                        <input type="checkbox" id="toggleMenu" class="d-none" />
-                        <a class="nav-link" href="javascript:void(0);" onclick="document.getElementById('toggleMenu').click();">
+                        <a class="nav-link" href="/grade_and_class" @onclick="()=>ChangePageName(4)">
                             <i class="bi bi-people-fill fs-3 me-2" style="color: #007BFF;"></i>
                             <span class="fs-6" style="color: #333;">Quản lý Lớp học</span>
-                            <!-- Mũi tên -->
-                            <i class="bi bi-chevron-down ms-2" id="menuArrow"></i>
                         </a>
-                        <!-- Menu con ẩn/hiện -->
-                        <ul class="list-unstyled ms-3" id="manageClassMenu">
-                            <li class="nav-item">
-                                <a class="nav-link" href="/grade_and_class">
-                                    <i class="bi bi-house-door-fill fs-5 me-2" style="color: #28A745;"></i>
-                                    <span class="fs-6" style="color: #333;">Khối và Lớp học</span>
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" href="/student-list">
-                                    <i class="bi bi-person-fill fs-5 me-2" style="color: #28A745;"></i>
-                                    <span class="fs-6" style="color: #333;">Danh sách học sinh</span>
-                                </a>
-                            </li>
-                        </ul>
                     </li>
-
                     <li class="nav-item mb-4">
-                        <a class="nav-link" href="/manage-test">
+                        <a class="nav-link" href="/Admin_Subject" @onclick="()=>ChangePageName(5)">
+                            <i class="bi bi-book fs-3 me-2" style="color: #28a745;"></i>
+                            <span class="fs-6" style="color: #333;">Quản lý Môn học</span>
+                        </a>
+                    </li>
+                    <li class="nav-item mb-4">
+                        <a class="nav-link" href="/manage-test" @onclick="()=>ChangePageName(6)">
                             <i class="bi bi-question-circle-fill fs-3 me-2" style="color: #FF9800;"></i>
-                            <span class="fs-6" style="color: #333;">Quản lý câu hỏi</span>
+                            <span class="fs-6" style="color: #333;">Quản lý Tạo bài thi và gói đề</span>
                         </a>
                     </li>
                     <li class="nav-item mb-4">
-                        <a class="nav-link" href="/exam-room">
+                        <a class="nav-link" href="/exam-room" @onclick="()=>ChangePageName(7)">
                             <i class="bi bi-calendar-check-fill fs-3 me-2" style="color: #9C27B0;"></i>
-                            <span class="fs-6" style="color: #333;">Quản lý ca thi</span>
+                            <span class="fs-6" style="color: #333;">Quản lý Gói đề</span>
                         </a>
                     </li>
                     <li class="nav-item mb-4">
-                        <a class="nav-link" href="/tongket">
+                        <a class="nav-link" href="/tongket" @onclick="()=>ChangePageName(8)">
                             <i class="bi bi-bar-chart-fill fs-3 me-2" style="color: #FFC107;"></i>
                             <span class="fs-6" style="color: #333;">Điểm</span>
                         </a>
                     </li>
                     <li class="nav-item mb-4">
-                        <a class="nav-link" href="/exam-result">
+                        <a class="nav-link" href="/exam-result" @onclick="()=>ChangePageName(9)">
                             <i class="bi bi-clipboard-check fs-3 me-2" style="color: #673AB7;"></i>
                             <span class="fs-6" style="color: #333;">Quản lý Phúc khảo</span>
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/teacher-system">
+                        <a class="nav-link" href="/teacher-system" @onclick="()=>ChangePageName(10)">
                             <i class="bi bi-telephone-fill fs-3 me-2" style="color: #2196F3;"></i>
                             <span class="fs-6" style="color: #333;">Thông tin Liên hệ</span>
                         </a>
                     </li>
                 </ul>
             </div>
-
         </div>
 
         <div class="col-10 bg-gradient">
-            <!-- Row for Navbar -->
             <div class="row">
                 <nav class="navbar navbar-expand-lg navbar-light shadow-sm py-2" style="height:65px">
+                    <div>
+                        <div class=" p-4">
+                            <h4 class="text-primary">@currentPage</h4>
+                        </div>
+                    </div>
                     <div class="container d-flex justify-content-end align-items-center">
+                       
                         <div class="d-flex align-items-center">
                             <i class="bi bi-person-circle fs-5 text-primary me-2"></i>
                             @if (tokenResponse != null)
@@ -108,18 +97,16 @@
                         </div>
                     </div>
                 </nav>
+
             </div>
-            <div class="row">
-                <div>
-                    <div class="body-container min-vh-100 overflow-scroll ">
-                        @Body
-                    </div>
+            <div class="body-container">
+                <div class="main-content">
+                    <!-- Nội dung chính của trang -->
+                    @Body
                 </div>
-            </div>
-            <div class="row fixed-bottom">
                 <footer class="bg-light text-secondary py-3">
                     <div class="container d-flex justify-content-between align-items-center">
-                        <span>&copy; 2024 Hệ thống quản lý. Tất cả các quyền được bảo lưu.</span>
+                        <span>&copy; 2025 Hệ thống quản lý SmartSchool. Tất cả các quyền được bảo lưu.</span>
                         <div class="d-flex">
                             <a href="https://example.com" class="text-secondary me-3" target="_blank" aria-label="Link đến trang chủ">
                                 <i class="bi bi-globe"></i> Trang chủ
@@ -132,14 +119,38 @@
                 </footer>
             </div>
         </div>
-
     </div>
 </main>
+
 @code {
-   
+
     private TokenResponse tokenResponse;
     private string userName;
-    
+    private string currentPage = "Trang chủ"; // Trang mặc định
+    private Dictionary<int, string> pageNames = new Dictionary<int, string>
+    {
+        { 1, "Trang chủ" },
+        { 2, "Quản lý FaceID" },
+        { 3, "Quản lý Danh sách Giáo viên" },
+        { 4, "Quản lý Lớp học" },
+        { 5, "Quản lý Môn học" },
+        { 6, "Quản lý Tạo bài thi và gói đề" },
+        { 7, "Quản lý Gói đề" },
+        { 8, "Quản lý Điểm" },
+        { 9, "Quản lý Phúc khảo" },
+        { 10, "Quản lý Thông tin liên hệ" },
+
+        // Thêm các trang khác ở đây
+    };
+
+    private void ChangePageName(int pageId)
+    {
+        if (pageNames.ContainsKey(pageId))
+        {
+            currentPage = pageNames[pageId];  // Cập nhật tên trang
+        }
+    }
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
@@ -165,7 +176,7 @@
             await jsRuntime.InvokeVoidAsync("localStorage.removeItem", "YourSuperSecretKeyHere");
             tokenResponse = null;
             userName = null;
-            // navigate.NavigateTo("/");
+            navigate.NavigateTo("/");
         }
     }
     private string ShortenContent(string content, int maxLength)

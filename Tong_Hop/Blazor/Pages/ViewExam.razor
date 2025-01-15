@@ -97,18 +97,18 @@ else
 												   id="answer_@answer.AnswerId"
 												   name="answer_@currentQuestion.QuestionId"
 												   value="@answer.AnswerId"
-												   @onchange="() => UpdateAndSaveAnswer(currentQuestion.QuestionId, answer.AnswerId)"
-												   checked="@(selectedAnswerIds.ContainsKey(currentQuestion.QuestionId) && selectedAnswerIds[currentQuestion.QuestionId] == answer.AnswerId)" />
+												   @onchange="() => UpdateAndSaveAnswerList(currentQuestion.QuestionId, answer.AnswerId)"
+												   checked="@(selectedAnswerId.ContainsKey(currentQuestion.QuestionId) && selectedAnswerId[currentQuestion.QuestionId].Contains(answer.AnswerId))" />
 										}
 										else
 										{
 											<input type="radio"
-												   class="form-check-input"
-												   id="answer_@answer.AnswerId"
-												   name="answer_@currentQuestion.QuestionId"
-												   value="@answer.AnswerId"
-												   @onchange="() => UpdateAndSaveAnswer(currentQuestion.QuestionId, answer.AnswerId)"
-												   checked="@(selectedAnswerIds.ContainsKey(currentQuestion.QuestionId) && selectedAnswerIds[currentQuestion.QuestionId] == answer.AnswerId)" />
+											class="form-check-input"
+											id="answer_@answer.AnswerId"
+											name="answer_@currentQuestion.QuestionId"
+											value="@answer.AnswerId"
+											@onchange="() => UpdateAndSaveAnswer(currentQuestion.QuestionId, answer.AnswerId)"
+											checked="@(selectedAnswerIds.ContainsKey(currentQuestion.QuestionId) && selectedAnswerIds[currentQuestion.QuestionId] == answer.AnswerId)" />
 										}
 										<label class="form-check-label" for="answer_@answer.AnswerId">
 											@answer.AnswerText
@@ -147,6 +147,7 @@ else
 	private List<infomationDTO> infomationDTOs = new List<infomationDTO>();
 	// Lưu trữ ID của các câu trả lời đã chọn cho mỗi câu hỏi
 	private Dictionary<Guid, Guid?> selectedAnswerIds = new Dictionary<Guid, Guid?>();
+	//private Dictionary<Guid, List<Guid?>> selectedAnswerId = new Dictionary<Guid, List<Guid?>>();
 	private TimeSpan remainingTime;  // Thời gian còn lại
 	private bool isTimeUp = false;   // Trạng thái hết giờ
 
@@ -219,6 +220,49 @@ else
 			isLoading = false;
 		}
 	}
+
+	private Dictionary<Guid, List<Guid?>> selectedAnswerId = new Dictionary<Guid, List<Guid?>>();
+
+	private async Task UpdateAndSaveAnswerList(Guid questionId, Guid answerId)
+	{
+		try
+		{
+			// Nếu câu hỏi chưa có trong từ điển, thêm mới
+			if (!selectedAnswerId.ContainsKey(questionId))
+			{
+				selectedAnswerId[questionId] = new List<Guid?>();
+			}
+
+			// Kiểm tra nếu đáp án đã tồn tại, thì xóa nó; nếu chưa tồn tại, thì thêm mới
+			if (selectedAnswerId[questionId].Contains(answerId))
+			{
+				selectedAnswerId[questionId].Remove(answerId);
+			}
+			else
+			{
+				selectedAnswerId[questionId].Add(answerId);
+			}
+
+			// Xử lý lưu đáp án vào lịch sử
+			Id_cau_hoi_duoc_tron = questionId;
+			var answerHistoryCount = await CheckAnswerHistory(CodeTest, questionId, isdtudent);
+
+			if (answerHistoryCount >= 1)
+			{
+				await DeleteHisst(CodeTest, questionId);
+			}
+
+			// Chuyển đổi danh sách đáp án về kiểu không nullable trước khi gọi CreateHistPas2
+			string covetCodeTesst = CodeTest.ToString();
+			await CreateHistPas2(covetCodeTesst, selectedAnswerId[questionId].Where(id => id.HasValue).Select(id => id.Value).ToList());
+		}
+		catch (Exception ex)
+		{
+			await jsruntime.InvokeVoidAsync("alert", $"Lỗi khi lưu đáp án: {ex.Message}");
+		}
+	}
+
+
 	private async Task UpdateAndSaveAnswer(Guid questionId, Guid answerId)
 	{
 		try
@@ -246,6 +290,7 @@ else
 			await jsruntime.InvokeVoidAsync("alert", $"Lỗi khi lưu đáp án: {ex.Message}");
 		}
 	}
+
 	private async Task DeleteHisst(int codetest, Guid idquest)
 	{
 		var res = await client.DeleteAsync($"api/ViewExam/Delete_hist?Cotesst={codetest}&IDQuestion={idquest}&IDStudent={isdtudent}");
@@ -254,6 +299,32 @@ else
 		{
 			var error = await res.Content.ReadAsStringAsync();
 			await jsruntime.InvokeVoidAsync("alert", $"Lỗi xóa dữ liệu: {error}");
+		}
+	}
+
+
+	private async Task CreateHistPas2(string codetest, List<Guid> idAnswer)
+	{
+		try
+		{
+			var requestData = new AnswerHistoryRequest
+				{
+					CodeTest = codetest,
+					StudentId = isdtudent,
+					AnswerIds = idAnswer
+				};
+
+			var response = await client.PostAsJsonAsync("api/ViewExam/create-hist-pass2", requestData);
+
+			if (!response.IsSuccessStatusCode)
+			{
+				var error = await response.Content.ReadAsStringAsync();
+				throw new Exception($"Lỗi lưu dữ liệu: {error}");
+			}
+		}
+		catch (Exception ex)
+		{
+			throw new Exception($"Lỗi hệ thống: {ex.Message}");
 		}
 	}
 	private async Task CreateHist(int codetest, Guid idAnswer)
@@ -310,8 +381,9 @@ else
 	{
 		try
 		{
-			var score = await client.GetAsync($"api/ViewExam/Exam_results_storage?CodeTest={CodeTest}&ExamResultStorage={STFDto.TotalScore}&IdStudent={isdtudent}");
-			var examhistory = await client.GetAsync($"api/ViewExam/Exam_Histories?ExamResultStorage={STFDto.TotalScore}&examRoomStudentId={isdtudent}");
+			string formattedScore = CodeTest.ToString().PadLeft(6, '0');
+			var score = await client.GetAsync($"api/ViewExam/Exam_results_storage?CodeTest={formattedScore}&ExamResultStorage={STFDto.TotalScore}&IdStudent={isdtudent}");
+			var examhistory = await client.PostAsync($"api/ViewExam/Exam_Histories?CodeTest={formattedScore}&ExamResultStorage={STFDto.TotalScore}&IdStudent={isdtudent}", null);
 		}
 		catch (Exception)
 		{

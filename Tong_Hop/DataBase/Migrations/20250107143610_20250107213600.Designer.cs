@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DataBase.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20241229113246_2024122918300000")]
-    partial class _2024122918300000
+    [Migration("20250107143610_20250107213600")]
+    partial class _20250107213600
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -216,6 +216,11 @@ namespace DataBase.Migrations
                     b.Property<DateTime>("CreationTime")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
@@ -277,7 +282,7 @@ namespace DataBase.Migrations
                     b.Property<double>("Point_Summary")
                         .HasColumnType("float");
 
-                    b.Property<Guid>("SemesterID")
+                    b.Property<Guid?>("SemesterID")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("StudentId")
@@ -790,8 +795,9 @@ namespace DataBase.Migrations
                     b.Property<Guid?>("ClassesId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<int>("Code")
-                        .HasColumnType("int");
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("CreationTime")
                         .HasColumnType("datetime2");
@@ -1017,9 +1023,7 @@ namespace DataBase.Migrations
 
                     b.HasOne("DataBase.Models.Semesters", "Semester")
                         .WithMany("Learning_Summarys")
-                        .HasForeignKey("SemesterID")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("SemesterID");
 
                     b.HasOne("DataBase.Models.Students", "Student")
                         .WithMany("Learning_Summaries")

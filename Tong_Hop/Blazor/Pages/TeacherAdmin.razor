@@ -5,20 +5,22 @@
 @inject IJSRuntime jsruntime
 
 <div class="container-fluid mt-3">
-
-    <div class="d-flex  shadow-sm">
+    <div class="d-flex  shadow-sm p-4">
         <div class="d-flex flex-wrap gap-2">
-            <button class="btn btn-primary btn-sm" @onclick="AddOrder" disabled="@(SelectedOrder != Guid.Empty)">
+            <button class="btn btn-primary btn-sm" @onclick="AddOrder" hidden="@(role=="1")">
                 <i class="bi bi-plus-circle"></i> Tạo mới
             </button>
-            <button class="btn btn-warning btn-sm" @onclick="EditOrder" disabled="@(SelectedOrder == Guid.Empty)">
+            <button class="btn btn-warning btn-sm" @onclick="EditOrder" hidden="@(role=="1")">
                 <i class="bi bi-pencil-square"></i> Chỉnh sửa
             </button>
-            <button class="btn btn-danger btn-sm" @onclick="DeleteOrder" disabled="@(SelectedOrder == Guid.Empty)">
+            <button class="btn btn-danger btn-sm" @onclick="DeleteOrder" hidden="@(role=="1")">
                 <i class="bi bi-trash"></i> Xóa
             </button>
-            <button class="btn btn-success btn-sm" @onclick="ExportToExcel">
+            <button class="btn btn-success btn-sm" @onclick="showexcel" hidden="@(role=="1")">
                 <i class="bi bi-file-earmark-excel"></i> Thêm file Excel
+            </button>
+            <button class="btn btn-success btn-sm" @onclick="dowloadexcel" hidden="@(role=="1")">
+                <i class="bi bi-file-earmark-excel"></i> Tải file mẫu Excel
             </button>
         </div>
 
@@ -33,19 +35,9 @@
     </div>
 
     <!-- Table -->
-    <div class="table-responsive border rounded shadow-sm" style="background-color: #ffffff;">
-        <table class="table table-hover  table-sm align-middle text-center">
-            <caption class="text-end">
-                <div class="d-flex  justify-content-end mt-3">
-                    <button class="btn btn-secondary btn-sm" @onclick="PreviousPage" disabled="@(!CanGoPrevious)">
-                        <i class="bi bi-arrow-left"></i> Trước
-                    </button>
-                    <span>Trang @CurrentPage / @TotalPages</span>
-                    <button class="btn btn-secondary btn-sm" @onclick="NextPage" disabled="@(!CanGoNext)">
-                        <i class="bi bi-arrow-right"></i> Sau
-                    </button>
-                </div>
-            </caption>
+    <div class="table-responsive border rounded shadow-sm" style="background-color: #ffffff;max-height: 800px; border: 1px solid #ddd; border-radius: 5px;">
+        <table class="table table-hover  table-sm align-middle text-center" style="">
+
             <thead class="table-primary border" style="height:45px">
                 <tr>
                     <th style="width: 50px;">
@@ -73,7 +65,7 @@
                                 <input type="checkbox"
                                        checked="@(SelectedOrder == order.Id)"
                                        @onchange="() => SelectOrder(order.Id)"
-                                       title="Chọn đơn hàng này" />
+                                       title="Chọn tài khoản này" />
                             </td>
                             <td>
                                 <img src="@order.Avartar" alt="Avatar"
@@ -85,7 +77,7 @@
                             <td>@order.DateOfBirth?.ToString("d")</td>
                             <td>@order.PhoneNumber</td>
                             <td>@order.UserName</td>
-                            <td>********</td>
+                            <td>@order.PasswordHash</td>
                             <td>
                                 <span class="badge @(order.Status == 1 ? "bg-success" : "bg-secondary")">
                                     @(order.Status == 1 ? "Hoạt động" : "Tạm dừng")
@@ -105,7 +97,7 @@
         </table>
     </div>
 
-    
+
 
 </div>
 
@@ -117,7 +109,7 @@
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">@((SelectedOrder == Guid.Empty ? "Thêm Tài Khoản" : "Chỉnh Sửa Tài Khoản"))</h5>
+                    <h5 class="modal-title">@((SelectedOrder == Guid.Empty ? "Thêm giáo viên" : "Chỉnh Sửa giáo viên"))</h5>
                     <button type="button" class="btn-close" @onclick="CloseModal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
@@ -133,8 +125,15 @@
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label">Số điện thoại</label>
-                                <input type="text" class="form-control" placeholder="Nhập số điện thoại" @bind="usercreate.PhoneNumber" />
+                                <input type="text"
+                                       class="form-control"
+                                       maxlength="10"
+                                       placeholder="Nhập số điện thoại"
+                                       @bind="usercreate.PhoneNumber"
+                                       oninput="this.value = this.value.replace(/[^0-9]/g, '');" />
+
                             </div>
+
                             <div class="col-md-6">
                                 <label class="form-label">Tên Đăng Nhập</label>
                                 <input type="text" class="form-control" placeholder="Nhập tên đăng nhập" @bind="usercreate.UserName" />
@@ -151,7 +150,7 @@
                                 <label class="form-label">Hình Ảnh</label>
                                 <div class="d-flex align-items-center">
                                     <div class="me-2">
-                                        <InputFile id="selectfile" style="display:none" class="form-control" onchange="HandfileAvatarTeacher" />
+                                        <InputFile id="selectfile" style="display:none" class="form-control" OnChange="HandfileAvatarTeacher" />
                                         <button class="btn btn-outline-primary" type="button" @onclick="TriggerFileInput">Chọn Ảnh</button>
                                     </div>
                                     <div class="position-relative">
@@ -187,43 +186,148 @@
     </div>
 
 }
-
+<div class="modal fade @(isExcelModalVisible ? "show" : "")" tabindex="-1" style="display:@(isExcelModalVisible ? "block" : "none"); background-color: rgba(0,0,0,0.5);">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <!-- Tiêu đề -->
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title @* @(selectedClassId=Guid.Empty)? *@">Nhập dữ liệu giáo viên</h5>
+                <button type="button" class="btn-close" aria-label="Close" @onclick="CloseModal"></button>
+            </div>
+            <!-- Nội dung -->
+            <div class="modal-body">
+                <div class="mb-3">
+                    <div class="mb-3 text-center">
+                        <!-- Nhãn tải lên tệp -->
+                        <label for="fileInput" class="btn btn-outline-primary" style="cursor: pointer;">
+                            <i class="bi bi-upload"></i> Chọn file Excel
+                        </label>
+                        <!-- Input file -->
+                        <InputFile OnChange="HandleFileSelected" id="fileInput" class="form-control d-none" oninput="fileNameDisplay.value = fileInput.value" />
+                        <!-- Hiển thị tên file -->
+                        <input type="text" id="fileNameDisplay" class="form-control mt-2 text-muted text-center" placeholder="File chưa được chọn" readonly />
+                    </div>
+                </div>
+                <div class="text-center">
+                    <button type="button" class="btn btn-primary me-2" @onclick="UploadFile">Lưu</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 @code {
+    private bool isExcelModalVisible = false;
     private List<UserDTOTEACHER> userDTOs = new List<UserDTOTEACHER>();
     private List<UserDTOTEACHER> FilteredOrders => userDTOs
        .Where(o => string.IsNullOrEmpty(SearchText) || o.FullName.Contains(SearchText, StringComparison.OrdinalIgnoreCase))
-       .Skip((CurrentPage - 1) * ItemsPerPage)
-       .Take(ItemsPerPage)
        .ToList();
 
     private bool CanGoPrevious => CurrentPage > 1;
     private bool CanGoNext => CurrentPage < TotalPages;
     private UserDTOTEACHER usercreate = new UserDTOTEACHER();
-    private string SearchText { get; set; }
+    private string? SearchText { get; set; }
     private Guid SelectedOrder { get; set; } = Guid.Empty;
     private UserDTOTEACHER EditingOrder { get; set; } = new UserDTOTEACHER();
     private bool ShowModal { get; set; } = false;
-    private IBrowserFile avatarTeacher;
+    private IBrowserFile? avatarTeacher;
     private int CurrentPage { get; set; } = 1;
     private int ItemsPerPage { get; set; } = 5; // Số mục trên mỗi trang
     private int TotalPages => (int)Math.Ceiling((double)FilteredOrders.Count() / ItemsPerPage);
     protected override async Task OnInitializedAsync()
     {
         await getuser();
+
     }
-    private void PreviousPage()
+    private string? role;
+    private TokenResponse tokenResponse;
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (CanGoPrevious)
+        if (firstRender)
         {
-            CurrentPage--;
+            var token = await jsruntime.InvokeAsync<string>("localStorage.getItem", "YourSuperSecretKeyHere");
+
+            if (!string.IsNullOrEmpty(token))
+            {
+                tokenResponse = new TokenResponse { Token = token };
+                var handler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
+                var jsonToken = handler.ReadToken(token) as System.IdentityModel.Tokens.Jwt.JwtSecurityToken;
+                role = jsonToken?.Claims.FirstOrDefault(c => c.Type == "rolecheck")?.Value;
+
+                // Cập nhật giao diện
+                await InvokeAsync(StateHasChanged);
+            }
+            else
+            {
+                Console.WriteLine("Token không tồn tại hoặc rỗng trong localStorage");
+            }
         }
     }
 
-    private void NextPage()
+    private void showexcel()
     {
-        if (CanGoNext)
+
+        isExcelModalVisible = true;
+    }
+    private async Task dowloadexcel()
+    {
+        var respon = await client.GetAsync("https://localhost:7046/api/User/export-sample");
+        if (respon.IsSuccessStatusCode)
         {
-            CurrentPage++;
+            var content = await respon.Content.ReadAsByteArrayAsync();
+            var base64String = Convert.ToBase64String(content);
+            await jsruntime.InvokeVoidAsync("downloadFile", $"Template_Sample_{DateTime.Now:yyyyMMddHHmmss}.xlsx", base64String);
+        }
+    }
+    private IBrowserFile? selectedFile;
+    private async Task HandleFileSelected(InputFileChangeEventArgs e)
+    {
+        var file = e.GetMultipleFiles(1); // Lấy tệp đầu tiên
+        if (file.Count > 0)
+        {
+            selectedFile = file[0]; // Chọn tệp đầu tiên
+        }
+    }
+    private async Task UploadFile()
+    {
+        if (selectedFile != null)
+        {
+            var stream = selectedFile.OpenReadStream(100 * 1024 * 1024); // Giới hạn 100MB
+            var content = new MultipartFormDataContent();
+
+            using (var memoryStream = new MemoryStream())
+            {
+                await stream.CopyToAsync(memoryStream);
+                var fileBytes = memoryStream.ToArray();
+                content.Add(new ByteArrayContent(fileBytes), "file", selectedFile.Name);
+            }
+
+
+            var response = await client.PostAsync($"https://localhost:7046/api/User/import-excel-teacher", content);
+            if (response.IsSuccessStatusCode)
+            {
+                await jsruntime.InvokeVoidAsync("alert", "Tải file thành công");
+                await getuser();
+            }
+            else
+            {
+                await jsruntime.InvokeVoidAsync("Swal.fire", new
+                {
+                    title = "Thất bại!",
+                    text = "Đã xảy ra lỗi khi tải lên",
+                    icon = "error",
+                    confirmButtonText = "OK"
+                });
+            }
+        }
+        else
+        {
+            await jsruntime.InvokeVoidAsync("Swal.fire", new
+            {
+                title = "Thất bại!",
+                text = "Vui lòng chọn một file",
+                icon = "error",
+                confirmButtonText = "OK"
+            });
         }
     }
     private async Task getuser()
@@ -233,6 +337,7 @@
 
     private void AddOrder()
     {
+        jsruntime.InvokeVoidAsync("alert", $"{role}");
         usercreate = new UserDTOTEACHER();
         ShowModal = true;
     }
@@ -270,8 +375,43 @@
         // Export logic can be implemented using a third-party library or JavaScript interop
         Console.WriteLine("Export to Excel functionality is triggered.");
     }
-    private void HandfileAvatarTeacher(InputFileChangeEventArgs e){
-        avatarTeacher = e.File; 
+    private const long MaxFileSize = 10 * 1024 * 1024;
+    private async void HandfileAvatarTeacher(InputFileChangeEventArgs e)
+    {
+        avatarTeacher = e.File;
+        var file = e.File;
+        if (file == null || file.Size > MaxFileSize)
+        {
+            Console.WriteLine("Invalid file or file size exceeds the allowed limit.");
+            return;
+        }
+
+        // Kiểm tra loại file có hợp lệ không
+        var allowedTypes = new[] { "image/png", "image/jpeg", "image/jpg" };
+        if (!allowedTypes.Contains(file.ContentType))
+        {
+            Console.WriteLine("Invalid file type.");
+            return;
+        }
+
+        // Cập nhật tên file vào userDTOs
+        usercreate.Avartar = file.Name;
+
+        try
+        {
+            // Đọc stream của file
+            using var stream = file.OpenReadStream(MaxFileSize);
+            using var memoryStream = new MemoryStream();
+            await stream.CopyToAsync(memoryStream);
+            usercreate.Avartar = $"data:{file.ContentType};base64,{Convert.ToBase64String(memoryStream.ToArray())}";
+
+            Console.WriteLine("Image uploaded successfully.");
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error uploading file: {ex.Message}");
+        }
     }
     #region
     private async Task TriggerFileInput()
@@ -279,9 +419,131 @@
         // Tìm và kích hoạt phần tử InputFile ẩn
         await jsruntime.InvokeVoidAsync("eval", "document.getElementById('selectfile').click()");
     }
+
+
+    private async Task<bool> ValidateInputs()
+    {
+        @if (!string.IsNullOrWhiteSpace(usercreate.FullName) && usercreate.FullName.Any(char.IsDigit))
+        {
+            await jsruntime.InvokeVoidAsync("Swal.fire", new
+            {
+                title = "Lỗi!",
+                text = "Họ và tên không được chứa số.",
+                icon = "error",
+                confirmButtonText = "OK"
+            });
+            return false; // Dừng nếu không hợp lệ
+        }
+
+        if (string.IsNullOrWhiteSpace(usercreate.FullName))
+        {
+            await jsruntime.InvokeVoidAsync("Swal.fire", new
+            {
+                title = "Lỗi!",
+                text = "Họ và tên không được để trống.",
+                icon = "error",
+                confirmButtonText = "OK"
+            });
+            return false; // Dừng nếu không hợp lệ
+        }
+        if (usercreate.DateOfBirth > DateTime.Now)
+        {
+            await jsruntime.InvokeVoidAsync("Swal.fire", new
+            {
+                title = "Lỗi!",
+                text = "Ngày tháng năm sinh không hợp lệ",
+                icon = "error",
+                confirmButtonText = "OK"
+            });
+            return false; // Dừng nếu không hợp lệ
+        }
+        if (string.IsNullOrWhiteSpace(usercreate.Email))
+        {
+            await jsruntime.InvokeVoidAsync("Swal.fire", new
+            {
+                title = "Lỗi!",
+                text = "Email không được để trống.",
+                icon = "error",
+                confirmButtonText = "OK"
+            });
+            return false; // Dừng nếu không hợp lệ
+        }
+
+        if (!new System.ComponentModel.DataAnnotations.EmailAddressAttribute().IsValid(usercreate.Email))
+        {
+            await jsruntime.InvokeVoidAsync("Swal.fire", new
+            {
+                title = "Lỗi!",
+                text = "Email không hợp lệ. Vui lòng nhập đúng định dạng email.",
+                icon = "error",
+                confirmButtonText = "OK"
+            });
+            return false; // Dừng nếu email không hợp lệ
+        }
+
+        // Kiểm tra số điện thoại bắt đầu bằng 0, đúng 10 ký tự
+        var phoneRegex = new System.Text.RegularExpressions.Regex(@"^0\d{9}$");
+        if (string.IsNullOrWhiteSpace(usercreate.PhoneNumber) || !phoneRegex.IsMatch(usercreate.PhoneNumber))
+        {
+            await jsruntime.InvokeVoidAsync("Swal.fire", new
+            {
+                title = "Lỗi!",
+                text = "Số điện thoại phải bắt đầu bằng số 0 và gồm đúng 10 chữ số.",
+                icon = "error",
+                confirmButtonText = "OK"
+            });
+            return false; // Ngăn tiếp tục nếu số điện thoại không hợp lệ
+        }
+
+        if (string.IsNullOrWhiteSpace(usercreate.PhoneNumber))
+        {
+            await jsruntime.InvokeVoidAsync("Swal.fire", new
+            {
+                title = "Lỗi!",
+                text = "Số điện thoại không được để trống.",
+                icon = "error",
+                confirmButtonText = "OK"
+            });
+            return false; // Dừng nếu không hợp lệ
+        }
+
+        if (string.IsNullOrWhiteSpace(usercreate.UserName))
+        {
+            await jsruntime.InvokeVoidAsync("Swal.fire", new
+            {
+                title = "Lỗi!",
+                text = "Tên đăng nhập không được để trống.",
+                icon = "error",
+                confirmButtonText = "OK"
+            });
+            return false; // Dừng nếu không hợp lệ
+        }
+
+        if (string.IsNullOrWhiteSpace(usercreate.PasswordHash))
+        {
+            await jsruntime.InvokeVoidAsync("Swal.fire", new
+            {
+                title = "Lỗi!",
+                text = "Mật khẩu không được để trống.",
+                icon = "error",
+                confirmButtonText = "OK"
+            });
+            return false; // Dừng nếu không hợp lệ
+        }
+
+        return true; // Tất cả đều hợp lệ
+    }
+
+
     #endregion
     private async Task SaveOrder()
     {
+
+        if (!await ValidateInputs())
+        {
+            return; // Dừng nếu dữ liệu không hợp lệ
+        }
+
         if (SelectedOrder == Guid.Empty)
         {
             // Tạo người dùng mới
@@ -317,12 +579,45 @@
             var respon = await client.PostAsync("https://localhost:7046/api/User/create-user-Teacher", content);
             if (respon.IsSuccessStatusCode)
             {
+                // Hiển thị thông báo thành công
+                await jsruntime.InvokeVoidAsync("Swal.fire", new
+                {
+                    title = "Thành công!",
+                    text = "Giáo viên đã được thêm thành công.",
+                    icon = "success",
+                    confirmButtonText = "OK"
+                });
                 await getuser();
+                CloseModal();
+
             }
             else
             {
                 var errorResponse = await respon.Content.ReadAsStringAsync();
-                await jsruntime.InvokeVoidAsync("alert", $"Thêm tài khoản không thành công: {errorResponse}");
+
+                // Hiển thị thông báo lỗi cụ thể qua alert
+                if (errorResponse.Contains("UserName đã tồn tại"))
+                {
+                    await jsruntime.InvokeVoidAsync("alert", "Lỗi: Tên đăng nhập đã tồn tại!");
+                }
+                else if (errorResponse.Contains("Email đã tồn tại"))
+                {
+                    await jsruntime.InvokeVoidAsync("alert", "Lỗi: Email đã tồn tại!");
+                }
+                else if (errorResponse.Contains("PhoneNumber đã tồn tại"))
+                {
+                    await jsruntime.InvokeVoidAsync("alert", "Lỗi: Số điện thoại đã tồn tại!");
+                }
+                else if (errorResponse.Contains("PasswordHash đã tồn tại"))
+                {
+                    await jsruntime.InvokeVoidAsync("alert", "Lỗi: Mật khẩu này đã được sử dụng!");
+                }
+                else
+                {
+                    await jsruntime.InvokeVoidAsync("alert", "Thêm học sinh thất bại! Vui lòng kiểm tra lại thông tin.");
+                }
+
+                StateHasChanged(); // Cập nhật giao diện
             }
         }
         else
@@ -356,31 +651,58 @@
             content.Add(new StringContent(usercreate.PhoneNumber ?? ""), "PhoneNumber");
             content.Add(new StringContent(usercreate.PasswordHash ?? ""), "PasswordHash");
             content.Add(new StringContent(usercreate.IsLocked.ToString()), "IsLocked");
-
             content.Add(new StringContent(usercreate.RoleId.ToString()), "RoleId");
-
-
             content.Add(new StringContent(usercreate.Avartar), "Avartar");
 
             var respon = await client.PutAsync($"https://localhost:7046/api/User/update-user-teacher/", content);
             if (respon.IsSuccessStatusCode)
             {
+                await jsruntime.InvokeVoidAsync("Swal.fire", new
+                {
+                    title = "Thành công!",
+                    text = "Giáo viên đã được cập nhật thành công.",
+                    icon = "success",
+                    confirmButtonText = "OK"
+                });
                 await getuser();
-                SelectedOrder = Guid.Empty ;
+                CloseModal();
+                SelectedOrder = Guid.Empty;
             }
             else
             {
                 var errorResponse = await respon.Content.ReadAsStringAsync();
-                await jsruntime.InvokeVoidAsync("alert", $"Cập nhật tài khoản không thành công: {errorResponse}");
+
+                // Hiển thị thông báo lỗi cụ thể qua alert
+                if (errorResponse.Contains("UserName đã tồn tại"))
+                {
+                    await jsruntime.InvokeVoidAsync("alert", "Lỗi: Tên đăng nhập đã tồn tại!");
+                }
+                else if (errorResponse.Contains("Email đã tồn tại"))
+                {
+                    await jsruntime.InvokeVoidAsync("alert", "Lỗi: Email đã tồn tại!");
+                }
+                else if (errorResponse.Contains("PhoneNumber đã tồn tại"))
+                {
+                    await jsruntime.InvokeVoidAsync("alert", "Lỗi: Số điện thoại đã tồn tại!");
+                }
+                else if (errorResponse.Contains("PasswordHash đã tồn tại"))
+                {
+                    await jsruntime.InvokeVoidAsync("alert", "Lỗi: Mật khẩu này đã được sử dụng!");
+                }
+                else
+                {
+                    await jsruntime.InvokeVoidAsync("alert", "Cập nhật học sinh thất bại! Vui lòng kiểm tra lại thông tin.");
+                }
+
+                StateHasChanged(); // Cập nhật giao diện
             }
         }
-
-        CloseModal();
     }
 
 
     private void CloseModal()
     {
+        isExcelModalVisible = false;
         ShowModal = false;
         EditingOrder = new UserDTOTEACHER();
     }
@@ -400,7 +722,7 @@
     .table thead th {
         border-top: none; /* Bỏ viền trên */
         border-bottom: none; /* Bỏ viền dưới */
-         /* Giảm độ đậm của chữ */
+        /* Giảm độ đậm của chữ */
     }
 
 </style>

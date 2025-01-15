@@ -8,7 +8,7 @@ namespace DataBase.DTOs
 {
     public class LoginModelDTO
     {
-        public string? Username { get; set; }
+        public string? Email { get; set; }
         public string? Password { get; set; }
     }
     public class TokenResponse
@@ -17,7 +17,7 @@ namespace DataBase.DTOs
     }
     public class Login_Exam_DTO
     {
-        public int codelogin { get; set; }
+        public string? codelogin { get; set; }
 
     }
 }

@@ -124,7 +124,7 @@
 											<td>@result.TestName</td>
 											<td>@result.TestCode</td>
 											<td>@result.Score</td>
-											<td>@result.CreationTime.ToString("MM/dd/yyyy HH:mm")</td>
+											<td>@result.ElapsedTime</td>
 											<td>
 												<button class="btn btn-info btn-sm" @onclick="() => OpenExamReviewModalAsync(result.TestCode)">
 													<i class="fas fa-eye"></i> Xem
@@ -231,6 +231,7 @@
 
 @code {
 	private List<ClassesDTO> classList = new List<ClassesDTO>();
+	private List<GradeDTO> grades = new List<GradeDTO>();
 	private List<ExamHistoryDTO> examResults = new List<ExamHistoryDTO>();
 	private ScoreTrueFalseDTO ExamDetail { get; set; } // DTO lưu trữ chi tiết bài thi
 	private bool IsLoading { get; set; } = true;       // Trạng thái tải dữ liệu
@@ -251,11 +252,42 @@
 
 	private async Task LoadClass()
 	{
-		var httpClient = clientFactory.CreateClient("DefaultClient");
-		var classUrl = "https://localhost:7046/api/Classes/get-all-class";
-		classList = await httpClient.GetFromJsonAsync<List<ClassesDTO>>(classUrl);
-	}
+		try
+		{
+			var httpClient = clientFactory.CreateClient("DefaultClient");
+			var classUrl = "https://localhost:7046/api/Classes/get-all-class";
+			classList = await httpClient.GetFromJsonAsync<List<ClassesDTO>>(classUrl);
 
+			// Lấy danh sách khối lớp
+			var gradeUrl = "https://localhost:7046/api/Grade/get-grade";
+			grades = await httpClient.GetFromJsonAsync<List<GradeDTO>>(gradeUrl);
+
+			// Kết hợp dữ liệu từ hai bảng
+			classList = classList
+				.Join(
+					grades,
+					c => c.GradeId, // Khóa ngoại từ bảng Classes
+					g => g.Id, // Khóa chính từ bảng Grades
+					(c, g) => new ClassesDTO
+						{
+							Id = c.Id,
+							Name = c.Name,
+							TeacherName = c.TeacherName,
+							Status = c.Status,
+							MaxStudent = c.MaxStudent,
+							GradeId = c.GradeId,
+							GradeName = g.Name // Gắn thêm GradeName từ bảng Grades
+						}
+				)
+				.OrderBy(c => c.GradeName) // Sắp xếp theo khối (6, 7, 8, 9)
+				.ThenBy(c => c.Name) // Sắp xếp theo tên lớp trong từng khối
+				.ToList();
+		}
+		catch (Exception ex)
+		{
+			await jsRuntime.InvokeVoidAsync("alert", $"Lỗi: {ex.Message}");
+		}
+	}
 	private async Task LoadExamResultsByClass(Guid classId)
 	{
 		try

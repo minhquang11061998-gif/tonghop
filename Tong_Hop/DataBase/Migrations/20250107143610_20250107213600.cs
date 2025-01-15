@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace DataBase.Migrations
 {
     /// <inheritdoc />
-    public partial class _2024122918300000 : Migration
+    public partial class _20250107213600 : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -161,6 +161,7 @@ namespace DataBase.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     CreationTime = table.Column<DateTime>(type: "datetime2", nullable: false),
                     Status = table.Column<int>(type: "int", nullable: false),
                     SubjectId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
@@ -278,7 +279,7 @@ namespace DataBase.Migrations
                     PointFinal = table.Column<double>(name: "Point_Final", type: "float", nullable: false),
                     PointSummary = table.Column<double>(name: "Point_Summary", type: "float", nullable: false),
                     IsView = table.Column<bool>(type: "bit", nullable: false),
-                    SemesterID = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    SemesterID = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     StudentId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     SubjectId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     PointTypesId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
@@ -295,8 +296,7 @@ namespace DataBase.Migrations
                         name: "FK_Learning_Summaries_Semesters_SemesterID",
                         column: x => x.SemesterID,
                         principalTable: "Semesters",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_Learning_Summaries_Students_StudentId",
                         column: x => x.StudentId,
@@ -499,7 +499,7 @@ namespace DataBase.Migrations
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Name = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: false),
-                    Code = table.Column<int>(type: "int", nullable: false),
+                    Code = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Minute = table.Column<int>(type: "int", nullable: true),
                     CreationTime = table.Column<DateTime>(type: "datetime2", nullable: false),
                     Status = table.Column<int>(type: "int", nullable: false),

@@ -24,7 +24,16 @@ window.drawPieChart = (canvasId, labels, data, title) => {
             title: {
                 display: true,
                 text: title
-            }
+            },
+            plugins: {
+                legend: {
+                    position: 'top', // Đặt chú thích lên trên
+                    labels: {
+                        boxWidth: 30, // Kích thước ô vuông màu
+                        padding: 5, // Khoảng cách giữa các mục
+                    },
+                },
+            },
         }
     });
 };

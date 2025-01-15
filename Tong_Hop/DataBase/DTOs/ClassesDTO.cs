@@ -17,6 +17,18 @@ namespace DataBase.DTOs
         public string? TeacherName { get; set; }
         public Guid TeacherId { get; set; }
         public Guid GradeId { get; set; }
-        public Guid SubjectId { get; set; }
+		public int GradeName { get; set; }
+		public Guid SubjectId { get; set; }
+    }
+    public class ClassStandardDTO
+    {
+        public Guid Id { get; set; }
+        public string? Code { get; set; }
+        public string? Name { get; set; }
+        public string? NameTeacher {  get; set; }
+        public int Status { get; set; }
+        public int MaxStudent { get; set; }
+        public Guid GradeId { get; set; }
+        public Guid TeacherId { get; set; }
     }
 }

@@ -31,3 +31,10 @@ p {
 .bg-light {
     background-color: #e9ecef !important; /* Đổi màu nền nhẹ hơn */
 }
+.img-uniform {
+    width: 100%;
+    height: 200px; 
+    object-fit: cover; /* Đảm bảo ảnh không bị biến dạng */
+    border-radius: 10px; /* Tùy chỉnh bo góc nếu cần */
+}
+

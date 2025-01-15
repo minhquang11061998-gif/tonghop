@@ -107,33 +107,53 @@ namespace API.Controllers
 
         [HttpGet]
         [Route("GetScores_code")]
-        public IActionResult GetScores(string code) // Thay đổi tham số thành code
+        public IActionResult GetScores(string code)
         {
-            // Lấy studentId từ code
-            var student = _db.Students.FirstOrDefault(s => s.Code == code);
-            if (student == null)
+            try
             {
-                return NotFound("Không tìm thấy sinh viên với mã: " + code);
+                // Lấy studentId từ mã sinh viên (code)
+                var student = _db.Students.FirstOrDefault(s => s.Code == code);
+                if (student == null)
+                {
+                    return NotFound("Không tìm thấy sinh viên với mã: " + code);
+                }
+
+                var studentId = student.Id;
+
+                // Truy vấn danh sách điểm
+                var result = from s in _db.Scores
+                             join subj in _db.Subjects on s.SubjectId equals subj.Id
+                             join pt in _db.PointTypes on s.PointTypeId equals pt.Id
+                             where s.StudentId == studentId
+                             select new
+                             {
+                                 SubjectName = subj.Name, // Tên môn học
+                                 PointTypeName = pt.Name, // Tên loại điểm (VD: 15 phút, miệng, giữa kỳ, ...)
+                                 s.Score // Điểm
+                             };
+
+                // Nhóm theo môn học và loại điểm, trả về từng điểm riêng biệt
+                var groupedResult = result
+                    .GroupBy(x => x.SubjectName)
+                    .Select(g => new
+                    {
+                        SubjectName = g.Key,
+                        FifteenMinutes = g.Where(x => x.PointTypeName == "Point_15").Select(x => x.Score).ToList(),
+                        Miệng = g.Where(x => x.PointTypeName == "Attendance").Select(x => x.Score).ToList(),
+                        FortyFiveMinutes = g.Where(x => x.PointTypeName == "Point_45").Select(x => x.Score).ToList(),
+                        MidTerm = g.Where(x => x.PointTypeName == "Point_Midterm").Select(x => x.Score).ToList(),
+                        Final = g.Where(x => x.PointTypeName == "Point_Final").Select(x => x.Score).ToList(),
+                    }).ToList();
+
+                return Ok(groupedResult);
             }
-
-            var studentId = student.Id;
-
-            var result = from s in _db.Scores
-                         join subj in _db.Subjects on s.SubjectId equals subj.Id
-                         join pt in _db.PointTypes on s.PointTypeId equals pt.Id
-                         join pts in _db.PointType_Subjects on pt.Id equals pts.PointTypeId
-                         where s.StudentId == studentId // Lọc theo StudentId
-                         group s by new { SubjectName = subj.Name, PointTypeName = pt.Name, pts.Quantity } into g
-                         select new
-                         {
-                             SubjectName = g.Key.SubjectName,
-                             PointTypeName = g.Key.PointTypeName,
-                             Quantity = g.Key.Quantity,
-                             Scores = string.Join(", ", g.Select(x => x.Score))      
-                         };
-
-            return Ok(result.ToList());
+            catch (Exception ex)
+            {
+                return BadRequest("Đã xảy ra lỗi: " + ex.Message);
+            }
         }
+
+
 
         [HttpGet]
         [Route("GetScores_codeS")]

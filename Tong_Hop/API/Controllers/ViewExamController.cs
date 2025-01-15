@@ -18,7 +18,7 @@ namespace API.Controllers
             _db = db;
         }
         [HttpGet("information_exam")]
-        public async Task<IActionResult> Getinfor(int code,string id)
+        public async Task<IActionResult> Getinfor(string code,string id)
         {
             var infor = (
                  from test in _db.Tests
@@ -33,7 +33,7 @@ namespace API.Controllers
                      nametesst= test.Name,
                      Namesubject = subject.Name,
                      codesubject = subject.Code,
-                     timeexam = test.Minute ?? 0, // Xử lý nếu Minute có thể null
+                     timeexam = test.Minute ?? 0, 
                      namestudent = user.FullName,
                      codestudent = student.Code,
                      email = user.Email
@@ -43,7 +43,7 @@ namespace API.Controllers
         }
 
         [HttpGet("test-testcode-question-await")]
-        public async Task<IActionResult> Get(int CodeTest)
+        public async Task<IActionResult> Get(string CodeTest)
         {
             if (CodeTest == null)
             {
@@ -102,7 +102,7 @@ namespace API.Controllers
         }
 
         [HttpGet("GetExamDuration")]
-        public async Task<IActionResult> GetExamDuration(int codeTest)
+        public async Task<IActionResult> GetExamDuration(string codeTest)
         {
             var exam = await _db.Tests.FirstOrDefaultAsync(e => e.Code == codeTest);
             if (exam == null)
@@ -114,7 +114,7 @@ namespace API.Controllers
         }
 
         [HttpGet("Chọn đáp an")]
-        public async Task<ActionResult> IdExamroomstudent(int CodeTesst, Guid GuidId)
+        public async Task<ActionResult> IdExamroomstudent(string CodeTesst, Guid GuidId)
         {
             var examroomstudent = await (from a in _db.Tests
                                          join testquestion in _db.TestQuestions on a.Id equals testquestion.TestId
@@ -130,7 +130,7 @@ namespace API.Controllers
         }
 
         [HttpPost("create-hist")]
-        public async Task<ActionResult> CreateHistories(int CodeTesst, string GuidId, Guid answerId)
+        public async Task<ActionResult> CreateHistories(string CodeTesst, string GuidId, Guid answerId)
         {
             var examroomstudent = await (from a in _db.Tests
                                          join b in _db.Exam_Room_TestCodes on a.Id equals b.TestId
@@ -153,12 +153,45 @@ namespace API.Controllers
                 ExamRoomStudentId = examroomstudent.Id,
             };
             _db.Exam_Room_Student_AnswerHistories.Add(hist);
-           await _db.SaveChangesAsync();
+            await _db.SaveChangesAsync();
             return Ok("đã lưu");
         }
 
+        [HttpPost("create-hist-pass2")]
+        public async Task<ActionResult> CreateHistoriesList([FromBody] AnswerHistoryRequest request)
+        {
+            var examroomstudent = await (from a in _db.Tests
+                                         join b in _db.Exam_Room_TestCodes on a.Id equals b.TestId
+                                         join c in _db.Exam_Room_Students on b.Id equals c.ExamRoomTestCodeId
+                                         where a.Code == request.CodeTest && c.StudentId == Guid.Parse(request.StudentId)
+                                         select new
+                                         {
+                                             c.Id
+                                         }).FirstOrDefaultAsync();
+
+            if (examroomstudent == null)
+            {
+                return NotFound("Exam room student not found");
+            }
+
+            foreach (var answer in request.AnswerIds)
+            {
+                var hist = new Exam_Room_Student_AnswerHistory
+                {
+                    Id = Guid.NewGuid(),
+                    TestQuestionAnswerId = answer,
+                    ExamRoomStudentId = examroomstudent.Id,
+                };
+                _db.Exam_Room_Student_AnswerHistories.Add(hist);
+            }
+
+            await _db.SaveChangesAsync();
+            return Ok("Đã lưu thành công");
+        }
+
+
         [HttpDelete("Delete_hist")]
-        public async Task<ActionResult> DeleteHist(int Cotesst, Guid IDQuestion, Guid IDStudent)
+        public async Task<ActionResult> DeleteHist(string Cotesst, Guid IDQuestion, Guid IDStudent)
         {
             var answerIds = await (from a in _db.Tests
                                    join b in _db.TestQuestions on a.Id equals b.TestId
@@ -195,7 +228,7 @@ namespace API.Controllers
         }
 
         [HttpGet("check-answer-history")]
-        public async Task<ActionResult<int>> CheckAnswerHistory(int codetest, Guid questionId, Guid studentId)
+        public async Task<ActionResult<int>> CheckAnswerHistory(string codetest, Guid questionId, Guid studentId)
         {
             // Tìm số lượng đáp án đã được lưu cho câu hỏi này và sinh viên này
             var answerHistoryCount = await (from a in _db.Tests
@@ -273,7 +306,7 @@ namespace API.Controllers
         }
 
         [HttpGet("Exam_results_storage")]
-        public async Task<ActionResult> ExamResultsStorage(int CodeTest, double ExamResultStorage, Guid IdStudent)
+        public async Task<ActionResult> ExamResultsStorage(string CodeTest, double ExamResultStorage, Guid IdStudent)
         {
             try
             {
@@ -286,13 +319,25 @@ namespace API.Controllers
                                        && s.SubjectId == t.SubjectId && s.StudentId == IdStudent
                                        select s).ToListAsync();
 
+                var examroomstudent = await (from a in _db.Tests
+                                             join b in _db.Exam_Room_TestCodes on a.Id equals b.TestId
+                                             join c in _db.Exam_Room_Students on b.Id equals c.ExamRoomTestCodeId
+                                             where a.Code == CodeTest && c.StudentId == IdStudent
+                                             select new
+                                             {
+                                                 c.Id
+                                             }).FirstOrDefaultAsync();
+
                 foreach (var item in ListScore)
                 {
                     if (item.Score == 0)
                     {
                         var updateScore = new Scores
                         {
-                            Score = ExamResultStorage
+                            Score = ExamResultStorage,
+                            StudentId = IdStudent,
+                            PointTypeId = item.PointTypeId,
+                            SubjectId = item.SubjectId,
                         };
 
                         _db.Scores.Update(updateScore);
@@ -301,6 +346,17 @@ namespace API.Controllers
 
                     break;
                 }
+
+                var data = new ExamHistorys
+                {
+                    Id = Guid.NewGuid(),
+                    Score = ExamResultStorage,
+                    CreationTime = DateTime.Now,
+                    ExamRoomStudentId = examroomstudent.Id
+                };
+
+                _db.ExamHistorys.Add(data);
+                await _db.SaveChangesAsync();
 
                 return Ok("Update điểm thành công");
             }
@@ -319,38 +375,38 @@ namespace API.Controllers
             public Guid ExamRoomStudentId { get; set; }
         }
 
-        [HttpGet("Exam_Histories")]
-        public async Task<ActionResult> ExamHistories(int CodeTesst, double ExamResultStorage, Guid IdStudent)
-        {
-            try
-            {
-                var examroomstudent = await (from a in _db.Tests
-                                             join b in _db.Exam_Room_TestCodes on a.Id equals b.TestId
-                                             join c in _db.Exam_Room_Students on b.Id equals c.ExamRoomTestCodeId
-                                             where a.Code == CodeTesst && c.StudentId == IdStudent
-                                             select new
-                                             {
-                                                 c.Id
-                                             }).FirstOrDefaultAsync();
+        //[HttpGet("Exam_Histories")]
+        //public async Task<ActionResult> ExamHistories(string CodeTesst, double ExamResultStorage, Guid IdStudent)
+        //{
+        //    try
+        //    {
+        //        var examroomstudent = await (from a in _db.Tests
+        //                                     join b in _db.Exam_Room_TestCodes on a.Id equals b.TestId
+        //                                     join c in _db.Exam_Room_Students on b.Id equals c.ExamRoomTestCodeId
+        //                                     where a.Code == CodeTesst && c.StudentId == IdStudent
+        //                                     select new
+        //                                     {
+        //                                         c.Id
+        //                                     }).FirstOrDefaultAsync();
 
-                var data = new ExamHistorys
-                {
-                    Id = Guid.NewGuid(),
-                    Score = ExamResultStorage,
-                    CreationTime = DateTime.Now,
-                    ExamRoomStudentId = examroomstudent.Id
-                };
+        //        var data = new ExamHistorys
+        //        {
+        //            Id = Guid.NewGuid(),
+        //            Score = ExamResultStorage,
+        //            CreationTime = DateTime.Now,
+        //            ExamRoomStudentId = examroomstudent.Id
+        //        };
 
-                _db.ExamHistorys.Add(data);
-                await _db.SaveChangesAsync();
+        //        _db.ExamHistorys.Add(data);
+        //        await _db.SaveChangesAsync();
 
-                return Ok(data);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new { message = ex.Message });
-            }
-        }
+        //        return Ok(data);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        return BadRequest(new { message = ex.Message });
+        //    }
+        //}
         #endregion
     }
 }

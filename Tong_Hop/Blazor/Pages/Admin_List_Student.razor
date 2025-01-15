@@ -1,0 +1,298 @@
+﻿@page "/Faceid"
+@using DataBase.DTOs
+@using DataBase.Models
+@using global::Data.DTOs
+@layout AdminLayout
+@inject IJSRuntime jsruntime
+@inject HttpClient client
+<div class="container-fluid mt-3">
+    <div class="border rounded shadow p-3">
+        <!-- Tiêu đề tìm kiếm -->
+        <div class="row mb-3">
+            <div class="col-12">
+                <h5 class="text-start text-primary">Tìm kiếm danh sách học sinh</h5>
+            </div>
+        </div>
+
+        <!-- Form tìm kiếm -->
+        <div class="row justify-content-center align-items-center">
+            <!-- Dropdown Khối -->
+            <div class="col-5 col-md-3 mx-1">
+                <div class="form-group">
+                    <select class="form-select" @onchange="@(e => GetAllClass(Guid.Parse(e.Value.ToString())))">
+                        <option value="0" style="display:none">Chọn khối...</option>
+                        @foreach (var itemGrade in grades.OrderBy(a => a.Name))
+                        {
+                            <option value="@itemGrade.Id">Khối @itemGrade.Name</option>
+                        }
+                    </select>
+                </div>
+            </div>
+
+            <!-- Dropdown Lớp -->
+            <div class="col-5 col-md-3 mx-1">
+                <div class="form-group">
+                    <select class="form-select" @onchange="OnClassChanged">
+                        <option value="0" style="display:none">Chọn lớp...</option>
+                        @foreach (var itemClass in classes.OrderBy(a => a.Name))
+                        {
+                            <option value="@itemClass.Id"
+                            selected="@(itemClass.Id == selectidclass ? "selected" : null)">
+                                Lớp @itemClass.Name
+                            </option>
+                        }
+                    </select>
+                </div>
+            </div>
+
+            <!-- Nút Tìm kiếm -->
+            <div class="col-2 d-flex justify-content-center p-1">
+                <button class="btn btn-primary" @onclick="() => getallstudent(selectidclass)">Tìm kiếm</button>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<div class="container-fluid mt-3">
+    <div class="table-responsive" style="height: 500px; overflow-y: auto;">
+        <table class="table table-hover table-bordered" style="table-layout: fixed; width: 100%;">
+            <thead class="thead-light" style="position: sticky; top: 0; background-color: #f8f9fa; z-index: 1;">
+                <tr>
+                    <th style="width: 5%;">STT</th>
+                    <th style="width: 7%;">Avatar</th>
+                    <th style="width: 10%;">Tên</th>
+                    <th style="width: 13%;">Email</th>
+                    <th style="width: 8%;">Ngày sinh</th>
+                    <th style="width: 9%;">Mã sinh viên</th>
+                    <th style="width: 12.5%;" class="text-center">Trạng thái đăng ký</th>
+                    <th style="width: 12.5%;" class="text-center">Hành động</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (FilteredUserstudent != null && FilteredUserstudent.Any())
+                {
+                    int index = 1; // Số thứ tự
+                    @foreach (var item in FilteredUserstudent.OrderBy(c => c.Name))
+                    {
+                        <tr class="align-content-center">
+                            <td>@index</td>
+                            <td>
+                                <img src="@item.picture" alt="Avatar"
+                                     class="img-thumbnail rounded-circle"
+                                     style="width: 40px; height: 40px;" />
+                            </td>
+                            <td>@item.Name</td>
+                            <td>@item.Email</td>
+                            <td>@item.dateofbirt.ToString("dd/MM/yyyy")</td>
+                            <td>@item.codestudent</td>
+                            <td class="text-center">@item.RegistrationStatus</td>
+                            <td class="text-center">
+                                <button class="btn btn-sm btn-success rounded-pill px-3 py-2" @onclick="()=>showdata(item.idstudent)">
+                                    Đăng ký
+                                </button>
+                                <button class="btn btn-sm btn-danger rounded-pill px-3" @onclick="() => delete(item.idstudent.ToString())">
+                                    Xóa
+                                </button>
+                            </td>
+                        </tr>
+                        index++;
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="8" class="text-center text-danger">Không có dữ liệu.</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="modal fade @(showfaceid ? "show" : "")" tabindex="-1" aria-hidden="true" style="display:@(showfaceid ? "block" : "none"); background-color: rgba(0,0,0,0.5);">
+    <div class="modal-dialog modal-dialog-centered modal-md">
+        <div class="modal-content">
+            <!-- Header -->
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">Cập nhật thông tin khuôn mặt</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" @onclick="closefaceid"></button>
+            </div>
+
+            <!-- Body -->
+            <div class="modal-body">
+                <div>
+                    <div style="position: relative; display: inline-block; border: 1px solid #ccc; border-radius: 8px; overflow: hidden;">
+                        <img id="cameraStream" src="https://localhost:7046/api/FaceId/camera-stream" alt="Camera Stream" class="img-fluid" style="max-width: 100%; height: auto;" />
+                        <canvas id="faceCanvas" style="position: absolute; top: 0; left: 0; pointer-events: none; width: 100%; height: 100%;"></canvas>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Footer -->
+            <div class="modal-footer">
+                <button class="btn btn-sm btn-success rounded-pill me-2 px-3" @onclick="() => RegisterFaceAsync(idstudent.ToString())">
+                    Đăng ký
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private bool showfaceid = false;
+    private Guid idstudent;
+    private void showdata(Guid id)
+    {
+        idstudent = id;
+        showfaceid = true;
+    }
+    private void closefaceid()
+    {
+        showfaceid = false;
+    }
+
+    private async Task delete(string id)
+    {
+        var resrpon = await client.DeleteAsync($"https://localhost:7046/api/FaceId/remove-face?userId={id}");
+        if (resrpon.IsSuccessStatusCode)
+        {
+            await jsruntime.InvokeVoidAsync("alert", "xóa dữ liệu thành công");
+            await getallstudent(selectidclass);
+        }
+        else { await jsruntime.InvokeVoidAsync("alert", "xóa dữ liệu thất bại"); }
+
+    }
+    private async Task RegisterFaceAsync(string userId)
+    {
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            await jsruntime.InvokeVoidAsync("alert", "vui lòng nhập ID user");
+            return;
+        }
+
+        try
+        {
+            var response = await client.PostAsync($"https://localhost:7046/api/FaceId/register-face?userId={userId}", null);
+            if (response.IsSuccessStatusCode)
+            {
+
+                await jsruntime.InvokeVoidAsync("alert", "thêm dữ liệu  thành công");
+                await jsruntime.InvokeVoidAsync("reloadCameraFeed");
+                showfaceid = false;
+                await getallstudent(selectidclass);
+
+
+            }
+            else
+            {
+                var errorResponse = await response.Content.ReadAsStringAsync();
+                await jsruntime.InvokeVoidAsync("alert", "thêm dữ liệu không thành công");
+                await jsruntime.InvokeVoidAsync("reloadCameraFeed");
+            }
+        }
+        catch (Exception)
+        {
+            await jsruntime.InvokeVoidAsync("alert", "thêm dữ liệu không thành công");
+            await jsruntime.InvokeVoidAsync("reloadCameraFeed");
+        }
+    }
+}
+<script>
+    function reloadCameraFeed() {
+        const cameraImage = document.querySelector("#cameraStream");
+        if (cameraImage) {
+            cameraImage.src = "https://localhost:7046/api/FaceId/camera-stream?" + new Date().getTime();
+        }
+    }
+</script>
+@code {
+    private bool isCreating = false;
+    private bool iscreatclass = false;
+    private Guid newGradeName = Guid.Empty;
+    private Grades gradescreate = new Grades();
+    private Guid selectidgrade;
+    private Guid selectidclass;
+    private Guid? TaskIdToEdit = null;
+    private Guid? EditClass = null;
+    private string? teacherid;
+    private Classes classcreateandupdate = new Classes();
+    private IBrowserFile? avatarFile;
+    private async Task tokent()
+    {
+        var token = await jsruntime.InvokeAsync<string>("localStorage.getItem", "YourSuperSecretKeyHere");
+        if (string.IsNullOrEmpty(token))
+        {
+            throw new Exception("Token không tồn tại hoặc không hợp lệ.");
+        }
+        var handler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
+        var jsontoken = handler.ReadToken(token) as System.IdentityModel.Tokens.Jwt.JwtSecurityToken;
+        teacherid = jsontoken?.Claims.FirstOrDefault(c => c.Type == "Idteacher")?.Value;
+    }
+   
+    private void OnInputChanged(string? value)
+    {
+        if (int.TryParse(value, out var parsedValue))
+        {
+            gradescreate.Name = parsedValue;
+            classcreateandupdate.Name = value;
+            StateHasChanged();              
+        }
+    } 
+    private void OnInputChangeds(ChangeEventArgs e)
+    {
+
+        var inputValue = e.Value?.ToString();
+        classcreateandupdate.Name = inputValue;
+        StateHasChanged();
+    }
+    private void OnClassChanged(ChangeEventArgs e)
+    {
+        if (Guid.TryParse(e.Value?.ToString(), out var parsedId))
+        {
+            selectidclass = parsedId;
+
+        }
+    }
+    private List<Grades> grades = new List<Grades>();
+    private List<Classes> classes = new List<Classes>();
+    private List<GetallStudentDT0> users = new List<GetallStudentDT0>();
+    private List<GetallStudentDT0> FilteredUserstudent => string.IsNullOrEmpty(SearchText)
+     ? users 
+     : users.Where(o => o.Name.ToString().Contains(SearchText)) 
+              .ToList();
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await tokent();
+
+    }
+    protected override async Task OnInitializedAsync()
+    {
+        await GetAllGrade();
+
+    }
+    private async Task GetAllClass(Guid id){
+        classes = await client.GetFromJsonAsync<List<Classes>>($"https://localhost:7046/api/Classes/Get-Grade-Class?gradeId={id}");
+        if (classes.Any())
+        {
+            selectidclass = classes.OrderBy(x=>x.Name).First().Id;
+        }
+        else
+        {
+            selectidclass = Guid.Empty; 
+        }
+      
+    }
+    private async Task GetAllGrade(){
+        grades = await client.GetFromJsonAsync<List<Grades>>("https://localhost:7046/api/Grade/get-grade");
+    }
+    private async Task getallstudent(Guid id){
+        users = await client.GetFromJsonAsync<List<GetallStudentDT0>>($"https://localhost:7046/api/Student/get-all-ID-class?id={id}");
+        
+    }
+    private string? SearchText { get; set; }
+  
+}
+
+
