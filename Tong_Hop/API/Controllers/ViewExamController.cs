@@ -33,7 +33,7 @@ namespace API.Controllers
                      nametesst= test.Name,
                      Namesubject = subject.Name,
                      codesubject = subject.Code,
-                     timeexam = test.Minute ?? 0, // Xử lý nếu Minute có thể null
+                     timeexam = test.Minute ?? 0, 
                      namestudent = user.FullName,
                      codestudent = student.Code,
                      email = user.Email
@@ -276,7 +276,7 @@ namespace API.Controllers
             }
         }
 
-        [HttpGet("Exam_results_storage")]
+        [HttpPost("Exam_results_storage")]
         public async Task<ActionResult> ExamResultsStorage(string CodeTest, double ExamResultStorage, Guid IdStudent)
         {
             try
@@ -290,16 +290,16 @@ namespace API.Controllers
                                        && s.SubjectId == t.SubjectId && s.StudentId == IdStudent
                                        select s).ToListAsync();
 
-				var examroomstudent = await (from a in _db.Tests
-											 join b in _db.Exam_Room_TestCodes on a.Id equals b.TestId
-											 join c in _db.Exam_Room_Students on b.Id equals c.ExamRoomTestCodeId
-											 where a.Code == CodeTest && c.StudentId == IdStudent
-											 select new
-											 {
-												 c.Id
-											 }).FirstOrDefaultAsync();
+                var examroomstudent = await (from a in _db.Tests
+                                             join b in _db.Exam_Room_TestCodes on a.Id equals b.TestId
+                                             join c in _db.Exam_Room_Students on b.Id equals c.ExamRoomTestCodeId
+                                             where a.Code == CodeTest && c.StudentId == IdStudent
+                                             select new
+                                             {
+                                                 c.Id
+                                             }).FirstOrDefaultAsync();
 
-				foreach (var item in ListScore)
+                foreach (var item in ListScore)
                 {
                     if (item.Score == 0)
                     {
@@ -318,18 +318,18 @@ namespace API.Controllers
                     break;
                 }
 
-				var data = new ExamHistorys
-				{
-					Id = Guid.NewGuid(),
-					Score = ExamResultStorage,
-					CreationTime = DateTime.Now,
-					ExamRoomStudentId = examroomstudent.Id
-				};
+                var data = new ExamHistorys
+                {
+                    Id = Guid.NewGuid(),
+                    Score = ExamResultStorage,
+                    CreationTime = DateTime.Now,
+                    ExamRoomStudentId = examroomstudent.Id
+                };
 
-				_db.ExamHistorys.Add(data);
-				await _db.SaveChangesAsync();
+                _db.ExamHistorys.Add(data);
+                await _db.SaveChangesAsync();
 
-				return Ok("Update điểm thành công");
+                return Ok("Update điểm thành công");
             }
             catch (Exception ex)
             {
