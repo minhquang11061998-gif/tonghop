@@ -130,7 +130,7 @@ namespace API.Controllers
         }
 
         [HttpPost("create-hist")]
-        public async Task<ActionResult> CreateHistories(string CodeTesst, string GuidId, Guid answerId)
+        public async Task<ActionResult> CreateHistories(string CodeTesst, string GuidId, List<Guid> answerIds)
         {
             var examroomstudent = await (from a in _db.Tests
                                          join b in _db.Exam_Room_TestCodes on a.Id equals b.TestId
@@ -146,15 +146,19 @@ namespace API.Controllers
                 return NotFound("Exam room student not found");
             }
 
-            var hist = new Exam_Room_Student_AnswerHistory
+            foreach (var answerId in answerIds)
             {
-                Id = Guid.NewGuid(),
-                TestQuestionAnswerId = answerId,
-                ExamRoomStudentId = examroomstudent.Id,
-            };
-            _db.Exam_Room_Student_AnswerHistories.Add(hist);
-           await _db.SaveChangesAsync();
-            return Ok("đã lưu");
+                var hist = new Exam_Room_Student_AnswerHistory
+                {
+                    Id = Guid.NewGuid(),
+                    TestQuestionAnswerId = answerId,
+                    ExamRoomStudentId = examroomstudent.Id,
+                };
+                _db.Exam_Room_Student_AnswerHistories.Add(hist);
+            }
+
+            await _db.SaveChangesAsync();
+            return Ok("Đã lưu tất cả đáp án");
         }
 
         [HttpDelete("Delete_hist")]
